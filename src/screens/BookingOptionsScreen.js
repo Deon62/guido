@@ -303,17 +303,17 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
     color: '#6D6D6D',
     letterSpacing: 0.2,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   backOptionButton: {
     flexDirection: 'row',
@@ -416,8 +416,8 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   calendarWrapper: {
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: 8,
+    marginBottom: 16,
   },
   selectedDateContainer: {
     backgroundColor: '#FFFFFF',

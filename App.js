@@ -13,6 +13,7 @@ import { NotificationPreferencesScreen } from './src/screens/NotificationPrefere
 import { LanguageScreen } from './src/screens/LanguageScreen';
 import { GuideDetailsScreen } from './src/screens/GuideDetailsScreen';
 import { BookingOptionsScreen } from './src/screens/BookingOptionsScreen';
+import { BookingSuccessScreen } from './src/screens/BookingSuccessScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -26,6 +27,8 @@ export default function App() {
   const [showLanguage, setShowLanguage] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [showBookingOptions, setShowBookingOptions] = useState(false);
+  const [showBookingSuccess, setShowBookingSuccess] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState(null);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -37,7 +40,9 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showBookingOptions) {
+    if (showBookingSuccess) {
+      handleBookingSuccessBack();
+    } else if (showBookingOptions) {
       setShowBookingOptions(false);
     } else if (selectedGuide) {
       setSelectedGuide(null);
@@ -88,8 +93,18 @@ export default function App() {
       option: bookingOption,
     });
     // TODO: Handle booking submission
+    setBookingDetails({
+      guide: selectedGuide,
+      bookingOption: bookingOption,
+    });
     setShowBookingOptions(false);
+    setShowBookingSuccess(true);
+  };
+
+  const handleBookingSuccessBack = () => {
+    setShowBookingSuccess(false);
     setSelectedGuide(null);
+    setBookingDetails(null);
   };
 
   const handleBookingOptionsBack = () => {
@@ -123,6 +138,17 @@ export default function App() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show booking success screen
+  if (showBookingSuccess && bookingDetails) {
+    return (
+      <BookingSuccessScreen
+        guide={bookingDetails.guide}
+        bookingOption={bookingDetails.bookingOption}
+        onBack={handleBookingSuccessBack}
+      />
+    );
+  }
 
   // Show booking options screen
   if (showBookingOptions && selectedGuide) {
