@@ -5,6 +5,7 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -89,6 +90,17 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onMessagePress={handleMessagePress}
+      />
+    );
+  }
+
+  // Show profile screen when profile tab is active
+  if (currentScreen === 'home' && activeTab === 'profile') {
+    return (
+      <ProfileScreen
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onSettingsPress={() => console.log('Settings pressed')}
       />
     );
   }
