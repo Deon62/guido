@@ -8,6 +8,9 @@ import { ChatScreen } from './src/screens/ChatScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
+import { AboutDeveloperScreen } from './src/screens/AboutDeveloperScreen';
+import { NotificationPreferencesScreen } from './src/screens/NotificationPreferencesScreen';
+import { LanguageScreen } from './src/screens/LanguageScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -16,6 +19,9 @@ export default function App() {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAboutDeveloper, setShowAboutDeveloper] = useState(false);
+  const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
+  const [showLanguage, setShowLanguage] = useState(false);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -27,7 +33,13 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showNotifications) {
+    if (showLanguage) {
+      setShowLanguage(false);
+    } else if (showNotificationPreferences) {
+      setShowNotificationPreferences(false);
+    } else if (showAboutDeveloper) {
+      setShowAboutDeveloper(false);
+    } else if (showNotifications) {
       setShowNotifications(false);
     } else if (showSettings) {
       setShowSettings(false);
@@ -40,6 +52,18 @@ export default function App() {
     } else {
       setCurrentScreen('landing');
     }
+  };
+
+  const handleAboutDeveloperPress = () => {
+    setShowAboutDeveloper(true);
+  };
+
+  const handleNotificationPreferencesPress = () => {
+    setShowNotificationPreferences(true);
+  };
+
+  const handleLanguagePress = () => {
+    setShowLanguage(true);
   };
 
   const handleNotificationsPress = () => {
@@ -70,6 +94,33 @@ export default function App() {
     setSelectedMessage(null);
   };
 
+  // Show language screen
+  if (showLanguage) {
+    return (
+      <LanguageScreen
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // Show notification preferences screen
+  if (showNotificationPreferences) {
+    return (
+      <NotificationPreferencesScreen
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // Show about developer screen
+  if (showAboutDeveloper) {
+    return (
+      <AboutDeveloperScreen
+        onBack={handleBack}
+      />
+    );
+  }
+
   // Show notifications screen
   if (showNotifications) {
     return (
@@ -84,6 +135,9 @@ export default function App() {
     return (
       <SettingsScreen
         onBack={handleBack}
+        onAboutDeveloperPress={handleAboutDeveloperPress}
+        onNotificationPreferencesPress={handleNotificationPreferencesPress}
+        onLanguagePress={handleLanguagePress}
       />
     );
   }

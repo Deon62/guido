@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
-export const SettingsScreen = ({ onBack }) => {
+export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPreferencesPress, onLanguagePress }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -11,12 +11,35 @@ export const SettingsScreen = ({ onBack }) => {
     {
       icon: 'notifications-outline',
       label: 'Notification Preferences',
-      onPress: () => console.log('Notification Preferences'),
+      onPress: () => {
+        if (onNotificationPreferencesPress) {
+          onNotificationPreferencesPress();
+        } else {
+          console.log('Notification Preferences');
+        }
+      },
     },
     {
       icon: 'language-outline',
       label: 'Language',
-      onPress: () => console.log('Language'),
+      onPress: () => {
+        if (onLanguagePress) {
+          onLanguagePress();
+        } else {
+          console.log('Language');
+        }
+      },
+    },
+    {
+      icon: 'person-outline',
+      label: 'More About App Developer',
+      onPress: () => {
+        if (onAboutDeveloperPress) {
+          onAboutDeveloperPress();
+        } else {
+          console.log('About Developer');
+        }
+      },
     },
     {
       icon: 'trash-outline',
@@ -117,6 +140,9 @@ const styles = StyleSheet.create({
   settingsSection: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 8,
+    marginHorizontal: 24,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   settingsItem: {
     flexDirection: 'row',
