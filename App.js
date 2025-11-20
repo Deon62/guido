@@ -1,20 +1,31 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { LandingScreen } from './src/screens/LandingScreen';
+import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [currentScreen, setCurrentScreen] = useState('landing');
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  const handleFindCityGuide = () => {
+    setCurrentScreen('citySelection');
+  };
+
+  const handleCitySelect = (city) => {
+    console.log('City selected:', city);
+    // TODO: Navigate to guide listing for selected city
+  };
+
+  const handleBack = () => {
+    setCurrentScreen('landing');
+  };
+
+  if (currentScreen === 'citySelection') {
+    return (
+      <CitySelectionScreen
+        onCitySelect={handleCitySelect}
+        onBack={handleBack}
+      />
+    );
+  }
+
+  return <LandingScreen onFindCityGuide={handleFindCityGuide} />;
+}
