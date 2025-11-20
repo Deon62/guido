@@ -3,11 +3,14 @@ import { LandingScreen } from './src/screens/LandingScreen';
 import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
+import { MessagesScreen } from './src/screens/MessagesScreen';
+import { ChatScreen } from './src/screens/ChatScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [selectedCity, setSelectedCity] = useState(null);
   const [activeTab, setActiveTab] = useState('home');
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -19,7 +22,15 @@ export default function App() {
   };
 
   const handleBack = () => {
-    setCurrentScreen('landing');
+    if (selectedMessage) {
+      setSelectedMessage(null);
+    } else if (currentScreen === 'citySelection') {
+      setCurrentScreen('landing');
+    } else if (currentScreen === 'home' && activeTab !== 'home') {
+      setActiveTab('home');
+    } else {
+      setCurrentScreen('landing');
+    }
   };
 
   const handleTabChange = (tab) => {
@@ -28,11 +39,29 @@ export default function App() {
     // Only navigate if we're already in the main app (not on landing or city selection)
     if (currentScreen === 'home') {
       // Tab changes are handled by showing different screens
-      // TripsScreen and HomeScreen will be shown based on activeTab
+      // TripsScreen, MessagesScreen and HomeScreen will be shown based on activeTab
     }
     
     console.log('Tab changed to:', tab);
   };
+
+  const handleMessagePress = (message) => {
+    setSelectedMessage(message);
+  };
+
+  const handleChatBack = () => {
+    setSelectedMessage(null);
+  };
+
+  // Show chat screen when a message is selected
+  if (selectedMessage) {
+    return (
+      <ChatScreen
+        message={selectedMessage}
+        onBack={handleChatBack}
+      />
+    );
+  }
 
   if (currentScreen === 'citySelection') {
     return (
@@ -49,6 +78,17 @@ export default function App() {
       <TripsScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
+      />
+    );
+  }
+
+  // Show messages screen when messages tab is active
+  if (currentScreen === 'home' && activeTab === 'messages') {
+    return (
+      <MessagesScreen
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onMessagePress={handleMessagePress}
       />
     );
   }
