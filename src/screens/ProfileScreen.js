@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress }) => {
+export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, user: userProp }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -16,13 +16,14 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
     }
   };
 
-  // Mock user data
-  const user = {
+  // Mock user data (use prop if provided)
+  const user = userProp || {
     name: 'John Doe',
     email: 'john.doe@example.com',
     avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
     phone: '+1 234 567 8900',
     location: 'New York, USA',
+    city: 'New York',
     memberSince: 'January 2024',
   };
 
@@ -33,12 +34,51 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
   ];
 
   const menuItems = [
-    { icon: 'person-outline', label: 'Edit Profile', onPress: () => console.log('Edit Profile') },
-    { icon: 'card-outline', label: 'Payment Methods', onPress: () => console.log('Payment Methods') },
-    { icon: 'heart-outline', label: 'Favorites', onPress: () => console.log('Favorites') },
-    { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => console.log('Help & Support') },
-    { icon: 'document-text-outline', label: 'Terms & Privacy', onPress: () => console.log('Terms & Privacy') },
-    { icon: 'log-out-outline', label: 'Logout', onPress: () => console.log('Logout'), danger: true },
+    { 
+      icon: 'person-outline', 
+      label: 'Edit Profile', 
+      onPress: () => {
+        if (onEditProfilePress) {
+          onEditProfilePress();
+        } else {
+          console.log('Edit Profile');
+        }
+      }
+    },
+    { 
+      icon: 'help-circle-outline', 
+      label: 'Help & Support', 
+      onPress: () => {
+        if (onHelpSupportPress) {
+          onHelpSupportPress();
+        } else {
+          console.log('Help & Support');
+        }
+      }
+    },
+    { 
+      icon: 'document-text-outline', 
+      label: 'Terms & Privacy', 
+      onPress: () => {
+        if (onTermsPrivacyPress) {
+          onTermsPrivacyPress();
+        } else {
+          console.log('Terms & Privacy');
+        }
+      }
+    },
+    { 
+      icon: 'log-out-outline', 
+      label: 'Logout', 
+      onPress: () => {
+        if (onLogoutPress) {
+          onLogoutPress();
+        } else {
+          console.log('Logout');
+        }
+      }, 
+      danger: true 
+    },
   ];
 
   return (
@@ -64,11 +104,26 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
       >
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <Image
-            source={user.avatar}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
+          <View style={styles.avatarContainer}>
+            <Image
+              source={user.avatar}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+            <TouchableOpacity
+              style={styles.cameraButton}
+              onPress={() => {
+                if (onProfilePicturePress) {
+                  onProfilePicturePress();
+                } else {
+                  console.log('Change profile picture');
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="camera" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.email}>{user.email}</Text>
         </View>
@@ -170,13 +225,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     marginBottom: 16,
   },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 16,
     borderWidth: 3,
     borderColor: '#F7F7F7',
+  },
+  cameraButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#0A1D37',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   name: {
     fontSize: 24,

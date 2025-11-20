@@ -14,6 +14,12 @@ import { LanguageScreen } from './src/screens/LanguageScreen';
 import { GuideDetailsScreen } from './src/screens/GuideDetailsScreen';
 import { BookingOptionsScreen } from './src/screens/BookingOptionsScreen';
 import { BookingSuccessScreen } from './src/screens/BookingSuccessScreen';
+import { HelpSupportScreen } from './src/screens/HelpSupportScreen';
+import { TermsScreen } from './src/screens/TermsScreen';
+import { PrivacyScreen } from './src/screens/PrivacyScreen';
+import { EditProfileScreen } from './src/screens/EditProfileScreen';
+import { ConfirmationModal } from './src/components/ConfirmationModal';
+import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelectorScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -29,6 +35,22 @@ export default function App() {
   const [showBookingOptions, setShowBookingOptions] = useState(false);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
+  const [showHelpSupport, setShowHelpSupport] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [showProfilePictureSelector, setShowProfilePictureSelector] = useState(false);
+  const [profilePictureContext, setProfilePictureContext] = useState(null); // 'profile' or 'edit'
+  const [userData, setUserData] = useState({
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 234 567 8900',
+    city: 'New York',
+    location: 'New York, USA',
+    avatar: require('./assets/profiles/ic.png'),
+  });
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -40,7 +62,18 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showBookingSuccess) {
+    if (showProfilePictureSelector) {
+      setShowProfilePictureSelector(false);
+      setProfilePictureContext(null);
+    } else if (showEditProfile) {
+      setShowEditProfile(false);
+    } else if (showPrivacy) {
+      setShowPrivacy(false);
+    } else if (showTerms) {
+      setShowTerms(false);
+    } else if (showHelpSupport) {
+      setShowHelpSupport(false);
+    } else if (showBookingSuccess) {
       handleBookingSuccessBack();
     } else if (showBookingOptions) {
       setShowBookingOptions(false);
@@ -119,6 +152,71 @@ export default function App() {
     setShowSettings(true);
   };
 
+  const handleHelpSupportPress = () => {
+    setShowHelpSupport(true);
+  };
+
+  const handleTermsPrivacyPress = () => {
+    setShowTerms(true);
+  };
+
+  const handleTermsBack = () => {
+    setShowTerms(false);
+    setShowHelpSupport(true);
+  };
+
+  const handleEditProfilePress = () => {
+    setShowEditProfile(true);
+  };
+
+  const handleSaveProfile = (formData) => {
+    setUserData({
+      ...userData,
+      ...formData,
+      location: formData.city ? `${formData.city}, USA` : userData.location,
+    });
+    console.log('Profile saved:', formData);
+  };
+
+  const handleProfilePicturePress = (context) => {
+    setProfilePictureContext(context);
+    setShowProfilePictureSelector(true);
+  };
+
+  const handleProfilePictureSelect = (image) => {
+    setUserData({
+      ...userData,
+      avatar: image,
+    });
+    setShowProfilePictureSelector(false);
+    setProfilePictureContext(null);
+    console.log('Profile picture updated');
+  };
+
+  const handleLogoutPress = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
+    console.log('User logged out');
+    // TODO: Handle logout logic (clear session, redirect to landing, etc.)
+    setCurrentScreen('landing');
+    setActiveTab('home');
+  };
+
+  const handleDeleteAccountPress = () => {
+    setShowDeleteAccountConfirm(true);
+  };
+
+  const handleDeleteAccountConfirm = () => {
+    setShowDeleteAccountConfirm(false);
+    console.log('Account deleted');
+    // TODO: Handle account deletion logic
+    setCurrentScreen('landing');
+    setActiveTab('home');
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     
@@ -138,6 +236,73 @@ export default function App() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show profile picture selector screen
+  if (showProfilePictureSelector) {
+    return (
+      <ProfilePictureSelectorScreen
+        currentAvatar={userData.avatar}
+        onBack={handleBack}
+        onSelect={handleProfilePictureSelect}
+      />
+    );
+  }
+
+  // Show edit profile screen
+  if (showEditProfile) {
+    return (
+      <EditProfileScreen
+        user={userData}
+        onBack={handleBack}
+        onSave={handleSaveProfile}
+        onProfilePicturePress={() => handleProfilePicturePress('edit')}
+        currentAvatar={userData.avatar}
+      />
+    );
+  }
+
+  // Show privacy screen
+  if (showPrivacy) {
+    return (
+      <PrivacyScreen
+        onBack={handleBack}
+        onTermsPress={() => {
+          setShowPrivacy(false);
+          setShowTerms(true);
+        }}
+      />
+    );
+  }
+
+  // Show terms screen
+  if (showTerms) {
+    return (
+      <TermsScreen
+        onBack={handleBack}
+        onPrivacyPress={() => {
+          setShowTerms(false);
+          setShowPrivacy(true);
+        }}
+      />
+    );
+  }
+
+  // Show help & support screen
+  if (showHelpSupport) {
+    return (
+      <HelpSupportScreen
+        onBack={handleBack}
+        onTermsPress={() => {
+          setShowHelpSupport(false);
+          setShowTerms(true);
+        }}
+        onPrivacyPress={() => {
+          setShowHelpSupport(false);
+          setShowPrivacy(true);
+        }}
+      />
+    );
+  }
 
   // Show booking success screen
   if (showBookingSuccess && bookingDetails) {
@@ -211,12 +376,27 @@ export default function App() {
   // Show settings screen
   if (showSettings) {
     return (
-      <SettingsScreen
-        onBack={handleBack}
-        onAboutDeveloperPress={handleAboutDeveloperPress}
-        onNotificationPreferencesPress={handleNotificationPreferencesPress}
-        onLanguagePress={handleLanguagePress}
-      />
+      <>
+        <SettingsScreen
+          onBack={handleBack}
+          onAboutDeveloperPress={handleAboutDeveloperPress}
+          onNotificationPreferencesPress={handleNotificationPreferencesPress}
+          onLanguagePress={handleLanguagePress}
+          onDeleteAccountPress={handleDeleteAccountPress}
+        />
+        
+        {/* Delete Account Confirmation Modal */}
+        <ConfirmationModal
+          visible={showDeleteAccountConfirm}
+          title="Delete Account"
+          message="Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted."
+          confirmText="Delete"
+          cancelText="Cancel"
+          danger={true}
+          onConfirm={handleDeleteAccountConfirm}
+          onCancel={() => setShowDeleteAccountConfirm(false)}
+        />
+      </>
     );
   }
 
@@ -264,11 +444,30 @@ export default function App() {
   // Show profile screen when profile tab is active
   if (currentScreen === 'home' && activeTab === 'profile') {
     return (
-      <ProfileScreen
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        onSettingsPress={handleSettingsPress}
-      />
+      <>
+        <ProfileScreen
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onSettingsPress={handleSettingsPress}
+          onHelpSupportPress={handleHelpSupportPress}
+          onTermsPrivacyPress={handleTermsPrivacyPress}
+          onEditProfilePress={handleEditProfilePress}
+          onLogoutPress={handleLogoutPress}
+          onProfilePicturePress={() => handleProfilePicturePress('profile')}
+          user={userData}
+        />
+        
+        {/* Logout Confirmation Modal */}
+        <ConfirmationModal
+          visible={showLogoutConfirm}
+          title="Logout"
+          message="Are you sure you want to logout? You'll need to sign in again to access your account."
+          confirmText="Logout"
+          cancelText="Cancel"
+          onConfirm={handleLogoutConfirm}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
+      </>
     );
   }
 

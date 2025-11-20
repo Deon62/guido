@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
-export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPreferencesPress, onLanguagePress }) => {
+export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPreferencesPress, onLanguagePress, onDeleteAccountPress }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -44,7 +46,7 @@ export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPr
     {
       icon: 'trash-outline',
       label: 'Delete Account',
-      onPress: () => console.log('Delete Account'),
+      onPress: () => setShowDeleteConfirm(true),
       danger: true,
     },
   ];
@@ -99,6 +101,25 @@ export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPr
           ))}
         </View>
       </ScrollView>
+
+      {/* Delete Account Confirmation Modal */}
+      <ConfirmationModal
+        visible={showDeleteConfirm}
+        title="Delete Account"
+        message="Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger={true}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          if (onDeleteAccountPress) {
+            onDeleteAccountPress();
+          } else {
+            console.log('Delete Account confirmed');
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </View>
   );
 };
