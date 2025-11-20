@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { MessageCard } from '../components/MessageCard';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const MessagesScreen = ({ activeTab = 'messages', onTabChange, onMessagePress }) => {
+export const MessagesScreen = ({ activeTab = 'messages', onTabChange, onMessagePress, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -100,7 +100,7 @@ export const MessagesScreen = ({ activeTab = 'messages', onTabChange, onMessageP
         )}
       </ScrollView>
 
-      <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+      {!hideBottomNav && <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />}
     </View>
   );
 };

@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, user: userProp }) => {
+export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -183,7 +183,7 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
         </View>
       </ScrollView>
 
-      <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+      {!hideBottomNav && <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />}
     </View>
   );
 };

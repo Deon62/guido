@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { View } from 'react-native';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -20,6 +21,9 @@ import { PrivacyScreen } from './src/screens/PrivacyScreen';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
 import { ConfirmationModal } from './src/components/ConfirmationModal';
 import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelectorScreen';
+import { GuideRegistrationScreen } from './src/screens/GuideRegistrationScreen';
+import { GuideHomeScreen } from './src/screens/GuideHomeScreen';
+import { GuideBottomNavBar } from './src/components/GuideBottomNavBar';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -43,6 +47,9 @@ export default function App() {
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
   const [showProfilePictureSelector, setShowProfilePictureSelector] = useState(false);
   const [profilePictureContext, setProfilePictureContext] = useState(null); // 'profile' or 'edit'
+  const [showGuideRegistration, setShowGuideRegistration] = useState(false);
+  const [isGuide, setIsGuide] = useState(false);
+  const [guideActiveTab, setGuideActiveTab] = useState('home');
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -56,13 +63,35 @@ export default function App() {
     setCurrentScreen('citySelection');
   };
 
+  const handleRegisterAsGuide = () => {
+    setShowGuideRegistration(true);
+  };
+
+  const handleGuideRegistrationSubmit = (formData) => {
+    console.log('Guide registration submitted:', formData);
+    // TODO: Handle guide registration submission
+    setIsGuide(true);
+    setShowGuideRegistration(false);
+    setCurrentScreen('guideHome');
+  };
+
+  const handleGuideTabChange = (tab) => {
+    setGuideActiveTab(tab);
+  };
+
   const handleCitySelect = (city) => {
     setSelectedCity(city);
     setCurrentScreen('home');
   };
 
   const handleBack = () => {
-    if (showProfilePictureSelector) {
+    if (isGuide && currentScreen === 'guideHome' && selectedMessage) {
+      setSelectedMessage(null);
+    } else if (isGuide && currentScreen === 'guideHome' && guideActiveTab !== 'home') {
+      setGuideActiveTab('home');
+    } else if (showGuideRegistration) {
+      setShowGuideRegistration(false);
+    } else if (showProfilePictureSelector) {
       setShowProfilePictureSelector(false);
       setProfilePictureContext(null);
     } else if (showEditProfile) {
@@ -484,5 +513,91 @@ export default function App() {
     );
   }
 
-  return <LandingScreen onFindCityGuide={handleFindCityGuide} />;
+  // Show guide chat screen (when a message is opened)
+  if (isGuide && currentScreen === 'guideHome' && selectedMessage) {
+    return (
+      <ChatScreen
+        message={selectedMessage}
+        onBack={handleChatBack}
+      />
+    );
+  }
+
+  // Show guide home screen if user is a guide
+  if (isGuide && currentScreen === 'guideHome') {
+    if (guideActiveTab === 'messages') {
+      return (
+        <View style={{ flex: 1 }}>
+          <MessagesScreen
+            activeTab={guideActiveTab}
+            onTabChange={handleGuideTabChange}
+            onMessagePress={handleMessagePress}
+            hideBottomNav={true}
+          />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+            <GuideBottomNavBar activeTab={guideActiveTab} onTabChange={handleGuideTabChange} />
+          </View>
+        </View>
+      );
+    }
+    
+    if (guideActiveTab === 'notifications') {
+      return (
+        <View style={{ flex: 1 }}>
+          <NotificationsScreen onBack={() => setGuideActiveTab('home')} />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+            <GuideBottomNavBar activeTab={guideActiveTab} onTabChange={handleGuideTabChange} />
+          </View>
+        </View>
+      );
+    }
+    
+    if (guideActiveTab === 'profile') {
+      return (
+        <View style={{ flex: 1 }}>
+          <ProfileScreen
+            activeTab={guideActiveTab}
+            onTabChange={handleGuideTabChange}
+            onSettingsPress={handleSettingsPress}
+            onHelpSupportPress={handleHelpSupportPress}
+            onTermsPrivacyPress={handleTermsPrivacyPress}
+            onEditProfilePress={handleEditProfilePress}
+            onLogoutPress={() => {
+              setIsGuide(false);
+              setCurrentScreen('landing');
+            }}
+            onProfilePicturePress={() => handleProfilePicturePress('profile')}
+            user={userData}
+            hideBottomNav={true}
+          />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+            <GuideBottomNavBar activeTab={guideActiveTab} onTabChange={handleGuideTabChange} />
+          </View>
+        </View>
+      );
+    }
+    
+    // Default: Guide Home (bookings)
+    return (
+      <GuideHomeScreen
+        activeTab={guideActiveTab}
+        onTabChange={handleGuideTabChange}
+        onMessagesPress={() => setGuideActiveTab('messages')}
+        onNotificationsPress={() => setGuideActiveTab('notifications')}
+        onProfilePress={() => setGuideActiveTab('profile')}
+      />
+    );
+  }
+
+  // Show guide registration screen
+  if (showGuideRegistration) {
+    return (
+      <GuideRegistrationScreen
+        onBack={handleBack}
+        onSubmit={handleGuideRegistrationSubmit}
+      />
+    );
+  }
+
+  return <LandingScreen onFindCityGuide={handleFindCityGuide} onRegisterAsGuide={handleRegisterAsGuide} />;
 }

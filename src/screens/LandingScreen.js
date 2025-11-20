@@ -4,10 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import { Button } from '../components/Button';
 import { WaveDivider } from '../components/WaveDivider';
 
-export const LandingScreen = ({ onFindCityGuide }) => {
+export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
   const handleRegisterAsGuide = () => {
-    // TODO: Navigate to guide registration
-    console.log('Register as guide pressed');
+    if (onRegisterAsGuide) {
+      onRegisterAsGuide();
+    } else {
+      console.log('Register as guide pressed');
+    }
   };
 
   const handleFindCityGuide = () => {
