@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { TourGuideCard } from '../components/TourGuideCard';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress }) => {
+export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress, onGuidePress }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -74,8 +74,11 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
   ];
 
   const handleGuidePress = (guide) => {
-    console.log('Guide selected:', guide.name);
-    // TODO: Navigate to guide details
+    if (onGuidePress) {
+      onGuidePress(guide);
+    } else {
+      console.log('Guide selected:', guide.name);
+    }
   };
 
   return (

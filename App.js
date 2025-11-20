@@ -11,6 +11,8 @@ import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { AboutDeveloperScreen } from './src/screens/AboutDeveloperScreen';
 import { NotificationPreferencesScreen } from './src/screens/NotificationPreferencesScreen';
 import { LanguageScreen } from './src/screens/LanguageScreen';
+import { GuideDetailsScreen } from './src/screens/GuideDetailsScreen';
+import { BookingOptionsScreen } from './src/screens/BookingOptionsScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -22,6 +24,8 @@ export default function App() {
   const [showAboutDeveloper, setShowAboutDeveloper] = useState(false);
   const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
   const [showLanguage, setShowLanguage] = useState(false);
+  const [selectedGuide, setSelectedGuide] = useState(null);
+  const [showBookingOptions, setShowBookingOptions] = useState(false);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -33,7 +37,11 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showLanguage) {
+    if (showBookingOptions) {
+      setShowBookingOptions(false);
+    } else if (selectedGuide) {
+      setSelectedGuide(null);
+    } else if (showLanguage) {
       setShowLanguage(false);
     } else if (showNotificationPreferences) {
       setShowNotificationPreferences(false);
@@ -66,6 +74,28 @@ export default function App() {
     setShowLanguage(true);
   };
 
+  const handleGuidePress = (guide) => {
+    setSelectedGuide(guide);
+  };
+
+  const handleRequestGuide = (guide) => {
+    setShowBookingOptions(true);
+  };
+
+  const handleBookingOptionSelect = (bookingOption) => {
+    console.log('Booking request:', {
+      guide: selectedGuide?.name,
+      option: bookingOption,
+    });
+    // TODO: Handle booking submission
+    setShowBookingOptions(false);
+    setSelectedGuide(null);
+  };
+
+  const handleBookingOptionsBack = () => {
+    setShowBookingOptions(false);
+  };
+
   const handleNotificationsPress = () => {
     setShowNotifications(true);
   };
@@ -93,6 +123,28 @@ export default function App() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show booking options screen
+  if (showBookingOptions && selectedGuide) {
+    return (
+      <BookingOptionsScreen
+        guide={selectedGuide}
+        onBack={handleBookingOptionsBack}
+        onSelect={handleBookingOptionSelect}
+      />
+    );
+  }
+
+  // Show guide details screen
+  if (selectedGuide) {
+    return (
+      <GuideDetailsScreen
+        guide={selectedGuide}
+        onBack={handleBack}
+        onRequestGuide={handleRequestGuide}
+      />
+    );
+  }
 
   // Show language screen
   if (showLanguage) {
@@ -202,6 +254,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onNotificationsPress={handleNotificationsPress}
+        onGuidePress={handleGuidePress}
       />
     );
   }
