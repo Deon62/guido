@@ -6,12 +6,14 @@ import { TripsScreen } from './src/screens/TripsScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [selectedCity, setSelectedCity] = useState(null);
   const [activeTab, setActiveTab] = useState('home');
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -23,7 +25,9 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (selectedMessage) {
+    if (showSettings) {
+      setShowSettings(false);
+    } else if (selectedMessage) {
       setSelectedMessage(null);
     } else if (currentScreen === 'citySelection') {
       setCurrentScreen('landing');
@@ -32,6 +36,10 @@ export default function App() {
     } else {
       setCurrentScreen('landing');
     }
+  };
+
+  const handleSettingsPress = () => {
+    setShowSettings(true);
   };
 
   const handleTabChange = (tab) => {
@@ -53,6 +61,15 @@ export default function App() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show settings screen
+  if (showSettings) {
+    return (
+      <SettingsScreen
+        onBack={handleBack}
+      />
+    );
+  }
 
   // Show chat screen when a message is selected
   if (selectedMessage) {
@@ -100,7 +117,7 @@ export default function App() {
       <ProfileScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        onSettingsPress={() => console.log('Settings pressed')}
+        onSettingsPress={handleSettingsPress}
       />
     );
   }
