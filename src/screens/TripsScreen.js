@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { TripCard } from '../components/TripCard';
 import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const TripsScreen = ({ activeTab = 'trips', onTabChange }) => {
+export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress }) => {
   const [selectedTab, setSelectedTab] = useState('upcoming');
   
   // Get safe area insets
@@ -102,6 +103,13 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange }) => {
       <StatusBar style="dark" />
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
         <Text style={styles.title}>My Trips</Text>
+        <TouchableOpacity
+          onPress={() => onNotificationsPress && onNotificationsPress()}
+          style={styles.notificationButton}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
+        </TouchableOpacity>
       </View>
 
       <TabSelector
@@ -147,11 +155,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 12,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E8E8E8',
+  },
+  notificationButton: {
+    padding: 4,
   },
   title: {
     fontSize: 28,

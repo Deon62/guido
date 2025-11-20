@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { TourGuideCard } from '../components/TourGuideCard';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange }) => {
+export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -87,6 +88,13 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange }) =>
             {selectedCity ? `${selectedCity.name}, ${selectedCity.country}` : 'Explore Cities'}
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => onNotificationsPress && onNotificationsPress()}
+          style={styles.notificationButton}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -115,11 +123,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7F7F7',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E8E8E8',
+  },
+  notificationButton: {
+    padding: 4,
   },
   greeting: {
     fontSize: 24,

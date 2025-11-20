@@ -7,6 +7,7 @@ import { MessagesScreen } from './src/screens/MessagesScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { NotificationsScreen } from './src/screens/NotificationsScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -14,6 +15,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('citySelection');
@@ -25,7 +27,9 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showSettings) {
+    if (showNotifications) {
+      setShowNotifications(false);
+    } else if (showSettings) {
       setShowSettings(false);
     } else if (selectedMessage) {
       setSelectedMessage(null);
@@ -36,6 +40,10 @@ export default function App() {
     } else {
       setCurrentScreen('landing');
     }
+  };
+
+  const handleNotificationsPress = () => {
+    setShowNotifications(true);
   };
 
   const handleSettingsPress = () => {
@@ -61,6 +69,15 @@ export default function App() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show notifications screen
+  if (showNotifications) {
+    return (
+      <NotificationsScreen
+        onBack={handleBack}
+      />
+    );
+  }
 
   // Show settings screen
   if (showSettings) {
@@ -96,6 +113,7 @@ export default function App() {
       <TripsScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
+        onNotificationsPress={handleNotificationsPress}
       />
     );
   }
@@ -129,6 +147,7 @@ export default function App() {
         selectedCity={selectedCity}
         activeTab={activeTab}
         onTabChange={handleTabChange}
+        onNotificationsPress={handleNotificationsPress}
       />
     );
   }
