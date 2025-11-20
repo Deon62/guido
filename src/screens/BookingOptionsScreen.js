@@ -9,6 +9,8 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [timeWindow, setTimeWindow] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [dateConfirmed, setDateConfirmed] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(null);
 
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -29,6 +31,16 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
     setSelectedDate(date);
   };
 
+  const handleDateConfirm = () => {
+    setDateConfirmed(true);
+  };
+
+  const handleTimeSelect = (timeSlot) => {
+    setSelectedTime(timeSlot.id);
+    const timeString = timeSlot.label;
+    handleConfirm({ type: 'schedule', date: selectedDate, time: timeString, hour: timeSlot.hour });
+  };
+
   const handleConfirm = (option) => {
     if (onSelect) {
       const bookingOption = option || { type: 'now' };
@@ -37,6 +49,24 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
     if (onBack) {
       onBack();
     }
+  };
+
+  // Generate time slots (10 AM to 4 PM, hourly)
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 10; hour <= 16; hour++) {
+      const timeString = hour > 12 
+        ? `${hour - 12}:00 PM` 
+        : hour === 12 
+        ? '12:00 PM' 
+        : `${hour}:00 AM`;
+      slots.push({
+        id: hour,
+        label: timeString,
+        hour: hour,
+      });
+    }
+    return slots;
   };
 
   const timeWindows = [
@@ -53,7 +83,7 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
       {/* Header */}
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
         <TouchableOpacity
-          onPress={onBack}
+          onPress={dateConfirmed ? () => setDateConfirmed(false) : onBack}
           style={styles.backButton}
           activeOpacity={0.7}
         >
@@ -157,7 +187,7 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
               ))}
             </View>
           </View>
-        ) : selectedOption === 'schedule' ? (
+        ) : selectedOption === 'schedule' && !dateConfirmed ? (
           <View style={styles.content}>
             <Text style={styles.title}>Select Date</Text>
             <Text style={styles.subtitle}>Choose your preferred date</Text>
@@ -187,14 +217,48 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
                 </View>
                 <TouchableOpacity
                   style={styles.confirmButton}
-                  onPress={() => handleConfirm({ type: 'schedule', date: selectedDate })}
+                  onPress={handleDateConfirm}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmButtonText}>Confirm</Text>
-                  <Ionicons name="checkmark" size={18} color="#F7F7F7" />
+                  <Ionicons name="chevron-forward" size={18} color="#F7F7F7" />
                 </TouchableOpacity>
               </View>
             )}
+          </View>
+        ) : selectedOption === 'schedule' && dateConfirmed ? (
+          <View style={styles.content}>
+            <Text style={styles.title}>Select Time</Text>
+            <Text style={styles.subtitle}>Choose your preferred time</Text>
+            
+            <View style={styles.selectedDateInfoCard}>
+              <Ionicons name="calendar" size={18} color="#0A1D37" />
+              <Text style={styles.selectedDateInfoText}>
+                {selectedDate.toLocaleDateString('en-US', { 
+                  weekday: 'short', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </Text>
+            </View>
+            
+            <View style={styles.timeSlotsGrid}>
+              {generateTimeSlots().map((slot) => (
+                <TouchableOpacity
+                  key={slot.id}
+                  style={[styles.timeSlotButton, selectedTime === slot.id && styles.timeSlotButtonActive]}
+                  onPress={() => handleTimeSelect(slot)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.timeSlotText, selectedTime === slot.id && styles.timeSlotTextActive]}>
+                    {slot.label}
+                  </Text>
+                  {selectedTime === slot.id && (
+                    <Ionicons name="checkmark" size={16} color="#F7F7F7" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         ) : null}
       </ScrollView>
@@ -399,6 +463,63 @@ const styles = StyleSheet.create({
     color: '#F7F7F7',
     letterSpacing: 0.3,
     marginRight: 8,
+  },
+  selectedDateInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  selectedDateInfoText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0A1D37',
+    marginLeft: 12,
+    letterSpacing: 0.3,
+  },
+  timeSlotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  timeSlotButton: {
+    width: '48%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  timeSlotButtonActive: {
+    backgroundColor: '#0A1D37',
+    borderColor: '#0A1D37',
+  },
+  timeSlotText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: 0.3,
+  },
+  timeSlotTextActive: {
+    color: '#F7F7F7',
   },
 });
 
