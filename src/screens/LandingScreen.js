@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, Platform, StatusBar as RNStatusBar, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '../components/Button';
 import { WaveDivider } from '../components/WaveDivider';
+import { GuideIllustration } from '../components/GuideIllustration';
 
 export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
   const handleRegisterAsGuide = () => {
@@ -29,13 +30,9 @@ export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
       <StatusBar style="light" />
       {/* Hero Image Section - Full Width */}
       <View style={[styles.imageSection, { paddingTop: statusBarHeight }]}>
-        <Image
-          source={{
-            uri: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80',
-          }}
-          style={styles.heroImage}
-          resizeMode="cover"
-        />
+        <View style={styles.svgContainer}>
+          <GuideIllustration width="100%" height="100%" />
+        </View>
         <View style={styles.imageOverlay} />
         <WaveDivider color="#F7F7F7" height={50} />
       </View>
@@ -74,13 +71,18 @@ const styles = StyleSheet.create({
   },
   imageSection: {
     width: '100%',
-    height: 320,
+    height: '50%',
+    minHeight: 400,
     position: 'relative',
     overflow: 'hidden',
   },
-  heroImage: {
+  svgContainer: {
     width: '100%',
     height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   imageOverlay: {
     position: 'absolute',
