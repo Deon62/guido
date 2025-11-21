@@ -224,6 +224,32 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
                     <Text style={styles.detailText}>{booking.time} • {booking.duration}</Text>
                   </View>
                 </View>
+                {booking.status === 'accepted' && (
+                  <TouchableOpacity
+                    style={styles.startButton}
+                    onPress={() => {
+                      console.log('Start booking pressed:', booking.id);
+                      // TODO: Move booking to active status
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="play-circle" size={14} color="#FFFFFF" />
+                    <Text style={styles.startButtonText}>Start</Text>
+                  </TouchableOpacity>
+                )}
+                {booking.status === 'active' && (
+                  <TouchableOpacity
+                    style={styles.completeButton}
+                    onPress={() => {
+                      console.log('Complete booking pressed:', booking.id);
+                      // TODO: Move booking to completed status
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+                    <Text style={styles.completeButtonText}>Complete</Text>
+                  </TouchableOpacity>
+                )}
                 {booking.status === 'completed' && onRateClientPress && (
                   <TouchableOpacity
                     style={styles.rateButton}
@@ -377,6 +403,40 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: 14,
     color: '#6D6D6D',
+    letterSpacing: 0.2,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  startButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 6,
+    letterSpacing: 0.2,
+  },
+  completeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  completeButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 6,
     letterSpacing: 0.2,
   },
   rateButton: {
