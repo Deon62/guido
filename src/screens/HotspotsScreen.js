@@ -7,6 +7,7 @@ import { BottomNavBar } from '../components/BottomNavBar';
 
 export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [likedHotspots, setLikedHotspots] = useState(new Set());
   
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -90,6 +91,19 @@ export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
     // TODO: Navigate to hotspot details
   };
 
+  const handleLikePress = (hotspotId, event) => {
+    event.stopPropagation(); // Prevent card press event
+    setLikedHotspots(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(hotspotId)) {
+        newSet.delete(hotspotId);
+      } else {
+        newSet.add(hotspotId);
+      }
+      return newSet;
+    });
+  };
+
   const formatLikes = (likes) => {
     if (likes >= 1000) {
       return `${(likes / 1000).toFixed(1)}k`;
@@ -144,6 +158,39 @@ export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
                 {/* Category Badge */}
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryText}>{hotspot.category}</Text>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.actionButtonsContainer}>
+                  {/* Share Button */}
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      console.log('Share hotspot:', hotspot.name);
+                      // TODO: Implement share functionality
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name="share-outline"
+                      size={22}
+                      color="#FFFFFF"
+                    />
+                  </TouchableOpacity>
+
+                  {/* Heart Like Button */}
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.heartButton]}
+                    onPress={(e) => handleLikePress(hotspot.id, e)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={likedHotspots.has(hotspot.id) ? 'heart' : 'heart-outline'}
+                      size={22}
+                      color={likedHotspots.has(hotspot.id) ? '#E74C3C' : '#FFFFFF'}
+                    />
+                  </TouchableOpacity>
                 </View>
 
                 {/* Content */}
@@ -272,6 +319,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.2,
+  },
+  actionButtonsContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  heartButton: {
+    marginLeft: 8,
   },
   hotspotContent: {
     padding: 12,

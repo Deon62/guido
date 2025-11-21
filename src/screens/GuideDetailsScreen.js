@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
@@ -9,36 +9,13 @@ export const GuideDetailsScreen = ({ guide, guides = [], currentIndex = 0, onBac
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   
   const scrollViewRef = useRef(null);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  
-  const canGoNext = currentIndex < guides.length - 1;
-  const canGoPrev = currentIndex > 0;
   
   // Reset scroll position when guide changes
   useEffect(() => {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y: 0, animated: false });
     }
-    // Fade animation when guide changes
-    fadeAnim.setValue(0);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [guide?.id, currentIndex]);
-  
-  const handleNextGuide = () => {
-    if (canGoNext && onGuideChange) {
-      onGuideChange(currentIndex + 1);
-    }
-  };
-  
-  const handlePrevGuide = () => {
-    if (canGoPrev && onGuideChange) {
-      onGuideChange(currentIndex - 1);
-    }
-  };
+  }, [guide?.id]);
 
   const handleRequestGuide = () => {
     if (onRequestGuide) {
@@ -69,37 +46,13 @@ export const GuideDetailsScreen = ({ guide, guides = [], currentIndex = 0, onBac
         </View>
       </View>
 
-      {/* Navigation Arrows */}
-      {guides.length > 1 && (
-        <>
-          {canGoPrev && (
-            <TouchableOpacity
-              style={[styles.navArrow, styles.navArrowLeft]}
-              onPress={handlePrevGuide}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={24} color="#0A1D37" />
-            </TouchableOpacity>
-          )}
-          {canGoNext && (
-            <TouchableOpacity
-              style={[styles.navArrow, styles.navArrowRight]}
-              onPress={handleNextGuide}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-forward" size={24} color="#0A1D37" />
-            </TouchableOpacity>
-          )}
-        </>
-      )}
 
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
           {/* Profile Section */}
           <View style={styles.profileSection}>
             <Image
@@ -160,7 +113,6 @@ export const GuideDetailsScreen = ({ guide, guides = [], currentIndex = 0, onBac
             </View>
           </View>
         </ScrollView>
-      </Animated.View>
 
       {/* Sticky Request Button */}
       <View style={styles.stickyBar}>
@@ -178,31 +130,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7F7F7',
-  },
-  navArrow: {
-    position: 'absolute',
-    top: '50%',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#0A1D37',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 10,
-  },
-  navArrowLeft: {
-    left: 16,
-  },
-  navArrowRight: {
-    right: 16,
   },
   header: {
     flexDirection: 'row',

@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { TripCard } from '../components/TripCard';
+import { TripCardSkeleton } from '../components/TripCardSkeleton';
 import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 
 export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress }) => {
   const [selectedTab, setSelectedTab] = useState('upcoming');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
   
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+
+  // Simulate loading trips data
+  useEffect(() => {
+    const loadTrips = async () => {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(false);
+    };
+    loadTrips();
+  }, []);
 
   // Mock trip data
   const allTrips = [
@@ -118,7 +131,10 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
           style={styles.notificationButton}
           activeOpacity={0.7}
         >
-          <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
+          <View style={styles.notificationIconContainer}>
+            <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
+            {hasUnreadNotifications && <View style={styles.notificationDot} />}
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -133,7 +149,13 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredTrips.length > 0 ? (
+        {isLoading ? (
+          // Show skeleton loaders
+          Array.from({ length: 4 }).map((_, index) => (
+            <TripCardSkeleton key={`skeleton-${index}`} />
+          ))
+        ) : filteredTrips.length > 0 ? (
+          // Show actual trip cards
           filteredTrips.map((trip) => (
             <TripCard
               key={trip.id}
@@ -143,6 +165,7 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
             />
           ))
         ) : (
+          // Show empty state
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No {selectedTab} trips</Text>
             <Text style={styles.emptySubtext}>
@@ -177,6 +200,20 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     padding: 4,
+  },
+  notificationIconContainer: {
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E74C3C',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   title: {
     fontSize: 28,

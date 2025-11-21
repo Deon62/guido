@@ -8,6 +8,7 @@ import { BottomNavBar } from '../components/BottomNavBar';
 
 export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress, onGuidePress }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
   
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -115,7 +116,10 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
           style={styles.notificationButton}
           activeOpacity={0.7}
         >
-          <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
+          <View style={styles.notificationIconContainer}>
+            <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
+            {hasUnreadNotifications && <View style={styles.notificationDot} />}
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -164,6 +168,20 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     padding: 4,
+  },
+  notificationIconContainer: {
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E74C3C',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   greeting: {
     fontSize: 24,
