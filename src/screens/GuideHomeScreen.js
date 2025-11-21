@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GuideBottomNavBar } from '../components/GuideBottomNavBar';
 import { GuideTabSelector } from '../components/GuideTabSelector';
 
-export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNotificationsPress, onProfilePress }) => {
+export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNotificationsPress, onProfilePress, onBookingPress }) => {
   const [selectedTab, setSelectedTab] = useState('request');
   
   // Get safe area insets
@@ -163,7 +163,16 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
         ) : (
           <View style={styles.bookingsContainer}>
             {filteredBookings.map((booking) => (
-              <View key={booking.id} style={styles.bookingCard}>
+              <TouchableOpacity
+                key={booking.id}
+                style={styles.bookingCard}
+                onPress={() => {
+                  if (onBookingPress && booking.status === 'request') {
+                    onBookingPress(booking);
+                  }
+                }}
+                activeOpacity={booking.status === 'request' ? 0.7 : 1}
+              >
                 <View style={styles.bookingHeader}>
                   <Image
                     source={booking.userAvatar}
@@ -199,7 +208,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
                     <Text style={styles.detailText}>{booking.time} • {booking.duration}</Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}

@@ -24,6 +24,8 @@ import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelect
 import { GuideRegistrationScreen } from './src/screens/GuideRegistrationScreen';
 import { GuideHomeScreen } from './src/screens/GuideHomeScreen';
 import { GuideProfileScreen } from './src/screens/GuideProfileScreen';
+import { GuideBookingDetailsScreen } from './src/screens/GuideBookingDetailsScreen';
+import { GuideBookingActionSuccessScreen } from './src/screens/GuideBookingActionSuccessScreen';
 import { GuideBottomNavBar } from './src/components/GuideBottomNavBar';
 
 export default function App() {
@@ -51,6 +53,9 @@ export default function App() {
   const [showGuideRegistration, setShowGuideRegistration] = useState(false);
   const [isGuide, setIsGuide] = useState(false);
   const [guideActiveTab, setGuideActiveTab] = useState('home');
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showBookingActionSuccess, setShowBookingActionSuccess] = useState(false);
+  const [bookingAction, setBookingAction] = useState(null); // 'accepted' or 'rejected'
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -80,13 +85,40 @@ export default function App() {
     setGuideActiveTab(tab);
   };
 
+  const handleBookingPress = (booking) => {
+    setSelectedBooking(booking);
+  };
+
+  const handleBookingAccept = (booking) => {
+    setBookingAction('accepted');
+    setShowBookingActionSuccess(true);
+    // Keep selectedBooking for success screen display
+  };
+
+  const handleBookingReject = (booking) => {
+    setBookingAction('rejected');
+    setShowBookingActionSuccess(true);
+    // Keep selectedBooking for success screen display
+  };
+
+  const handleBookingActionSuccessDone = () => {
+    setShowBookingActionSuccess(false);
+    setBookingAction(null);
+    setSelectedBooking(null);
+    // Optionally refresh booking list or update status
+  };
+
   const handleCitySelect = (city) => {
     setSelectedCity(city);
     setCurrentScreen('home');
   };
 
   const handleBack = () => {
-    if (isGuide && currentScreen === 'guideHome' && selectedMessage) {
+    if (showBookingActionSuccess) {
+      handleBookingActionSuccessDone();
+    } else if (selectedBooking) {
+      setSelectedBooking(null);
+    } else if (isGuide && currentScreen === 'guideHome' && selectedMessage) {
       setSelectedMessage(null);
     } else if (isGuide && currentScreen === 'guideHome' && guideActiveTab !== 'home') {
       setGuideActiveTab('home');
@@ -514,6 +546,31 @@ export default function App() {
     );
   }
 
+  // Show guide booking action success screen
+  if (showBookingActionSuccess && bookingAction) {
+    // Store booking before clearing selectedBooking
+    const bookingForSuccess = selectedBooking;
+    return (
+      <GuideBookingActionSuccessScreen
+        action={bookingAction}
+        booking={bookingForSuccess}
+        onDone={handleBookingActionSuccessDone}
+      />
+    );
+  }
+
+  // Show guide booking details screen
+  if (selectedBooking && isGuide) {
+    return (
+      <GuideBookingDetailsScreen
+        booking={selectedBooking}
+        onBack={handleBack}
+        onAccept={handleBookingAccept}
+        onReject={handleBookingReject}
+      />
+    );
+  }
+
   // Show guide chat screen (when a message is opened)
   if (isGuide && currentScreen === 'guideHome' && selectedMessage) {
     return (
@@ -586,6 +643,7 @@ export default function App() {
         onMessagesPress={() => setGuideActiveTab('messages')}
         onNotificationsPress={() => setGuideActiveTab('notifications')}
         onProfilePress={() => setGuideActiveTab('profile')}
+        onBookingPress={handleBookingPress}
       />
     );
   }
