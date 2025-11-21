@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform, StatusBar as RNStatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '../components/Button';
 import { WaveDivider } from '../components/WaveDivider';
-import { GuideIllustration } from '../components/GuideIllustration';
 
 export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
   const handleRegisterAsGuide = () => {
@@ -30,9 +29,11 @@ export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
       <StatusBar style="light" />
       {/* Hero Image Section - Full Width */}
       <View style={[styles.imageSection, { paddingTop: statusBarHeight }]}>
-        <View style={styles.svgContainer}>
-          <GuideIllustration width="100%" height="100%" />
-        </View>
+        <Image
+          source={require('../../assets/logo/guide.png')}
+          style={styles.heroImage}
+          resizeMode="contain"
+        />
         <View style={styles.imageOverlay} />
         <WaveDivider color="#F7F7F7" height={50} />
       </View>
@@ -42,7 +43,7 @@ export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
         {/* Main Content */}
         <View style={styles.mainContent}>
           <Text style={styles.welcomeText}>
-            Discover amazing local guides{'\n'}who'll show you around
+            First time in town? Don't sweat it, we've got a guide
           </Text>
         </View>
 
@@ -76,13 +77,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  svgContainer: {
+  heroImage: {
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
   },
   imageOverlay: {
     position: 'absolute',
