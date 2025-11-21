@@ -90,8 +90,6 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
             </View>
             <Text style={styles.profilePictureHint}>Tap camera icon to change</Text>
           </View>
-
-          <Text style={styles.sectionTitle}>Personal Information</Text>
           
           {/* Name Field */}
           <View style={styles.inputGroup}>
