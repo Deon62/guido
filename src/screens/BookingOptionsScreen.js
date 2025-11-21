@@ -83,7 +83,15 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
       {/* Header */}
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
         <TouchableOpacity
-          onPress={dateConfirmed ? () => setDateConfirmed(false) : onBack}
+          onPress={() => {
+            if (dateConfirmed) {
+              setDateConfirmed(false);
+            } else if (selectedOption) {
+              setSelectedOption(null);
+            } else {
+              onBack();
+            }
+          }}
           style={styles.backButton}
           activeOpacity={0.7}
         >
@@ -152,15 +160,6 @@ export const BookingOptionsScreen = ({ guide, onBack, onSelect }) => {
           </View>
         ) : selectedOption === 'laterToday' ? (
           <View style={styles.content}>
-            <TouchableOpacity
-              style={styles.backOptionButton}
-              onPress={() => setSelectedOption(null)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={20} color="#0A1D37" />
-              <Text style={styles.backOptionText}>Back</Text>
-            </TouchableOpacity>
-            
             <Text style={styles.title}>Select Time Window</Text>
             <Text style={styles.subtitle}>Choose when you'd like to meet</Text>
             
