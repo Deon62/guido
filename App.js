@@ -6,6 +6,7 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
+import { HotspotsScreen } from './src/screens/HotspotsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
@@ -568,6 +569,16 @@ export default function App() {
   }
 
   // Show profile screen when profile tab is active
+  if (currentScreen === 'home' && activeTab === 'hotspots') {
+    return (
+      <HotspotsScreen
+        selectedCity={selectedCity}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+    );
+  }
+
   if (currentScreen === 'home' && activeTab === 'profile') {
     return (
       <>

@@ -7,6 +7,7 @@ export const BottomNavBar = ({ activeTab, onTabChange }) => {
     { id: 'home', icon: 'home', label: 'Home' },
     { id: 'trips', icon: 'map', label: 'Trips' },
     { id: 'messages', icon: 'chatbubble-ellipses', label: 'Messages' },
+    { id: 'hotspots', icon: 'location', label: 'Hotspots' },
     { id: 'profile', icon: 'person', label: 'Profile' },
   ];
 
