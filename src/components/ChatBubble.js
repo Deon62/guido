@@ -40,8 +40,6 @@ const styles = StyleSheet.create({
   otherBubble: {
     backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
   },
   messageText: {
     fontSize: 14,

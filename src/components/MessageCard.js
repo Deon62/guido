@@ -62,8 +62,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     padding: 12,
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    marginBottom: 8,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
   },
   avatar: {
     width: 55,
