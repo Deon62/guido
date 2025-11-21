@@ -23,6 +23,7 @@ import { ConfirmationModal } from './src/components/ConfirmationModal';
 import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelectorScreen';
 import { GuideRegistrationScreen } from './src/screens/GuideRegistrationScreen';
 import { GuideHomeScreen } from './src/screens/GuideHomeScreen';
+import { GuideProfileScreen } from './src/screens/GuideProfileScreen';
 import { GuideBottomNavBar } from './src/components/GuideBottomNavBar';
 
 export default function App() {
@@ -555,7 +556,7 @@ export default function App() {
     if (guideActiveTab === 'profile') {
       return (
         <View style={{ flex: 1 }}>
-          <ProfileScreen
+          <GuideProfileScreen
             activeTab={guideActiveTab}
             onTabChange={handleGuideTabChange}
             onSettingsPress={handleSettingsPress}

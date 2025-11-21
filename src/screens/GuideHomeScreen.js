@@ -137,13 +137,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       {/* Header */}
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
         <Text style={styles.headerTitle}>My Bookings</Text>
-        <TouchableOpacity
-          onPress={onNotificationsPress}
-          style={styles.notificationButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
-        </TouchableOpacity>
+        <View style={styles.placeholder} />
       </View>
 
       {/* Tab Selector */}
@@ -237,8 +231,8 @@ const styles = StyleSheet.create({
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
-  notificationButton: {
-    padding: 4,
+  placeholder: {
+    width: 32,
   },
   tabSelectorContainer: {
     backgroundColor: '#FFFFFF',
