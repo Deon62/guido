@@ -4,8 +4,17 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ChatBubble } from '../components/ChatBubble';
 
-export const ChatScreen = ({ message, onBack }) => {
+export const ChatScreen = ({ message, onBack, onCall }) => {
   const [inputText, setInputText] = useState('');
+  
+  const handleCall = () => {
+    if (onCall) {
+      onCall(message);
+    } else {
+      console.log('Call pressed for:', message?.name);
+      // TODO: Implement call functionality
+    }
+  };
   
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -75,6 +84,9 @@ export const ChatScreen = ({ message, onBack }) => {
           <Text style={styles.headerName}>{message?.name || 'Chat'}</Text>
           <Text style={styles.headerStatus}>Online</Text>
         </View>
+        <TouchableOpacity onPress={handleCall} style={styles.callButton} activeOpacity={0.7}>
+          <Ionicons name="call" size={24} color="#0A1D37" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -138,6 +150,10 @@ const styles = StyleSheet.create({
   },
   headerInfo: {
     flex: 1,
+  },
+  callButton: {
+    padding: 4,
+    marginLeft: 12,
   },
   headerName: {
     fontSize: 18,
