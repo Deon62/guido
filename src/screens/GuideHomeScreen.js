@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GuideBottomNavBar } from '../components/GuideBottomNavBar';
 import { GuideTabSelector } from '../components/GuideTabSelector';
 
-export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNotificationsPress, onProfilePress, onBookingPress }) => {
+export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNotificationsPress, onProfilePress, onBookingPress, onRateClientPress }) => {
   const [selectedTab, setSelectedTab] = useState('request');
   
   // Get safe area insets
@@ -208,6 +208,16 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
                     <Text style={styles.detailText}>{booking.time} • {booking.duration}</Text>
                   </View>
                 </View>
+                {booking.status === 'completed' && onRateClientPress && (
+                  <TouchableOpacity
+                    style={styles.rateButton}
+                    onPress={() => onRateClientPress(booking)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="star" size={14} color="#0A1D37" />
+                    <Text style={styles.rateButtonText}>Rate Client</Text>
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -343,6 +353,25 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: 14,
     color: '#6D6D6D',
+    letterSpacing: 0.2,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F7F7F7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  rateButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0A1D37',
+    marginLeft: 6,
     letterSpacing: 0.2,
   },
 });

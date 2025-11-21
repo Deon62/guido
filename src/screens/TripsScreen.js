@@ -6,7 +6,7 @@ import { TripCard } from '../components/TripCard';
 import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 
-export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress }) => {
+export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress }) => {
   const [selectedTab, setSelectedTab] = useState('upcoming');
   
   // Get safe area insets
@@ -98,6 +98,16 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
     // TODO: Navigate to trip details
   };
 
+  const handleRatePress = (trip) => {
+    console.log('TripsScreen handleRatePress called with trip:', trip);
+    if (onRatePress) {
+      console.log('Calling onRatePress prop');
+      onRatePress(trip);
+    } else {
+      console.log('onRatePress prop is not defined');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -129,6 +139,7 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
               key={trip.id}
               trip={trip}
               onPress={() => handleTripPress(trip)}
+              onRatePress={handleRatePress}
             />
           ))
         ) : (

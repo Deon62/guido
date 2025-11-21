@@ -26,6 +26,8 @@ import { GuideHomeScreen } from './src/screens/GuideHomeScreen';
 import { GuideProfileScreen } from './src/screens/GuideProfileScreen';
 import { GuideBookingDetailsScreen } from './src/screens/GuideBookingDetailsScreen';
 import { GuideBookingActionSuccessScreen } from './src/screens/GuideBookingActionSuccessScreen';
+import { UserRateGuideScreen } from './src/screens/UserRateGuideScreen';
+import { GuideRateClientScreen } from './src/screens/GuideRateClientScreen';
 import { GuideBottomNavBar } from './src/components/GuideBottomNavBar';
 
 export default function App() {
@@ -56,6 +58,8 @@ export default function App() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingActionSuccess, setShowBookingActionSuccess] = useState(false);
   const [bookingAction, setBookingAction] = useState(null); // 'accepted' or 'rejected'
+  const [selectedTripForRating, setSelectedTripForRating] = useState(null);
+  const [selectedBookingForRating, setSelectedBookingForRating] = useState(null);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -108,13 +112,33 @@ export default function App() {
     // Optionally refresh booking list or update status
   };
 
+  const handleRateGuidePress = (trip) => {
+    console.log('Rate guide pressed for trip:', trip);
+    setSelectedTripForRating(trip);
+  };
+
+  const handleRateClientPress = (booking) => {
+    setSelectedBookingForRating(booking);
+  };
+
+  const handleRatingSubmit = (ratingData) => {
+    console.log('Rating submitted:', ratingData);
+    // TODO: Submit rating to backend
+    setSelectedTripForRating(null);
+    setSelectedBookingForRating(null);
+  };
+
   const handleCitySelect = (city) => {
     setSelectedCity(city);
     setCurrentScreen('home');
   };
 
   const handleBack = () => {
-    if (showBookingActionSuccess) {
+    if (selectedTripForRating) {
+      setSelectedTripForRating(null);
+    } else if (selectedBookingForRating) {
+      setSelectedBookingForRating(null);
+    } else if (showBookingActionSuccess) {
       handleBookingActionSuccessDone();
     } else if (selectedBooking) {
       setSelectedBooking(null);
@@ -481,6 +505,28 @@ export default function App() {
     );
   }
 
+  // Show user rate guide screen (must be before trips screen check)
+  if (selectedTripForRating && !isGuide) {
+    return (
+      <UserRateGuideScreen
+        trip={selectedTripForRating}
+        onBack={handleBack}
+        onSubmit={handleRatingSubmit}
+      />
+    );
+  }
+
+  // Show guide rate client screen (must be before guide home screen check)
+  if (selectedBookingForRating && isGuide) {
+    return (
+      <GuideRateClientScreen
+        booking={selectedBookingForRating}
+        onBack={handleBack}
+        onSubmit={handleRatingSubmit}
+      />
+    );
+  }
+
   // Show trips screen when trips tab is active
   if (currentScreen === 'home' && activeTab === 'trips') {
     return (
@@ -488,6 +534,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onNotificationsPress={handleNotificationsPress}
+        onRatePress={handleRateGuidePress}
       />
     );
   }
@@ -545,6 +592,7 @@ export default function App() {
       />
     );
   }
+
 
   // Show guide booking action success screen
   if (showBookingActionSuccess && bookingAction) {
@@ -644,6 +692,7 @@ export default function App() {
         onNotificationsPress={() => setGuideActiveTab('notifications')}
         onProfilePress={() => setGuideActiveTab('profile')}
         onBookingPress={handleBookingPress}
+        onRateClientPress={handleRateClientPress}
       />
     );
   }

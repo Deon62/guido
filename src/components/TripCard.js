@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export const TripCard = ({ trip, onPress }) => {
+export const TripCard = ({ trip, onPress, onRatePress }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'upcoming':
@@ -36,8 +36,8 @@ export const TripCard = ({ trip, onPress }) => {
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.85}
+      onPress={trip.status === 'past' && onRatePress ? undefined : onPress}
+      activeOpacity={trip.status === 'past' && onRatePress ? 1 : 0.85}
     >
       <Image
         source={trip.guideAvatar}
@@ -71,6 +71,16 @@ export const TripCard = ({ trip, onPress }) => {
             <Ionicons name="time" size={11} color="#6D6D6D" style={{ marginRight: 3 }} />
             <Text style={styles.timeText}>{trip.time}</Text>
           </View>
+        )}
+        {trip.status === 'past' && onRatePress && (
+          <TouchableOpacity
+            style={styles.rateButton}
+            onPress={() => onRatePress(trip)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="star" size={14} color="#0A1D37" />
+            <Text style={styles.rateButtonText}>Rate Guide</Text>
+          </TouchableOpacity>
         )}
       </View>
     </TouchableOpacity>
@@ -159,6 +169,25 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 11,
     color: '#6D6D6D',
+    letterSpacing: 0.2,
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F7F7F7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  rateButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0A1D37',
+    marginLeft: 6,
     letterSpacing: 0.2,
   },
 });
