@@ -43,7 +43,17 @@ export const GuideDetailsScreen = ({ guide, onBack, onRequestGuide }) => {
             style={styles.avatar}
             resizeMode="cover"
           />
-          <Text style={styles.name}>{guide.name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{guide.name}</Text>
+            {guide.verified && (
+              <Ionicons 
+                name="checkmark-circle" 
+                size={22} 
+                color="#2196F3" 
+                style={styles.verifiedBadge}
+              />
+            )}
+          </View>
           <View style={styles.ratingContainer}>
             <Ionicons name="star" size={16} color="#FFB800" style={{ marginRight: 4 }} />
             <Text style={styles.rating}>{guide.rating}</Text>
@@ -147,12 +157,20 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#F7F7F7',
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   name: {
     fontSize: 24,
     fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.5,
-    marginBottom: 8,
+    marginRight: 8,
+  },
+  verifiedBadge: {
+    marginLeft: 2,
   },
   ratingContainer: {
     flexDirection: 'row',

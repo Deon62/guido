@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { GuideBottomNavBar } from '../components/GuideBottomNavBar';
 
-export const GuideProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, user: userProp, hideBottomNav = false }) => {
+export const GuideProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onGetBadgePress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -43,6 +43,17 @@ export const GuideProfileScreen = ({ activeTab = 'profile', onTabChange, onSetti
           onEditProfilePress();
         } else {
           console.log('Edit Profile');
+        }
+      }
+    },
+    { 
+      icon: 'checkmark-circle-outline', 
+      label: 'Get Badge', 
+      onPress: () => {
+        if (onGetBadgePress) {
+          onGetBadgePress();
+        } else {
+          console.log('Get Badge');
         }
       }
     },

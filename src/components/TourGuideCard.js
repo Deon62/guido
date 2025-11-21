@@ -16,7 +16,17 @@ export const TourGuideCard = ({ guide, onPress }) => {
       />
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.name}>{guide.name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{guide.name}</Text>
+            {guide.verified && (
+              <Ionicons 
+                name="checkmark-circle" 
+                size={18} 
+                color="#2196F3" 
+                style={styles.verifiedBadge}
+              />
+            )}
+          </View>
           <View style={styles.ratingContainer}>
             <Ionicons name="star" size={14} color="#FFB800" style={{ marginRight: 4 }} />
             <Text style={styles.rating}>{guide.rating}</Text>
@@ -70,14 +80,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   name: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
+    marginRight: 6,
+  },
+  verifiedBadge: {
+    marginLeft: 2,
   },
   ratingContainer: {
     flexDirection: 'row',

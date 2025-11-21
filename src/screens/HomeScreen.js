@@ -20,6 +20,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
       tours: 127,
       price: 45,
       avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
+      verified: true,
     },
     {
       id: '2',
@@ -30,6 +31,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
       tours: 89,
       price: 50,
       avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
+      verified: false,
     },
     {
       id: '3',
@@ -40,6 +42,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
       tours: 156,
       price: 55,
       avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
+      verified: true,
     },
     {
       id: '4',
@@ -50,6 +53,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
       tours: 94,
       price: 40,
       avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
+      verified: false,
     },
     {
       id: '5',
@@ -60,6 +64,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
       tours: 112,
       price: 48,
       avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
+      verified: true,
     },
     {
       id: '6',
@@ -70,6 +75,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
       tours: 73,
       price: 52,
       avatar: { uri: 'https://i.pravatar.cc/150?img=6' },
+      verified: false,
     },
   ];
 

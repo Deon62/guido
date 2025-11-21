@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, Alert } from 'react-native';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -28,6 +28,7 @@ import { GuideBookingDetailsScreen } from './src/screens/GuideBookingDetailsScre
 import { GuideBookingActionSuccessScreen } from './src/screens/GuideBookingActionSuccessScreen';
 import { UserRateGuideScreen } from './src/screens/UserRateGuideScreen';
 import { GuideRateClientScreen } from './src/screens/GuideRateClientScreen';
+import { GuideVerificationScreen } from './src/screens/GuideVerificationScreen';
 import { GuideBottomNavBar } from './src/components/GuideBottomNavBar';
 
 export default function App() {
@@ -60,6 +61,7 @@ export default function App() {
   const [bookingAction, setBookingAction] = useState(null); // 'accepted' or 'rejected'
   const [selectedTripForRating, setSelectedTripForRating] = useState(null);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState(null);
+  const [showGuideVerification, setShowGuideVerification] = useState(false);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -128,13 +130,28 @@ export default function App() {
     setSelectedBookingForRating(null);
   };
 
+  const handleGetBadgePress = () => {
+    console.log('Get Badge pressed');
+    setShowGuideVerification(true);
+  };
+
+  const handleVerificationSubmit = (verificationData) => {
+    console.log('Verification submitted:', verificationData);
+    // TODO: Handle verification submission and payment
+    setShowGuideVerification(false);
+    // TODO: Update guide's verified status
+    Alert.alert('Verification Submitted', 'Your verification request has been submitted. You will receive your badge once approved.');
+  };
+
   const handleCitySelect = (city) => {
     setSelectedCity(city);
     setCurrentScreen('home');
   };
 
   const handleBack = () => {
-    if (selectedTripForRating) {
+    if (showGuideVerification) {
+      setShowGuideVerification(false);
+    } else if (selectedTripForRating) {
       setSelectedTripForRating(null);
     } else if (selectedBookingForRating) {
       setSelectedBookingForRating(null);
@@ -631,6 +648,16 @@ export default function App() {
 
   // Show guide home screen if user is a guide
   if (isGuide && currentScreen === 'guideHome') {
+    // Check for verification screen first (before any tab screens)
+    if (showGuideVerification) {
+      return (
+        <GuideVerificationScreen
+          onBack={handleBack}
+          onSubmit={handleVerificationSubmit}
+        />
+      );
+    }
+    
     if (guideActiveTab === 'messages') {
       return (
         <View style={{ flex: 1 }}>
@@ -673,6 +700,7 @@ export default function App() {
               setCurrentScreen('landing');
             }}
             onProfilePicturePress={() => handleProfilePicturePress('profile')}
+            onGetBadgePress={handleGetBadgePress}
             user={userData}
             hideBottomNav={true}
           />
