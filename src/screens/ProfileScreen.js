@@ -28,9 +28,9 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
   };
 
   const stats = [
-    { label: 'Trips', value: '12' },
-    { label: 'Guides', value: '8' },
-    { label: 'Rating', value: '4.9' },
+    { label: 'Trips', value: '12', icon: 'airplane-outline' },
+    { label: 'Guides', value: '8', icon: 'people-outline' },
+    { label: 'Rating', value: '4.9', icon: 'star-outline' },
   ];
 
   const menuItems = [
@@ -68,16 +68,12 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
       }
     },
     { 
-      icon: 'log-out-outline', 
-      label: 'Logout', 
+      icon: 'download-outline', 
+      label: 'Download my data', 
       onPress: () => {
-        if (onLogoutPress) {
-          onLogoutPress();
-        } else {
-          console.log('Logout');
-        }
-      }, 
-      danger: true 
+        console.log('Download my data');
+        // TODO: Implement download data functionality
+      }
     },
   ];
 
@@ -131,15 +127,19 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
         {/* Stats Section */}
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => (
-            <View key={index} style={styles.statItem}>
+            <View 
+              key={index} 
+              style={styles.statBadge}
+            >
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Info Section */}
+        {/* Personal Info Section */}
         <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Personal Info</Text>
           <View style={styles.infoRow}>
             <Ionicons name="call-outline" size={18} color="#6D6D6D" />
             <Text style={styles.infoText}>{user.phone}</Text>
@@ -154,8 +154,9 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           </View>
         </View>
 
-        {/* Menu Section */}
+        {/* Account Hub Section */}
         <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Account Hub</Text>
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
@@ -167,9 +168,9 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
                 <Ionicons
                   name={item.icon}
                   size={22}
-                  color={item.danger ? '#E74C3C' : '#0A1D37'}
+                  color="#0A1D37"
                 />
-                <Text style={[styles.menuItemText, item.danger && styles.menuItemTextDanger]}>
+                <Text style={styles.menuItemText}>
                   {item.label}
                 </Text>
               </View>
@@ -180,6 +181,23 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               />
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Logout Button */}
+        <View style={styles.logoutSection}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => {
+              if (onLogoutPress) {
+                onLogoutPress();
+              } else {
+                console.log('Logout');
+              }
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -272,32 +290,51 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
     paddingVertical: 20,
     marginBottom: 16,
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
-    borderColor: '#E8E8E8',
   },
-  statItem: {
+  statBadge: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#0A1D37',
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#0A1D37',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#6D6D6D',
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
     letterSpacing: 0.2,
+    textTransform: 'uppercase',
   },
   infoSection: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 16,
     paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0A1D37',
+    letterSpacing: 0.3,
     marginBottom: 16,
   },
   infoRow: {
@@ -314,13 +351,15 @@ const styles = StyleSheet.create({
   menuSection: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 8,
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
   menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 0,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -336,6 +375,36 @@ const styles = StyleSheet.create({
   },
   menuItemTextDanger: {
     color: '#E74C3C',
+  },
+  logoutSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    marginBottom: 16,
+  },
+  logoutButton: {
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 20,
+    backgroundColor: '#F7F7F7',
+    borderWidth: 2,
+    borderColor: '#E74C3C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#E74C3C',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  logoutButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#E74C3C',
+    letterSpacing: 0.6,
   },
 });
 
