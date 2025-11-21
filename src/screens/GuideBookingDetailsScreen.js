@@ -59,7 +59,17 @@ export const GuideBookingDetailsScreen = ({ booking, onBack, onAccept, onReject 
               resizeMode="cover"
             />
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{booking.userName}</Text>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName}>{booking.userName}</Text>
+                {booking.verified && (
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color="#00C8B4" 
+                    style={styles.verifiedBadge}
+                  />
+                )}
+              </View>
               <View style={styles.ratingRow}>
                 <Ionicons name="star" size={16} color="#FFD700" />
                 <Text style={styles.ratingText}>4.8</Text>
@@ -234,12 +244,20 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   userName: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.3,
-    marginBottom: 4,
+    marginRight: 6,
+  },
+  verifiedBadge: {
+    marginLeft: 2,
   },
   ratingRow: {
     flexDirection: 'row',

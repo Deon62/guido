@@ -54,7 +54,17 @@ export const GuideRateClientScreen = ({ booking, onBack, onSubmit }) => {
             style={styles.avatar}
             resizeMode="cover"
           />
-          <Text style={styles.clientName}>{booking.userName}</Text>
+          <View style={styles.clientNameRow}>
+            <Text style={styles.clientName}>{booking.userName}</Text>
+            {booking.verified && (
+              <Ionicons 
+                name="checkmark-circle" 
+                size={20} 
+                color="#00C8B4" 
+                style={styles.verifiedBadge}
+              />
+            )}
+          </View>
           <Text style={styles.tourType}>{booking.tourType}</Text>
         </View>
 
@@ -173,12 +183,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#F7F7F7',
   },
+  clientNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   clientName: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.3,
-    marginBottom: 4,
+    marginRight: 6,
+  },
+  verifiedBadge: {
+    marginLeft: 2,
   },
   tourType: {
     fontSize: 14,

@@ -24,6 +24,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       time: '10:00 AM',
       duration: '3 hours',
       status: 'request',
+      verified: true,
     },
     {
       id: '2',
@@ -35,6 +36,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       time: '2:00 PM',
       duration: '2 hours',
       status: 'request',
+      verified: false,
     },
     // Accepted bookings
     {
@@ -47,6 +49,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       time: '11:00 AM',
       duration: '4 hours',
       status: 'accepted',
+      verified: true,
     },
     // Active bookings
     {
@@ -59,6 +62,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       time: '6:00 PM',
       duration: '3 hours',
       status: 'active',
+      verified: false,
     },
     // Completed bookings
     {
@@ -71,6 +75,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       time: '9:00 AM',
       duration: '5 hours',
       status: 'completed',
+      verified: true,
     },
     // Canceled bookings
     {
@@ -83,6 +88,7 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
       time: '2:00 PM',
       duration: '2 hours',
       status: 'canceled',
+      verified: false,
     },
   ];
 
@@ -180,7 +186,17 @@ export const GuideHomeScreen = ({ activeTab, onTabChange, onMessagesPress, onNot
                     resizeMode="cover"
                   />
                   <View style={styles.bookingInfo}>
-                    <Text style={styles.userName}>{booking.userName}</Text>
+                    <View style={styles.userNameRow}>
+                      <Text style={styles.userName}>{booking.userName}</Text>
+                      {booking.verified && (
+                        <Ionicons 
+                          name="checkmark-circle" 
+                          size={18} 
+                          color="#00C8B4" 
+                          style={styles.verifiedBadge}
+                        />
+                      )}
+                    </View>
                     <View style={styles.statusBadge}>
                       <View style={[styles.statusDot, { backgroundColor: getStatusColor(booking.status) }]} />
                       <Text style={[styles.statusText, { color: getStatusColor(booking.status) }]}>
@@ -300,12 +316,20 @@ const styles = StyleSheet.create({
   bookingInfo: {
     flex: 1,
   },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   userName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
-    marginBottom: 4,
+    marginRight: 6,
+  },
+  verifiedBadge: {
+    marginLeft: 2,
   },
   statusBadge: {
     flexDirection: 'row',
