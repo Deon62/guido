@@ -43,6 +43,8 @@ export default function App() {
   const [showNotificationPreferences, setShowNotificationPreferences] = useState(false);
   const [showLanguage, setShowLanguage] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(null);
+  const [guidesList, setGuidesList] = useState([]);
+  const [currentGuideIndex, setCurrentGuideIndex] = useState(0);
   const [showBookingOptions, setShowBookingOptions] = useState(false);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -217,7 +219,89 @@ export default function App() {
   };
 
   const handleGuidePress = (guide) => {
+    // Get guides list from HomeScreen mock data
+    const mockGuides = [
+      {
+        id: '1',
+        name: 'Sarah Johnson',
+        specialty: 'Historical Tours & Culture',
+        location: 'Downtown',
+        rating: 4.9,
+        tours: 127,
+        price: 45,
+        avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
+        verified: true,
+      },
+      {
+        id: '2',
+        name: 'Michael Chen',
+        specialty: 'Food & Local Cuisine',
+        location: 'City Center',
+        rating: 4.8,
+        tours: 89,
+        price: 50,
+        avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
+        verified: false,
+      },
+      {
+        id: '3',
+        name: 'Emma Williams',
+        specialty: 'Art & Architecture',
+        location: 'Historic District',
+        rating: 5.0,
+        tours: 156,
+        price: 55,
+        avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
+        verified: true,
+      },
+      {
+        id: '4',
+        name: 'David Martinez',
+        specialty: 'Nightlife & Entertainment',
+        location: 'Entertainment Quarter',
+        rating: 4.7,
+        tours: 94,
+        price: 40,
+        avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
+        verified: false,
+      },
+      {
+        id: '5',
+        name: 'Lisa Anderson',
+        specialty: 'Nature & Outdoor',
+        location: 'Parks & Gardens',
+        rating: 4.9,
+        tours: 112,
+        price: 48,
+        avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
+        verified: true,
+      },
+      {
+        id: '6',
+        name: 'James Wilson',
+        specialty: 'Photography Tours',
+        location: 'Scenic Areas',
+        rating: 4.8,
+        tours: 73,
+        price: 52,
+        avatar: { uri: 'https://i.pravatar.cc/150?img=6' },
+        verified: false,
+      },
+    ];
+    
+    setGuidesList(mockGuides);
+    const guideIndex = mockGuides.findIndex(g => g.id === guide.id);
+    setCurrentGuideIndex(guideIndex >= 0 ? guideIndex : 0);
     setSelectedGuide(guide);
+  };
+
+  const handleGuideChange = (newIndex) => {
+    if (newIndex >= 0 && newIndex < guidesList.length && guidesList[newIndex]) {
+      const newGuide = guidesList[newIndex];
+      setCurrentGuideIndex(newIndex);
+      setSelectedGuide(newGuide);
+      console.log('Guide changed to:', newGuide.name, 'at index:', newIndex);
+    }
   };
 
   const handleRequestGuide = (guide) => {
@@ -435,8 +519,11 @@ export default function App() {
     return (
       <GuideDetailsScreen
         guide={selectedGuide}
+        guides={guidesList}
+        currentIndex={currentGuideIndex}
         onBack={handleBack}
         onRequestGuide={handleRequestGuide}
+        onGuideChange={handleGuideChange}
       />
     );
   }

@@ -4,9 +4,9 @@
     "slug": "guido",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo/logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "description": "Find local tour guides to show you around the city",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -19,14 +19,25 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logo/logo.png",
+        "backgroundColor": "#0A1D37"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.guido.app"
+      "package": "com.guido.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9334a866-fcaa-4ede-97dd-4249c6f580c2"
+      }
     }
   }
 }

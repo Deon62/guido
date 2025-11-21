@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { TourGuideCard } from '../components/TourGuideCard';
+import { TourGuideCardSkeleton } from '../components/TourGuideCardSkeleton';
 import { BottomNavBar } from '../components/BottomNavBar';
 
 export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress, onGuidePress }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+
+  // Simulate loading guides data
+  useEffect(() => {
+    const loadGuides = async () => {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(false);
+    };
+    loadGuides();
+  }, []);
 
   // Mock tour guide data
   const mockGuides = [
@@ -112,13 +125,21 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.sectionTitle}>Available Guides</Text>
-        {mockGuides.map((guide) => (
-          <TourGuideCard
-            key={guide.id}
-            guide={guide}
-            onPress={() => handleGuidePress(guide)}
-          />
-        ))}
+        {isLoading ? (
+          // Show skeleton loaders
+          Array.from({ length: 6 }).map((_, index) => (
+            <TourGuideCardSkeleton key={`skeleton-${index}`} />
+          ))
+        ) : (
+          // Show actual guide cards
+          mockGuides.map((guide) => (
+            <TourGuideCard
+              key={guide.id}
+              guide={guide}
+              onPress={() => handleGuidePress(guide)}
+            />
+          ))
+        )}
       </ScrollView>
 
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />

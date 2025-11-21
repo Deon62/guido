@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { HotspotCardSkeleton } from '../components/HotspotCardSkeleton';
 import { BottomNavBar } from '../components/BottomNavBar';
 
 export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+
+  // Simulate loading hotspots data
+  useEffect(() => {
+    const loadHotspots = async () => {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(false);
+    };
+    loadHotspots();
+  }, []);
 
   // Mock hotspots data
   const hotspots = [
@@ -107,56 +120,64 @@ export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.gridContainer}>
-          {hotspots.map((hotspot) => (
-            <TouchableOpacity
-              key={hotspot.id}
-              style={styles.hotspotCard}
-              onPress={() => handleHotspotPress(hotspot)}
-              activeOpacity={0.85}
-            >
-              <Image
-                source={hotspot.image}
-                style={styles.hotspotImage}
-                resizeMode="cover"
-              />
-              <View style={styles.imageOverlay} />
-              
-              {/* Category Badge */}
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{hotspot.category}</Text>
-              </View>
+          {isLoading ? (
+            // Show skeleton loaders
+            Array.from({ length: 6 }).map((_, index) => (
+              <HotspotCardSkeleton key={`skeleton-${index}`} />
+            ))
+          ) : (
+            // Show actual hotspot cards
+            hotspots.map((hotspot) => (
+              <TouchableOpacity
+                key={hotspot.id}
+                style={styles.hotspotCard}
+                onPress={() => handleHotspotPress(hotspot)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={hotspot.image}
+                  style={styles.hotspotImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.imageOverlay} />
+                
+                {/* Category Badge */}
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{hotspot.category}</Text>
+                </View>
 
-              {/* Content */}
-              <View style={styles.hotspotContent}>
-                <View style={styles.hotspotHeader}>
-                  <View style={styles.hotspotNameContainer}>
-                    <Text style={styles.hotspotName} numberOfLines={1}>
-                      {hotspot.name}
-                    </Text>
-                    <View style={styles.ratingContainer}>
-                      <Ionicons name="star" size={12} color="#FFD166" />
-                      <Text style={styles.ratingText}>{hotspot.rating}</Text>
+                {/* Content */}
+                <View style={styles.hotspotContent}>
+                  <View style={styles.hotspotHeader}>
+                    <View style={styles.hotspotNameContainer}>
+                      <Text style={styles.hotspotName} numberOfLines={1}>
+                        {hotspot.name}
+                      </Text>
+                      <View style={styles.ratingContainer}>
+                        <Ionicons name="star" size={12} color="#FFD166" />
+                        <Text style={styles.ratingText}>{hotspot.rating}</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <Text style={styles.hotspotDescription} numberOfLines={2}>
+                    {hotspot.description}
+                  </Text>
+
+                  <View style={styles.hotspotFooter}>
+                    <View style={styles.likesContainer}>
+                      <Ionicons name="heart" size={14} color="#E74C3C" />
+                      <Text style={styles.likesText}>{formatLikes(hotspot.likes)}</Text>
+                    </View>
+                    <View style={styles.distanceContainer}>
+                      <Ionicons name="location" size={14} color="#6D6D6D" />
+                      <Text style={styles.distanceText}>{hotspot.distance}</Text>
                     </View>
                   </View>
                 </View>
-
-                <Text style={styles.hotspotDescription} numberOfLines={2}>
-                  {hotspot.description}
-                </Text>
-
-                <View style={styles.hotspotFooter}>
-                  <View style={styles.likesContainer}>
-                    <Ionicons name="heart" size={14} color="#E74C3C" />
-                    <Text style={styles.likesText}>{formatLikes(hotspot.likes)}</Text>
-                  </View>
-                  <View style={styles.distanceContainer}>
-                    <Ionicons name="location" size={14} color="#6D6D6D" />
-                    <Text style={styles.distanceText}>{hotspot.distance}</Text>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
 

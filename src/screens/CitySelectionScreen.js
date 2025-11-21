@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, StatusBar as RNStatusBar, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { CityCard } from '../components/CityCard';
+import { CityCardSkeleton } from '../components/CityCardSkeleton';
 
 export const CitySelectionScreen = ({ onCitySelect, onBack }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+
+  // Simulate loading cities data
+  useEffect(() => {
+    const loadCities = async () => {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(false);
+    };
+    loadCities();
+  }, []);
 
   const cities = [
     {
@@ -108,15 +120,23 @@ export const CitySelectionScreen = ({ onCitySelect, onBack }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.grid}>
-          {filteredCities.map((city) => (
-            <CityCard
-              key={city.id}
-              city={city.name}
-              country={city.country}
-              image={city.image}
-              onPress={() => handleCityPress(city)}
-            />
-          ))}
+          {isLoading ? (
+            // Show skeleton loaders
+            Array.from({ length: 8 }).map((_, index) => (
+              <CityCardSkeleton key={`skeleton-${index}`} />
+            ))
+          ) : (
+            // Show actual city cards
+            filteredCities.map((city) => (
+              <CityCard
+                key={city.id}
+                city={city.name}
+                country={city.country}
+                image={city.image}
+                onPress={() => handleCityPress(city)}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
