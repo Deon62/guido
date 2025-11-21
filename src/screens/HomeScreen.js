@@ -123,6 +123,24 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
         </TouchableOpacity>
       </View>
 
+      {/* Map Section */}
+      <View style={styles.mapSection}>
+        <View style={styles.mapContainer}>
+          <View style={styles.mapPlaceholder}>
+            <Ionicons name="map-outline" size={48} color="#6D6D6D" />
+            <Text style={styles.mapPlaceholderText}>Map View</Text>
+            <Text style={styles.mapPlaceholderSubtext}>
+              {selectedCity ? `${selectedCity.name}, ${selectedCity.country}` : 'Select a city to view map'}
+            </Text>
+          </View>
+          {/* Map controls overlay */}
+          <TouchableOpacity style={styles.mapControlButton} activeOpacity={0.7}>
+            <Ionicons name="locate" size={20} color="#0A1D37" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Guides Section */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -195,6 +213,61 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     fontWeight: '400',
     letterSpacing: 0.3,
+  },
+  mapSection: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+  },
+  mapContainer: {
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F0F0F0',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  mapPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F7F7F7',
+  },
+  mapPlaceholderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6D6D6D',
+    marginTop: 8,
+    letterSpacing: 0.3,
+  },
+  mapPlaceholderSubtext: {
+    fontSize: 12,
+    color: '#9D9D9D',
+    marginTop: 4,
+    letterSpacing: 0.2,
+  },
+  mapControlButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   scrollView: {
     flex: 1,
