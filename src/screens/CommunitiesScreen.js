@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -437,6 +437,20 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress }) => {
           <Text style={styles.headerTitle}>Communities</Text>
           <Text style={styles.headerSubtitle}>Join discussions about places</Text>
         </View>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => onTabChange && onTabChange('profile')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.profileImageContainer}>
+            <Image
+              source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+              style={styles.profileImage}
+              resizeMode="cover"
+            />
+            <View style={styles.onlineIndicator} />
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -529,6 +543,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E8E8E8',
+  },
+  profileButton: {
+    padding: 4,
+  },
+  profileImageContainer: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#0A1D37',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   backButton: {
     padding: 4,

@@ -271,6 +271,20 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
       {/* Header */}
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
         <Text style={styles.title}>Feed</Text>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => onTabChange && onTabChange('profile')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.profileImageContainer}>
+            <Image
+              source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+              style={styles.profileImage}
+              resizeMode="cover"
+            />
+            <View style={styles.onlineIndicator} />
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Feed ScrollView */}
@@ -458,6 +472,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 12,
     backgroundColor: '#FFFFFF',
@@ -470,6 +487,32 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: '#0A1D37',
     letterSpacing: 0.5,
+  },
+  profileButton: {
+    padding: 4,
+  },
+  profileImageContainer: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#0A1D37',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   scrollView: {
     flex: 1,
