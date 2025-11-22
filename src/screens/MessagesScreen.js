@@ -108,7 +108,7 @@ export const MessagesScreen = ({ activeTab = 'messages', onTabChange, onMessageP
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingHorizontal: 24,

@@ -60,12 +60,9 @@ export const MessageCard = ({ message, onPress }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    padding: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     flexDirection: 'row',
-    marginBottom: 8,
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 8,
   },
   avatar: {
     width: 55,
