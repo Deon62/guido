@@ -8,7 +8,7 @@ import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
-export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress }) => {
+export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress, onAddTripPress }) => {
   const [selectedTab, setSelectedTab] = useState('wishlist');
   const [isLoading, setIsLoading] = useState(true);
   const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
@@ -205,8 +205,11 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         <TouchableOpacity
           style={styles.fab}
           onPress={() => {
-            console.log('Add trip pressed');
-            // TODO: Navigate to add trip screen
+            if (onAddTripPress) {
+              onAddTripPress();
+            } else {
+              console.log('Add trip pressed');
+            }
           }}
           activeOpacity={0.8}
         >

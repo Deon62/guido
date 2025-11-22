@@ -6,6 +6,7 @@ import { LandingScreen } from './src/screens/LandingScreen';
 import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
+import { AddPastTripScreen } from './src/screens/AddPastTripScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
 import { FeedScreen } from './src/screens/FeedScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
@@ -75,6 +76,7 @@ export default function App() {
   const [selectedTripForRating, setSelectedTripForRating] = useState(null);
   const [selectedBookingForRating, setSelectedBookingForRating] = useState(null);
   const [showGuideVerification, setShowGuideVerification] = useState(false);
+  const [showAddPastTrip, setShowAddPastTrip] = useState(false);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -162,7 +164,9 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showGuideVerification) {
+    if (showAddPastTrip) {
+      setShowAddPastTrip(false);
+    } else if (showGuideVerification) {
       setShowGuideVerification(false);
     } else if (selectedTripForRating) {
       setSelectedTripForRating(null);
@@ -233,6 +237,17 @@ export default function App() {
     console.log('Place selected:', place.name);
     // TODO: Navigate to place details screen
     setSelectedPlace(place);
+  };
+
+  const handleAddTripPress = () => {
+    setShowAddPastTrip(true);
+  };
+
+  const handleAddTripSave = (tripData) => {
+    console.log('Trip saved:', tripData);
+    // TODO: Save trip to database/state
+    // For now, just close the screen
+    setShowAddPastTrip(false);
   };
 
   const handleGuideChange = (newIndex) => {
@@ -555,6 +570,16 @@ export default function App() {
     );
   }
 
+  // Show add past trip screen
+  if (showAddPastTrip) {
+    return (
+      <AddPastTripScreen
+        onBack={handleBack}
+        onSave={handleAddTripSave}
+      />
+    );
+  }
+
   // Show user rate guide screen (must be before trips screen check)
   if (selectedTripForRating && !isGuide) {
     return (
@@ -585,6 +610,7 @@ export default function App() {
         onTabChange={handleTabChange}
         onNotificationsPress={handleNotificationsPress}
         onRatePress={handleRateGuidePress}
+        onAddTripPress={handleAddTripPress}
       />
     );
   }
