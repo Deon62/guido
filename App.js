@@ -170,9 +170,7 @@ function AppContent() {
   };
 
   const handleAIRecommend = (tripData) => {
-    console.log('AI Recommend requested with data:', tripData);
-    setAIRecommendationData(tripData);
-    setShowAIRecommendations(true);
+    handleComingSoonPress('AI Recommendations', "We're working on making AI-powered travel recommendations available. You'll be able to get personalized suggestions based on your travel history and preferences soon!");
   };
 
   const handleAddTripSuccessBack = () => {

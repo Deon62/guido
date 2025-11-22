@@ -181,6 +181,16 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         onTabChange={setSelectedTab}
       />
 
+      {/* Tab Description */}
+      <View style={styles.tabDescriptionContainer}>
+        <Text style={styles.tabDescription}>
+          {selectedTab === 'wishlist' && 'Places you added wishing to visit'}
+          {selectedTab === 'active' && 'Places you are currently visiting'}
+          {selectedTab === 'past' && 'Places you have already visited'}
+          {selectedTab === 'recommendations' && 'Get personalized recommendations based on your trips'}
+        </Text>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -302,6 +312,20 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: '#0A1D37',
     letterSpacing: 0.5,
+  },
+  tabDescriptionContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+  },
+  tabDescription: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    letterSpacing: 0.2,
+    lineHeight: 18,
   },
   scrollView: {
     flex: 1,
