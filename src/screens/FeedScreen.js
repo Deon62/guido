@@ -15,6 +15,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [savedPosts, setSavedPosts] = useState(new Set());
   const [selectedPostForComments, setSelectedPostForComments] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState({});
 
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -32,7 +33,11 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         location: 'Paris, France',
         category: 'Landmarks',
       },
-      image: { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
+      images: [
+        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
+      ],
       caption: 'The iconic Eiffel Tower at sunset! 🌅 A must-visit when in Paris. The view from the top is absolutely breathtaking!',
       likes: 1247,
       comments: 89,
@@ -49,7 +54,10 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         location: 'Paris, France',
         category: 'Cafes',
       },
-      image: { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
+      images: [
+        { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800' },
+      ],
       caption: 'Morning coffee at this historic café. The atmosphere is incredible! ☕️',
       likes: 892,
       comments: 45,
@@ -66,7 +74,12 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         location: 'Paris, France',
         category: 'Nature',
       },
-      image: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
+      images: [
+        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
+      ],
       caption: 'Perfect spot for a peaceful afternoon walk. The gardens are so well maintained! 🌳',
       likes: 634,
       comments: 23,
@@ -83,7 +96,10 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         location: 'Paris, France',
         category: 'Landmarks',
       },
-      image: { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
+      images: [
+        { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
+      ],
       caption: 'The architecture here is simply stunning. Every detail tells a story! 🏛️',
       likes: 1456,
       comments: 112,
@@ -100,7 +116,13 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         location: 'Paris, France',
         category: 'Hotels',
       },
-      image: { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' },
+      images: [
+        { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
+        { uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800' },
+      ],
       caption: 'Luxury at its finest! The service here is impeccable. Highly recommend! ✨',
       likes: 987,
       comments: 67,
@@ -228,8 +250,45 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
               </TouchableOpacity>
             </View>
 
-            {/* Post Image */}
-            <Image source={post.image} style={styles.postImage} resizeMode="cover" />
+            {/* Post Image Carousel */}
+            <View style={styles.imageCarouselContainer}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const screenWidth = Dimensions.get('window').width;
+                  const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+                  setCurrentImageIndex(prev => ({ ...prev, [post.id]: index }));
+                }}
+                style={styles.imageCarousel}
+                scrollEventThrottle={16}
+              >
+                {(post.images || (post.image ? [post.image] : [])).slice(0, 5).map((image, imgIndex) => (
+                  <Image
+                    key={imgIndex}
+                    source={image}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                  />
+                ))}
+              </ScrollView>
+              
+              {/* Image Indicators */}
+              {(post.images || []).length > 1 && (
+                <View style={styles.imageIndicators}>
+                  {(post.images || []).slice(0, 5).map((_, imgIndex) => (
+                    <View
+                      key={imgIndex}
+                      style={[
+                        styles.indicatorDot,
+                        (currentImageIndex[post.id] ?? 0) === imgIndex && styles.indicatorDotActive
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
 
             {/* Post Actions */}
             <View style={styles.postActions}>
@@ -401,10 +460,41 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: FONTS.semiBold,
   },
-  postImage: {
+  imageCarouselContainer: {
+    position: 'relative',
     width: '100%',
     height: CARD_HEIGHT * 0.65,
+  },
+  imageCarousel: {
+    width: '100%',
+    height: '100%',
+  },
+  postImage: {
+    width: Dimensions.get('window').width,
+    height: CARD_HEIGHT * 0.65,
     backgroundColor: '#E8E8E8',
+  },
+  imageIndicators: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  indicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  indicatorDotActive: {
+    backgroundColor: '#FFFFFF',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   postActions: {
     flexDirection: 'row',
