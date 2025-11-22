@@ -4,12 +4,15 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../components/Button';
+import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 
 export const AddFeedPostScreen = ({ onBack, onSave }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     placeName: '',
     location: '',
@@ -21,14 +24,34 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const categories = ['Landmarks', 'Hotels', 'Cafes', 'Nature'];
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (isSubmitting) return;
+
     if (!formData.placeName || !formData.location || !formData.category || formData.images.length === 0) {
-      Alert.alert('Missing Information', 'Please fill in all required fields and add at least one image');
+      setError('Please fill in all required fields and add at least one image');
       return;
     }
 
-    if (onSave) {
-      onSave(formData);
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulate random error (10% chance for demo)
+      if (Math.random() < 0.1) {
+        throw new Error('Failed to post');
+      }
+
+      if (onSave) {
+        onSave(formData);
+      }
+    } catch (err) {
+      setError('Failed to post. Please try again.');
+      console.error('Error posting:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -218,12 +241,23 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
             {/* Caption */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Caption</Text>
+              {error && (
+                <View style={styles.errorContainer}>
+                  <ErrorCard
+                    message={error}
+                    onRetry={() => setError(null)}
+                  />
+                </View>
+              )}
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Share your experience..."
                 placeholderTextColor="#9B9B9B"
                 value={formData.caption}
-                onChangeText={(text) => updateField('caption', text)}
+                onChangeText={(text) => {
+                  updateField('caption', text);
+                  if (error) setError(null); // Clear error when user types
+                }}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -233,9 +267,10 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
             {/* Save Button */}
             <View style={styles.buttonContainer}>
               <Button
-                title="Post to Feed"
+                title={isSubmitting ? "Posting..." : "Post to Feed"}
                 onPress={handleSave}
                 variant="primary"
+                disabled={isSubmitting}
               />
             </View>
           </View>
@@ -486,6 +521,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#1A1A1A',
     letterSpacing: 0.3,
+  },
+  errorContainer: {
+    marginBottom: 16,
   },
 });
 

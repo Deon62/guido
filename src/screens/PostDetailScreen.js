@@ -2,13 +2,29 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 
 export const PostDetailScreen = ({ post, community, comments: initialComments, onBack, onAddComment }) => {
   const [comments, setComments] = useState(initialComments || []);
   const [commentText, setCommentText] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const scrollViewRef = useRef(null);
+
+  // Ensure post has required structure with defaults
+  const safePost = post || {};
+  const safeUser = safePost.user || { name: 'Unknown User', avatar: '👤' };
+  const safePostData = {
+    ...safePost,
+    user: safeUser,
+    title: safePost.title || '',
+    content: safePost.content || '',
+    timestamp: safePost.timestamp || '',
+    upvotes: safePost.upvotes || 0,
+    isUpvoted: safePost.isUpvoted || false,
+  };
 
   // Handle keyboard visibility
   useEffect(() => {
@@ -25,8 +41,21 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
     };
   }, []);
 
-  const handleSendComment = () => {
-    if (commentText.trim()) {
+  const handleSendComment = async () => {
+    if (commentText.trim() === '' || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Simulate random error (5% chance for demo)
+      if (Math.random() < 0.05) {
+        throw new Error('Failed to post comment');
+      }
+
       const newComment = {
         id: Date.now().toString(),
         user: { name: 'You', avatar: '👤' },
@@ -45,6 +74,11 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
+    } catch (err) {
+      setError('Failed to post comment. Please try again.');
+      console.error('Error posting comment:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -56,6 +90,33 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
   };
 
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+
+  // If post is missing, show error state
+  if (!post) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={[styles.header, { paddingTop: statusBarHeight + 12 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color="#0A1D37" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Post Not Found</Text>
+          </View>
+        </View>
+        <View style={styles.errorContainerFull}>
+          <ErrorCard
+            message="The post you're looking for couldn't be found. It may have been deleted or doesn't exist."
+            onRetry={onBack}
+          />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -86,25 +147,25 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
           <View style={styles.postHeader}>
             <View style={styles.postUserInfo}>
               <View style={styles.postAvatar}>
-                <Text style={styles.postAvatarText}>{post.user.avatar}</Text>
+                <Text style={styles.postAvatarText}>{safePostData.user.avatar}</Text>
               </View>
               <View>
-                <Text style={styles.postUserName}>{post.user.name}</Text>
-                <Text style={styles.postTimestamp}>{post.timestamp}</Text>
+                <Text style={styles.postUserName}>{safePostData.user.name}</Text>
+                <Text style={styles.postTimestamp}>{safePostData.timestamp}</Text>
               </View>
             </View>
           </View>
-          <Text style={styles.postTitle}>{post.title}</Text>
-          <Text style={styles.postContentText}>{post.content}</Text>
+          <Text style={styles.postTitle}>{safePostData.title}</Text>
+          <Text style={styles.postContentText}>{safePostData.content}</Text>
           <View style={styles.postActions}>
             <View style={styles.actionButton}>
               <Ionicons
-                name={post.isUpvoted ? 'arrow-up' : 'arrow-up-outline'}
+                name={safePostData.isUpvoted ? 'arrow-up' : 'arrow-up-outline'}
                 size={18}
-                color={post.isUpvoted ? '#0A1D37' : '#6D6D6D'}
+                color={safePostData.isUpvoted ? '#0A1D37' : '#6D6D6D'}
               />
-              <Text style={[styles.actionText, post.isUpvoted && styles.actionTextActive]}>
-                {formatNumber(post.upvotes)}
+              <Text style={[styles.actionText, safePostData.isUpvoted && styles.actionTextActive]}>
+                {formatNumber(safePostData.upvotes)}
               </Text>
             </View>
           </View>
@@ -118,6 +179,14 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {error && (
+            <View style={styles.errorContainer}>
+              <ErrorCard
+                message={error}
+                onRetry={() => setError(null)}
+              />
+            </View>
+          )}
           {comments.length === 0 ? (
             <View style={styles.emptyComments}>
               <Ionicons name="chatbubble-outline" size={48} color="#C0C0C0" />
@@ -125,20 +194,23 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
               <Text style={styles.emptyCommentsSubtext}>Be the first to comment!</Text>
             </View>
           ) : (
-            comments.map((comment) => (
-              <View key={comment.id} style={styles.commentItem}>
-                <View style={styles.commentAvatar}>
-                  <Text style={styles.commentAvatarText}>{comment.user.avatar}</Text>
-                </View>
-                <View style={styles.commentContent}>
-                  <View style={styles.commentBubble}>
-                    <Text style={styles.commentUserName}>{comment.user.name}</Text>
-                    <Text style={styles.commentText}>{comment.text}</Text>
+            comments.map((comment) => {
+              const safeCommentUser = comment.user || { name: 'Unknown User', avatar: '👤' };
+              return (
+                <View key={comment.id} style={styles.commentItem}>
+                  <View style={styles.commentAvatar}>
+                    <Text style={styles.commentAvatarText}>{safeCommentUser.avatar}</Text>
                   </View>
-                  <Text style={styles.commentTimestamp}>{comment.timestamp}</Text>
+                  <View style={styles.commentContent}>
+                    <View style={styles.commentBubble}>
+                      <Text style={styles.commentUserName}>{safeCommentUser.name}</Text>
+                      <Text style={styles.commentText}>{comment.text || ''}</Text>
+                    </View>
+                    <Text style={styles.commentTimestamp}>{comment.timestamp || ''}</Text>
+                  </View>
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </ScrollView>
 
@@ -154,12 +226,12 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
             maxLength={500}
           />
           <TouchableOpacity
-            style={[styles.sendButton, commentText.trim() === '' && styles.sendButtonDisabled]}
+            style={[styles.sendButton, (commentText.trim() === '' || isSubmitting) && styles.sendButtonDisabled]}
             onPress={handleSendComment}
             activeOpacity={0.7}
-            disabled={commentText.trim() === ''}
+            disabled={commentText.trim() === '' || isSubmitting}
           >
-            <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
+            <Ionicons name="send" size={20} color={(commentText.trim() === '' || isSubmitting) ? '#C0C0C0' : '#FFFFFF'} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -390,6 +462,16 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#E8E8E8',
+  },
+  errorContainer: {
+    padding: 16,
+    paddingTop: 20,
+  },
+  errorContainerFull: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
   },
 });
 

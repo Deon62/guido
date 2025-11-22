@@ -25,6 +25,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
   // IMPORTANT: Use a PUBLIC token (pk.*), NOT a secret token (sk.*)
   const [mapboxToken] = useState('pk.eyJ1IjoiZGVvbmNoaW5lc2UiLCJhIjoiY21odG82dHVuMDQ1eTJpc2RmdDdlZWZ3NiJ9.W0Nbf6fypzPbXgnMcOcoTA'); // Replace with your PUBLIC token
   const webViewRef = useRef(null);
+  const isMountedRef = useRef(true);
   
   // Bottom sheet animation - Y position from top of screen
   const bottomSheetY = useRef(new Animated.Value(SCREEN_HEIGHT - BOTTOM_SHEET_MIN_HEIGHT - BOTTOM_NAVBAR_HEIGHT)).current;
@@ -62,6 +63,13 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
   };
   
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Get user location
   useEffect(() => {
     (async () => {
@@ -72,23 +80,28 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
           return;
         }
         let location = await Location.getCurrentPositionAsync({});
+        if (!isMountedRef.current) return;
         setUserLocation(location);
         // Update map with user location
-        if (webViewRef.current) {
-          const script = `
-            if (window.map) {
-              window.map.flyTo({
-                center: [${location.coords.longitude}, ${location.coords.latitude}],
-                zoom: 13,
-                duration: 1000
-              });
-              new mapboxgl.Marker({ color: '#2196F3' })
-                .setLngLat([${location.coords.longitude}, ${location.coords.latitude}])
-                .setPopup(new mapboxgl.Popup().setHTML('<b>Your Location</b>'))
-                .addTo(window.map);
-            }
-          `;
-          webViewRef.current.injectJavaScript(script);
+        if (isMountedRef.current && webViewRef.current && webViewRef.current.injectJavaScript) {
+          try {
+            const script = `
+              if (window.map) {
+                window.map.flyTo({
+                  center: [${location.coords.longitude}, ${location.coords.latitude}],
+                  zoom: 13,
+                  duration: 1000
+                });
+                new mapboxgl.Marker({ color: '#2196F3' })
+                  .setLngLat([${location.coords.longitude}, ${location.coords.latitude}])
+                  .setPopup(new mapboxgl.Popup().setHTML('<b>Your Location</b>'))
+                  .addTo(window.map);
+              }
+            `;
+            webViewRef.current.injectJavaScript(script);
+          } catch (error) {
+            console.log('Error injecting JavaScript:', error);
+          }
         }
       } catch (error) {
         console.log('Error getting location:', error);
@@ -313,32 +326,42 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
 
   // Add markers to map after places finish loading
   useEffect(() => {
-    if (!isLoading && webViewRef.current) {
-      setTimeout(() => {
-        const defaultLat = userLocation?.coords?.latitude || selectedCity?.latitude || 48.8566;
-        const defaultLng = userLocation?.coords?.longitude || selectedCity?.longitude || 2.3522;
-        const markersScript = mockPlaces.map((place) => {
-          const lat = place.latitude || defaultLat;
-          const lng = place.longitude || defaultLng;
-          const name = place.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-          const category = place.category.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-          return `
-            new mapboxgl.Marker({ color: '#0A1D37' })
-              .setLngLat([${lng}, ${lat}])
-              .setPopup(new mapboxgl.Popup().setHTML('<b>${name}</b><br>${category}'))
-              .addTo(window.map);
-          `;
-        }).join('');
-        webViewRef.current.injectJavaScript(`
-          if (window.map && window.map.loaded()) {
-            ${markersScript}
-          } else {
-            window.map.on('load', function() {
-              ${markersScript}
-            });
+    if (!isLoading && isMountedRef.current && webViewRef.current && webViewRef.current.injectJavaScript) {
+      const timeoutId = setTimeout(() => {
+        // Double-check ref is still valid after timeout and component is still mounted
+        if (isMountedRef.current && webViewRef.current && webViewRef.current.injectJavaScript) {
+          try {
+            const defaultLat = userLocation?.coords?.latitude || selectedCity?.latitude || 48.8566;
+            const defaultLng = userLocation?.coords?.longitude || selectedCity?.longitude || 2.3522;
+            const markersScript = mockPlaces.map((place) => {
+              const lat = place.latitude || defaultLat;
+              const lng = place.longitude || defaultLng;
+              const name = place.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+              const category = place.category.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+              return `
+                new mapboxgl.Marker({ color: '#0A1D37' })
+                  .setLngLat([${lng}, ${lat}])
+                  .setPopup(new mapboxgl.Popup().setHTML('<b>${name}</b><br>${category}'))
+                  .addTo(window.map);
+              `;
+            }).join('');
+            webViewRef.current.injectJavaScript(`
+              if (window.map && window.map.loaded()) {
+                ${markersScript}
+              } else {
+                window.map.on('load', function() {
+                  ${markersScript}
+                });
+              }
+            `);
+          } catch (error) {
+            console.log('Error injecting markers JavaScript:', error);
           }
-        `);
+        }
       }, 500);
+      
+      // Cleanup timeout on unmount
+      return () => clearTimeout(timeoutId);
     }
   }, [isLoading, userLocation, selectedCity]);
 
@@ -420,23 +443,28 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
               let { status } = await Location.requestForegroundPermissionsAsync();
               if (status === 'granted') {
                 let location = await Location.getCurrentPositionAsync({});
+                if (!isMountedRef.current) return;
                 setUserLocation(location);
                 // Update map
-                if (webViewRef.current) {
-                  const script = `
-                    if (window.map) {
-                      window.map.flyTo({
-                        center: [${location.coords.longitude}, ${location.coords.latitude}],
-                        zoom: 13,
-                        duration: 1000
-                      });
-                      new mapboxgl.Marker({ color: '#2196F3' })
-                        .setLngLat([${location.coords.longitude}, ${location.coords.latitude}])
-                        .setPopup(new mapboxgl.Popup().setHTML('<b>Your Location</b>'))
-                        .addTo(window.map);
-                    }
-                  `;
-                  webViewRef.current.injectJavaScript(script);
+                if (isMountedRef.current && webViewRef.current && webViewRef.current.injectJavaScript) {
+                  try {
+                    const script = `
+                      if (window.map) {
+                        window.map.flyTo({
+                          center: [${location.coords.longitude}, ${location.coords.latitude}],
+                          zoom: 13,
+                          duration: 1000
+                        });
+                        new mapboxgl.Marker({ color: '#2196F3' })
+                          .setLngLat([${location.coords.longitude}, ${location.coords.latitude}])
+                          .setPopup(new mapboxgl.Popup().setHTML('<b>Your Location</b>'))
+                          .addTo(window.map);
+                      }
+                    `;
+                    webViewRef.current.injectJavaScript(script);
+                  } catch (error) {
+                    console.log('Error injecting JavaScript:', error);
+                  }
                 }
               }
             } catch (error) {

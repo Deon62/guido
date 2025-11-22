@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { CommentsModal } from '../components/CommentsModal';
+import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -19,6 +20,8 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
   const [isUserScrolling, setIsUserScrolling] = useState({});
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const scrollViewRefs = useRef({});
   const autoScrollTimers = useRef({});
   const isUserScrollingRef = useRef({});
@@ -236,6 +239,25 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     );
   });
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate random error (10% chance for demo)
+      if (Math.random() < 0.1) {
+        throw new Error('Failed to load feed posts');
+      }
+      // In a real app, you would fetch new feed posts here
+    } catch (err) {
+      setError('Failed to refresh feed. Please try again.');
+      console.error('Error refreshing feed:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleLike = (postId) => {
     setLikedPosts(prev => {
       const newSet = new Set(prev);
@@ -421,8 +443,24 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
         snapToAlignment="start"
         decelerationRate="fast"
         bounces={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0A1D37"
+            colors={['#0A1D37']}
+          />
+        }
       >
-        {filteredPosts.map((post) => (
+        {error ? (
+          <View style={styles.errorContainer}>
+            <ErrorCard
+              message={error}
+              onRetry={onRefresh}
+            />
+          </View>
+        ) : (
+          filteredPosts.map((post) => (
           <View key={post.id} style={styles.postCard}>
             {/* Post Header */}
             <View style={styles.postHeader}>
@@ -561,7 +599,8 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
             {/* Post Timestamp */}
             <Text style={styles.timestamp}>{post.timestamp}</Text>
           </View>
-        ))}
+        ))
+        )}
       </ScrollView>
 
       {/* Floating Action Button for Adding Post */}

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
-export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, user: userProp, hideBottomNav = false }) => {
+export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -67,8 +67,11 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
       icon: 'download-outline', 
       label: 'Download my data', 
       onPress: () => {
-        console.log('Download my data');
-        // TODO: Implement download data functionality
+        if (onComingSoonPress) {
+          onComingSoonPress('Download My Data', "We're working on making your data export feature available. You'll be able to download all your account data soon!");
+        } else {
+          console.log('Download my data');
+        }
       }
     },
   ];

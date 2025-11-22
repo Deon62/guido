@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
+import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 
 export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress }) => {
@@ -13,6 +14,8 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
   const [newPostText, setNewPostText] = useState('');
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const searchBarWidth = useRef(new Animated.Value(0)).current;
   const searchBarOpacity = useRef(new Animated.Value(0)).current;
   const [showNewPostInput, setShowNewPostInput] = useState(false);
@@ -320,6 +323,14 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#0A1D37"
+                colors={['#0A1D37']}
+              />
+            }
           >
             {/* Community Info */}
             <View style={styles.communityDetailInfo}>
@@ -460,6 +471,25 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     );
   });
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate random error (10% chance for demo)
+      if (Math.random() < 0.1) {
+        throw new Error('Failed to load communities');
+      }
+      // In a real app, you would fetch new communities/posts here
+    } catch (err) {
+      setError('Failed to refresh. Please try again.');
+      console.error('Error refreshing communities:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Show communities list
   return (
     <View style={styles.container}>
@@ -572,8 +602,24 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0A1D37"
+            colors={['#0A1D37']}
+          />
+        }
       >
-        <View style={styles.communitiesList}>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <ErrorCard
+              message={error}
+              onRetry={onRefresh}
+            />
+          </View>
+        ) : (
+          <View style={styles.communitiesList}>
           {filteredCommunities.length === 0 ? (
             <View style={styles.emptySearchResults}>
               <Ionicons name="search-outline" size={48} color="#C0C0C0" />
@@ -613,9 +659,10 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
                 </View>
               </TouchableOpacity>
             );
-          })
+            })
+          )}
+          </View>
         )}
-        </View>
       </ScrollView>
 
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />

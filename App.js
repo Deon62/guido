@@ -31,8 +31,10 @@ import { EditProfileScreen } from './src/screens/EditProfileScreen';
 import { ConfirmationModal } from './src/components/ConfirmationModal';
 import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelectorScreen';
 import { PageTransition } from './src/components/PageTransition';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { ComingSoonScreen } from './src/screens/ComingSoonScreen';
 
-export default function App() {
+function AppContent() {
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
     Nunito_600SemiBold,
@@ -70,6 +72,8 @@ export default function App() {
   const [showMyPosts, setShowMyPosts] = useState(false);
   const [showMyCommunities, setShowMyCommunities] = useState(false);
   const [showMyFeedPosts, setShowMyFeedPosts] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [comingSoonData, setComingSoonData] = useState(null);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -220,6 +224,16 @@ export default function App() {
     setShowMyFeedPosts(true);
   };
 
+  const handleComingSoonPress = (title, message) => {
+    setComingSoonData({ title, message });
+    setShowComingSoon(true);
+  };
+
+  const handleComingSoonBack = () => {
+    setShowComingSoon(false);
+    setComingSoonData(null);
+  };
+
   const handleAddFeedPostSave = (postData) => {
     console.log('Feed post saved:', postData);
     // TODO: Save post to database/state
@@ -330,6 +344,17 @@ export default function App() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show coming soon screen
+  if (showComingSoon && comingSoonData) {
+    return (
+      <ComingSoonScreen
+        title={comingSoonData.title}
+        message={comingSoonData.message}
+        onBack={handleComingSoonBack}
+      />
+    );
+  }
 
   // Show profile picture selector screen
   if (showProfilePictureSelector) {
@@ -626,6 +651,7 @@ export default function App() {
           onProfilePicturePress={() => handleProfilePicturePress('profile')}
           onMyPostsPress={handleMyPostsPress}
           onMyCommunitiesPress={handleMyCommunitiesPress}
+          onComingSoonPress={handleComingSoonPress}
           user={userData}
         />
         
@@ -658,4 +684,12 @@ export default function App() {
 
 
   return <LandingScreen onFindCityGuide={handleFindCityGuide} />;
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
 }

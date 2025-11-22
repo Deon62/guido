@@ -56,7 +56,15 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
         name: post.community,
         description: '',
       };
-      onPostPress(post, community, []);
+      // Ensure post has user information for PostDetailScreen
+      const postWithUser = {
+        ...post,
+        user: {
+          name: 'You', // Since these are the user's own posts
+          avatar: '👤',
+        },
+      };
+      onPostPress(postWithUser, community, []);
     }
   };
 

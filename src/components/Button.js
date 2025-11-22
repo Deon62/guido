@@ -2,16 +2,25 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { FONTS } from '../constants/fonts';
 
-export const Button = ({ title, onPress, variant = 'primary' }) => {
+export const Button = ({ title, onPress, variant = 'primary', disabled = false }) => {
   const isPrimary = variant === 'primary';
   
   return (
     <TouchableOpacity
-      style={[styles.button, isPrimary ? styles.primaryButton : styles.secondaryButton]}
+      style={[
+        styles.button, 
+        isPrimary ? styles.primaryButton : styles.secondaryButton,
+        disabled && styles.buttonDisabled
+      ]}
       onPress={onPress}
       activeOpacity={0.8}
+      disabled={disabled}
     >
-      <Text style={[styles.buttonText, isPrimary ? styles.primaryText : styles.secondaryText]}>
+      <Text style={[
+        styles.buttonText, 
+        isPrimary ? styles.primaryText : styles.secondaryText,
+        disabled && styles.buttonTextDisabled
+      ]}>
         {title}
       </Text>
     </TouchableOpacity>
@@ -54,6 +63,12 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: '#0A1D37',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonTextDisabled: {
+    opacity: 0.7,
   },
 });
 
