@@ -123,6 +123,19 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           <Text style={styles.email}>{user.email}</Text>
         </View>
 
+        {/* Followers/Following Section */}
+        <View style={styles.followStatsSection}>
+          <TouchableOpacity style={styles.followStatItem} activeOpacity={0.7}>
+            <Text style={styles.followStatNumber}>1.2k</Text>
+            <Text style={styles.followStatLabel}>Followers</Text>
+          </TouchableOpacity>
+          <View style={styles.followStatDivider} />
+          <TouchableOpacity style={styles.followStatItem} activeOpacity={0.7}>
+            <Text style={styles.followStatNumber}>456</Text>
+            <Text style={styles.followStatLabel}>Following</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Streaks Section */}
         <View style={styles.streaksSection}>
           <View style={styles.streakCard}>
@@ -311,6 +324,39 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     letterSpacing: 0.3,
+  },
+  followStatsSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  followStatItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  followStatNumber: {
+    fontSize: 20,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  followStatLabel: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    letterSpacing: 0.2,
+  },
+  followStatDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E8E8E8',
+    marginHorizontal: 24,
   },
   streaksSection: {
     backgroundColor: '#FFFFFF',

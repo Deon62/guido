@@ -12,7 +12,7 @@ const HEADER_HEIGHT = 80; // Approximate header height
 const BOTTOM_NAV_HEIGHT = 80; // Approximate bottom nav height
 const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full visible height
 
-export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, onMyFeedPostsPress }) => {
+export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, onMyFeedPostsPress, onUserProfilePress }) => {
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [savedPosts, setSavedPosts] = useState(new Set());
   const [followedUsers, setFollowedUsers] = useState(new Set());
@@ -477,7 +477,15 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
           <View key={post.id} style={styles.postCard}>
             {/* Post Header */}
             <View style={styles.postHeader}>
-              <View style={styles.userInfo}>
+              <TouchableOpacity 
+                style={styles.userInfo}
+                onPress={() => {
+                  if (onUserProfilePress) {
+                    onUserProfilePress(post.user);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
                 <Image source={post.user.avatar} style={styles.avatar} />
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{post.user.name}</Text>
@@ -491,7 +499,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                     </View>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleFollow(post.user.name)}
                 style={[

@@ -234,6 +234,14 @@ function AppContent() {
     setComingSoonData(null);
   };
 
+  const handleCreateCommunityPress = () => {
+    handleComingSoonPress('Create Community', "We're working on making community creation available. You'll be able to create your own communities and invite others to join soon!");
+  };
+
+  const handleUserProfilePress = (user) => {
+    handleComingSoonPress('User Profile', `We're working on the profile view feature. You'll be able to see ${user.name}'s profile, posts, and more soon!`);
+  };
+
   const handleAddFeedPostSave = (postData) => {
     console.log('Feed post saved:', postData);
     // TODO: Save post to database/state
@@ -592,12 +600,13 @@ function AppContent() {
   // Show messages screen when messages tab is active
   if (currentScreen === 'home' && activeTab === 'feed') {
     return (
-      <FeedScreen
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        onAddPostPress={handleAddFeedPostPress}
-        onMyFeedPostsPress={handleMyFeedPostsPress}
-      />
+        <FeedScreen
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onAddPostPress={handleAddFeedPostPress}
+          onMyFeedPostsPress={handleMyFeedPostsPress}
+          onUserProfilePress={handleUserProfilePress}
+        />
     );
   }
 
@@ -633,6 +642,7 @@ function AppContent() {
         onTabChange={handleTabChange}
         onPostPress={handlePostDetailPress}
         onMyCommunitiesPress={handleMyCommunitiesPress}
+        onCreateCommunityPress={handleCreateCommunityPress}
       />
     );
   }

@@ -6,7 +6,7 @@ import { BottomNavBar } from '../components/BottomNavBar';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 
-export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress }) => {
+export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress, onCreateCommunityPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   
   const [selectedCommunity, setSelectedCommunity] = useState(null);
@@ -663,12 +663,27 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
           )}
           </View>
         )}
-      </ScrollView>
+          </ScrollView>
 
-      <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
-    </View>
-  );
-};
+        {/* Floating Action Button for Creating Community */}
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => {
+            if (onCreateCommunityPress) {
+              onCreateCommunityPress();
+            } else {
+              console.log('Create community pressed');
+            }
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+      </View>
+    );
+  };
 
 const styles = StyleSheet.create({
   container: {
@@ -1052,6 +1067,26 @@ const styles = StyleSheet.create({
   actionTextActive: {
     color: '#0A1D37',
     fontFamily: FONTS.semiBold,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0A1D37',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 20,
   },
 });
 
