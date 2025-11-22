@@ -15,15 +15,15 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     location: '',
     category: '',
     caption: '',
-    image: null,
+    images: [],
   });
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const categories = ['Landmarks', 'Hotels', 'Cafes', 'Nature'];
 
   const handleSave = () => {
-    if (!formData.placeName || !formData.location || !formData.category || !formData.image) {
-      Alert.alert('Missing Information', 'Please fill in all required fields and add an image');
+    if (!formData.placeName || !formData.location || !formData.category || formData.images.length === 0) {
+      Alert.alert('Missing Information', 'Please fill in all required fields and add at least one image');
       return;
     }
 
@@ -66,16 +66,26 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
         return;
       }
 
+      // Calculate how many images can still be selected
+      const remainingSlots = 5 - formData.images.length;
+      if (remainingSlots === 0) {
+        Alert.alert('Maximum Images', 'You can only select up to 5 images');
+        return;
+      }
+
       // Launch image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
-        updateField('image', { uri: result.assets[0].uri });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const newImage = { uri: result.assets[0].uri };
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, newImage].slice(0, 5), // Ensure max 5 images
+        }));
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -83,8 +93,11 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     }
   };
 
-  const handleRemoveImage = () => {
-    updateField('image', null);
+  const handleRemoveImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -119,26 +132,46 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
           <View style={styles.content}>
             {/* Image Upload Section */}
             <View style={styles.imageSection}>
-              {formData.image ? (
-                <View style={styles.imagePreviewContainer}>
-                  <Image source={formData.image} style={styles.imagePreview} resizeMode="cover" />
-                  <TouchableOpacity
-                    style={styles.removeImageButton}
-                    onPress={handleRemoveImage}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="close-circle" size={32} color="#FFFFFF" />
-                  </TouchableOpacity>
+              <Text style={styles.label}>Images *</Text>
+              <Text style={styles.imageCountText}>
+                {formData.images.length} / 5 images selected
+              </Text>
+              
+              {/* Image Previews Grid */}
+              {formData.images.length > 0 && (
+                <View style={styles.imagesGrid}>
+                  {formData.images.map((image, index) => (
+                    <View key={index} style={styles.imagePreviewWrapper}>
+                      <Image source={image} style={styles.imagePreviewSmall} resizeMode="cover" />
+                      <TouchableOpacity
+                        style={styles.removeImageButtonSmall}
+                        onPress={() => handleRemoveImage(index)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="close-circle" size={20} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
                 </View>
-              ) : (
+              )}
+
+              {/* Add Image Button */}
+              {formData.images.length < 5 && (
                 <TouchableOpacity
                   style={styles.imageUploadButton}
                   onPress={handleImagePick}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="camera" size={48} color="#6D6D6D" />
-                  <Text style={styles.imageUploadText}>Add Photo</Text>
-                  <Text style={styles.imageUploadSubtext}>Tap to upload an image</Text>
+                  <Ionicons name="camera" size={32} color="#6D6D6D" />
+                  <Text style={styles.imageUploadText}>
+                    {formData.images.length === 0 ? 'Add Photos' : 'Add More Photos'}
+                  </Text>
+                  <Text style={styles.imageUploadSubtext}>
+                    {formData.images.length === 0 
+                      ? 'Tap to upload images (up to 5)' 
+                      : `Add ${5 - formData.images.length} more image${5 - formData.images.length > 1 ? 's' : ''}`
+                    }
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -298,9 +331,43 @@ const styles = StyleSheet.create({
   imageSection: {
     marginBottom: 24,
   },
+  imageCountText: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginBottom: 12,
+  },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+    marginHorizontal: -6,
+  },
+  imagePreviewWrapper: {
+    width: '18.5%',
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    marginHorizontal: 6,
+    marginBottom: 12,
+  },
+  imagePreviewSmall: {
+    width: '100%',
+    height: '100%',
+  },
+  removeImageButtonSmall: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 10,
+  },
   imageUploadButton: {
     width: '100%',
-    height: 200,
+    height: 120,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     justifyContent: 'center',
@@ -310,36 +377,18 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   imageUploadText: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: FONTS.semiBold,
     color: '#0A1D37',
-    marginTop: 12,
+    marginTop: 8,
     letterSpacing: 0.3,
   },
   imageUploadSubtext: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     marginTop: 4,
     letterSpacing: 0.2,
-  },
-  imagePreviewContainer: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 16,
   },
   inputGroup: {
     marginBottom: 20,
