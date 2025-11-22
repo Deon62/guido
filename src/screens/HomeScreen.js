@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, Animated, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
@@ -8,18 +8,58 @@ import { TourGuideCard } from '../components/TourGuideCard';
 import { TourGuideCardSkeleton } from '../components/TourGuideCardSkeleton';
 import { BottomNavBar } from '../components/BottomNavBar';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BOTTOM_NAVBAR_HEIGHT = Platform.OS === 'ios' ? 80 : 70; // Approximate height of bottom navbar
+const BOTTOM_SHEET_MIN_HEIGHT = 120; // Minimum visible height when collapsed
+const HEADER_HEIGHT = 100; // Approximate height for header
+const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT - BOTTOM_NAVBAR_HEIGHT - HEADER_HEIGHT; // Maximum height when expanded (leaving space for header)
+
 export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress, onGuidePress }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
   const [userLocation, setUserLocation] = useState(null);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   // TODO: Replace with your Mapbox PUBLIC access token (must start with 'pk.')
   // Get your token from: https://account.mapbox.com/access-tokens/
   // IMPORTANT: Use a PUBLIC token (pk.*), NOT a secret token (sk.*)
   const [mapboxToken] = useState('pk.eyJ1IjoiZGVvbmNoaW5lc2UiLCJhIjoiY21odG82dHVuMDQ1eTJpc2RmdDdlZWZ3NiJ9.W0Nbf6fypzPbXgnMcOcoTA'); // Replace with your PUBLIC token
   const webViewRef = useRef(null);
   
+  // Bottom sheet animation - Y position from top of screen
+  const bottomSheetY = useRef(new Animated.Value(SCREEN_HEIGHT - BOTTOM_SHEET_MIN_HEIGHT - BOTTOM_NAVBAR_HEIGHT)).current;
+  const bottomSheetHeight = useRef(new Animated.Value(BOTTOM_SHEET_MIN_HEIGHT)).current;
+  
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+  
+  // Toggle bottom sheet
+  const toggleBottomSheet = () => {
+    const newExpanded = !isSheetExpanded;
+    setIsSheetExpanded(newExpanded);
+    
+    const targetY = newExpanded 
+      ? SCREEN_HEIGHT - BOTTOM_SHEET_MAX_HEIGHT - BOTTOM_NAVBAR_HEIGHT
+      : SCREEN_HEIGHT - BOTTOM_SHEET_MIN_HEIGHT - BOTTOM_NAVBAR_HEIGHT;
+    const targetHeight = newExpanded 
+      ? BOTTOM_SHEET_MAX_HEIGHT
+      : BOTTOM_SHEET_MIN_HEIGHT;
+    
+    Animated.parallel([
+      Animated.spring(bottomSheetY, {
+        toValue: targetY,
+        useNativeDriver: false,
+        tension: 60,
+        friction: 9,
+      }),
+      Animated.spring(bottomSheetHeight, {
+        toValue: targetHeight,
+        useNativeDriver: false,
+        tension: 60,
+        friction: 9,
+      }),
+    ]).start();
+  };
+  
 
   // Get user location
   useEffect(() => {
@@ -257,117 +297,160 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
     }
   };
 
+  // Calculate map height based on bottom sheet position
+  // bottomSheetY is the top position of the sheet, so map height = bottomSheetY
+  const mapHeight = bottomSheetY.interpolate({
+    inputRange: [
+      SCREEN_HEIGHT - BOTTOM_SHEET_MAX_HEIGHT - BOTTOM_NAVBAR_HEIGHT,
+      SCREEN_HEIGHT - BOTTOM_SHEET_MIN_HEIGHT - BOTTOM_NAVBAR_HEIGHT
+    ],
+    outputRange: [200, SCREEN_HEIGHT - BOTTOM_NAVBAR_HEIGHT],
+    extrapolate: 'clamp',
+  });
+
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
-      <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
-        <View>
-          <Text style={styles.greeting}>Hello!</Text>
-          <Text style={styles.location}>
-            {selectedCity ? `${selectedCity.name}, ${selectedCity.country}` : 'Explore Cities'}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => onNotificationsPress && onNotificationsPress()}
-          style={styles.notificationButton}
-          activeOpacity={0.7}
-        >
-          <View style={styles.notificationIconContainer}>
-            <Ionicons name="notifications-outline" size={24} color="#0A1D37" />
-            {hasUnreadNotifications && <View style={styles.notificationDot} />}
+      <StatusBar style="light" />
+      
+      {/* Map Section - Full Screen Initially */}
+      <Animated.View style={[styles.mapSection, { height: mapHeight }]}>
+        <WebView
+          ref={webViewRef}
+          source={{ html: getMapHTML() }}
+          style={styles.mapView}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          scalesPageToFit={true}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView error: ', nativeEvent);
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.warn('WebView HTTP error: ', nativeEvent);
+          }}
+          onMessage={(event) => {
+            console.log('WebView message:', event.nativeEvent.data);
+          }}
+          onLoadEnd={() => {
+            console.log('WebView loaded');
+          }}
+        />
+        
+        {/* Header Overlay */}
+        <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
+          <View>
+            <Text style={styles.greeting}>Hello!</Text>
+            <Text style={styles.location}>
+              {selectedCity ? `${selectedCity.name}, ${selectedCity.country}` : 'Explore Cities'}
+            </Text>
           </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Map Section */}
-      <View style={styles.mapSection}>
-        <View style={styles.mapContainer}>
-          <WebView
-            ref={webViewRef}
-            source={{ html: getMapHTML() }}
-            style={styles.mapView}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            onError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.warn('WebView error: ', nativeEvent);
-            }}
-            onHttpError={(syntheticEvent) => {
-              const { nativeEvent } = syntheticEvent;
-              console.warn('WebView HTTP error: ', nativeEvent);
-            }}
-            onMessage={(event) => {
-              console.log('WebView message:', event.nativeEvent.data);
-            }}
-            onLoadEnd={() => {
-              console.log('WebView loaded');
-            }}
-          />
-          {/* Map controls overlay */}
-          <TouchableOpacity 
-            style={styles.mapControlButton} 
+          <TouchableOpacity
+            onPress={() => onNotificationsPress && onNotificationsPress()}
+            style={styles.notificationButton}
             activeOpacity={0.7}
-            onPress={async () => {
-              try {
-                let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status === 'granted') {
-                  let location = await Location.getCurrentPositionAsync({});
-                  setUserLocation(location);
-                  // Update map
-                  if (webViewRef.current) {
-                    const script = `
-                      if (window.map) {
-                        window.map.flyTo({
-                          center: [${location.coords.longitude}, ${location.coords.latitude}],
-                          zoom: 13,
-                          duration: 1000
-                        });
-                        new mapboxgl.Marker({ color: '#2196F3' })
-                          .setLngLat([${location.coords.longitude}, ${location.coords.latitude}])
-                          .setPopup(new mapboxgl.Popup().setHTML('<b>Your Location</b>'))
-                          .addTo(window.map);
-                      }
-                    `;
-                    webViewRef.current.injectJavaScript(script);
-                  }
-                }
-              } catch (error) {
-                console.log('Error getting location:', error);
-              }
-            }}
           >
-            <Ionicons name="locate" size={20} color="#0A1D37" />
+            <View style={styles.notificationIconContainer}>
+              <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
+              {hasUnreadNotifications && <View style={styles.notificationDot} />}
+            </View>
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Guides Section */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        {/* Map controls overlay */}
+        <TouchableOpacity 
+          style={styles.mapControlButton} 
+          activeOpacity={0.7}
+          onPress={async () => {
+            try {
+              let { status } = await Location.requestForegroundPermissionsAsync();
+              if (status === 'granted') {
+                let location = await Location.getCurrentPositionAsync({});
+                setUserLocation(location);
+                // Update map
+                if (webViewRef.current) {
+                  const script = `
+                    if (window.map) {
+                      window.map.flyTo({
+                        center: [${location.coords.longitude}, ${location.coords.latitude}],
+                        zoom: 13,
+                        duration: 1000
+                      });
+                      new mapboxgl.Marker({ color: '#2196F3' })
+                        .setLngLat([${location.coords.longitude}, ${location.coords.latitude}])
+                        .setPopup(new mapboxgl.Popup().setHTML('<b>Your Location</b>'))
+                        .addTo(window.map);
+                    }
+                  `;
+                  webViewRef.current.injectJavaScript(script);
+                }
+              }
+            } catch (error) {
+              console.log('Error getting location:', error);
+            }
+          }}
+        >
+          <Ionicons name="locate" size={20} color="#0A1D37" />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Bottom Sheet with Guides */}
+      <Animated.View
+        style={[
+          styles.bottomSheet,
+          {
+            height: bottomSheetHeight,
+            top: bottomSheetY,
+          },
+        ]}
       >
-        <Text style={styles.sectionTitle}>Recommended Guides</Text>
-        {isLoading ? (
-          // Show skeleton loaders
-          Array.from({ length: 6 }).map((_, index) => (
-            <TourGuideCardSkeleton key={`skeleton-${index}`} />
-          ))
-        ) : (
-          // Show actual guide cards
-          mockGuides.map((guide) => (
-            <TourGuideCard
-              key={guide.id}
-              guide={guide}
-              onPress={() => handleGuidePress(guide)}
+        {/* Toggle Button */}
+        <TouchableOpacity 
+          style={styles.toggleButton}
+          onPress={toggleBottomSheet}
+          activeOpacity={0.7}
+        >
+          <View style={styles.toggleButtonContainer}>
+            <Ionicons 
+              name={isSheetExpanded ? "chevron-down" : "chevron-up"} 
+              size={24} 
+              color="#0A1D37" 
             />
-          ))
-        )}
-      </ScrollView>
+          </View>
+        </TouchableOpacity>
 
-      <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+        {/* Bottom Sheet Content */}
+        <ScrollView
+          style={styles.bottomSheetContent}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+          bounces={false}
+        >
+          <Text style={styles.sectionTitle}>Recommended Guides</Text>
+          {isLoading ? (
+            // Show skeleton loaders
+            Array.from({ length: 6 }).map((_, index) => (
+              <TourGuideCardSkeleton key={`skeleton-${index}`} />
+            ))
+          ) : (
+            // Show actual guide cards
+            mockGuides.map((guide) => (
+              <TourGuideCard
+                key={guide.id}
+                guide={guide}
+                onPress={() => handleGuidePress(guide)}
+              />
+            ))
+          )}
+        </ScrollView>
+      </Animated.View>
+
+      {/* Bottom NavBar - Always visible */}
+      <View style={styles.bottomNavContainer}>
+        <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+      </View>
     </View>
   );
 };
@@ -375,77 +458,89 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
-  },
-  notificationButton: {
-    padding: 4,
-  },
-  notificationIconContainer: {
-    position: 'relative',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E74C3C',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0A1D37',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 14,
-    color: '#6D6D6D',
-    fontWeight: '400',
-    letterSpacing: 0.3,
+    overflow: 'hidden',
   },
   mapSection: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
-  },
-  mapContainer: {
-    height: 200,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#F0F0F0',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    backgroundColor: '#E8F4F8',
+    zIndex: 1,
   },
   mapView: {
     width: '100%',
     height: '100%',
     backgroundColor: '#E8F4F8',
   },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(10, 29, 55, 0.85)',
+    zIndex: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  notificationButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  notificationIconContainer: {
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E74C3C',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  location: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontWeight: '400',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   mapControlButton: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    bottom: 30,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -454,17 +549,60 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 8,
+    zIndex: 5,
   },
-  scrollView: {
+  bottomSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 15,
+    zIndex: 10,
+  },
+  toggleButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingTop: 12,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#FFFFFF',
+  },
+  toggleButtonContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  bottomSheetContent: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 100,
+    paddingTop: 8,
+    paddingBottom: 20,
+    minHeight: '100%',
   },
   sectionTitle: {
     fontSize: 20,
@@ -472,6 +610,24 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginBottom: 16,
+  },
+  bottomNavContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
 

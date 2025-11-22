@@ -39,21 +39,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E8E8E8',
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 24 : 12,
     paddingHorizontal: 16,
     justifyContent: 'space-around',
     alignItems: 'center',
-    shadowColor: '#0A1D37',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
+    width: '100%',
+    minHeight: Platform.OS === 'ios' ? 80 : 70,
   },
   tab: {
     alignItems: 'center',
