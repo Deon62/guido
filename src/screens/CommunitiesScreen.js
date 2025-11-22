@@ -546,7 +546,10 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name="people" size={24} color="#0A1D37" />
+            <View style={styles.myCommunitiesIconContainer}>
+              <Ionicons name="people" size={24} color="#0A1D37" />
+              <View style={styles.myCommunitiesBadge} />
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.profileButton}
@@ -654,6 +657,20 @@ const styles = StyleSheet.create({
   },
   myCommunitiesButton: {
     padding: 4,
+  },
+  myCommunitiesIconContainer: {
+    position: 'relative',
+  },
+  myCommunitiesBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0A1D37',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   profileButton: {
     padding: 4,
