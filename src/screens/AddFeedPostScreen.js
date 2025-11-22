@@ -25,6 +25,7 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     subCategory: '',
     caption: '',
     images: [],
+    videos: [],
   });
   const [fieldErrors, setFieldErrors] = useState({
     placeName: null,
@@ -33,6 +34,8 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     subCategory: null,
     caption: null,
     images: null,
+    videos: null,
+    media: null,
   });
 
   const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
@@ -92,12 +95,13 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     if (isSubmitting) return;
 
     // Validate all fields
+    const hasMedia = formData.images.length > 0 || formData.videos.length > 0;
     const errors = {
       placeName: validatePlaceName(formData.placeName),
       location: validateLocation(formData.location),
       mainCategory: !formData.mainCategory ? 'Main category is required' : null,
       subCategory: !formData.subCategory ? 'Sub category is required' : null,
-      images: formData.images.length === 0 ? 'At least one image is required' : null,
+      media: !hasMedia ? 'At least one image or video is required' : null,
       caption: validateMaxLength(formData.caption, 500, 'Caption'),
     };
     
@@ -168,14 +172,15 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
       // Request permission
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'We need camera roll permissions to upload images!');
+        Alert.alert('Permission Required', 'We need camera roll permissions to upload media!');
         return;
       }
 
-      // Calculate how many images can still be selected
-      const remainingSlots = 5 - formData.images.length;
+      // Calculate how many images can still be selected (max 5 total media items)
+      const totalMedia = formData.images.length + formData.videos.length;
+      const remainingSlots = 5 - totalMedia;
       if (remainingSlots === 0) {
-        Alert.alert('Maximum Images', 'You can only select up to 5 images');
+        Alert.alert('Maximum Media', 'You can only select up to 5 images or videos total');
         return;
       }
 
@@ -208,12 +213,13 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
           
           setFormData(prev => ({
             ...prev,
-            images: [...prev.images, compressedImage].slice(0, 5), // Ensure max 5 images
+            images: [...prev.images, compressedImage].slice(0, 5),
           }));
           
-          // Clear image error if any
+          // Clear media errors
           setFieldErrors(prev => ({
             ...prev,
+            media: null,
             images: null,
           }));
         } catch (compressionError) {
@@ -231,11 +237,91 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     }
   };
 
+  const handleVideoPick = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'We need camera roll permissions to upload videos!');
+        return;
+      }
+
+      // Calculate how many videos can still be selected (max 5 total media items)
+      const totalMedia = formData.images.length + formData.videos.length;
+      const remainingSlots = 5 - totalMedia;
+      if (remainingSlots === 0) {
+        Alert.alert('Maximum Media', 'You can only select up to 5 images or videos total');
+        return;
+      }
+
+      // Launch video picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: false,
+        videoQuality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const videoAsset = result.assets[0];
+        
+        // Check video duration (15 seconds max)
+        if (videoAsset.duration && videoAsset.duration > 15000) {
+          Alert.alert(
+            'Video Too Long',
+            'Videos must be 15 seconds or shorter. Please select a shorter video.',
+            [{ text: 'OK' }]
+          );
+          triggerHaptic('error');
+          return;
+        }
+        
+        triggerHaptic('light');
+        
+        const videoData = {
+          uri: videoAsset.uri,
+          duration: videoAsset.duration,
+          type: videoAsset.type || 'video',
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          videos: [...prev.videos, videoData].slice(0, 5),
+        }));
+        
+        // Clear media errors
+        setFieldErrors(prev => ({
+          ...prev,
+          media: null,
+          videos: null,
+        }));
+      }
+    } catch (error) {
+      console.error('Error picking video:', error);
+      Alert.alert('Error', 'Error picking video. Please try again.');
+      triggerHaptic('error');
+    }
+  };
+
   const handleRemoveImage = (index) => {
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleRemoveVideo = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== index),
+    }));
+  };
+
+  const formatDuration = (milliseconds) => {
+    if (!milliseconds) return '0:00';
+    const seconds = Math.floor(milliseconds / 1000);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -268,25 +354,60 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
           keyboardDismissMode="on-drag"
         >
           <View style={styles.content}>
-            {/* Image Upload Section */}
-            <View style={styles.imageSection}>
-              <Text style={styles.label}>Images *</Text>
-              <Text style={styles.imageCountText}>
-                {formData.images.length} / 5 images selected
+            {/* Media Upload Section */}
+            <View style={styles.mediaSection}>
+              <Text style={styles.label}>Media *</Text>
+              <Text style={styles.mediaCountText}>
+                {(formData.images.length + formData.videos.length)} / 5 items selected
               </Text>
-              {fieldErrors.images && (
-                <Text style={styles.fieldError}>{fieldErrors.images}</Text>
+              {(fieldErrors.media || fieldErrors.images || fieldErrors.videos) && (
+                <Text style={styles.fieldError}>
+                  {fieldErrors.media || fieldErrors.images || fieldErrors.videos}
+                </Text>
               )}
               
-              {/* Image Previews Grid */}
-              {formData.images.length > 0 && (
-                <View style={styles.imagesGrid}>
+              {/* Media Previews Grid */}
+              {(formData.images.length > 0 || formData.videos.length > 0) && (
+                <View style={styles.mediaGrid}>
+                  {/* Image Previews */}
                   {formData.images.map((image, index) => (
-                    <View key={index} style={styles.imagePreviewWrapper}>
-                      <Image source={image} style={styles.imagePreviewSmall} resizeMode="cover" />
+                    <View key={`img-${index}`} style={styles.mediaPreviewWrapper}>
+                      <Image source={image} style={styles.mediaPreview} resizeMode="cover" />
+                      <View style={styles.mediaTypeBadge}>
+                        <Ionicons name="image" size={12} color="#FFFFFF" />
+                      </View>
                       <TouchableOpacity
-                        style={styles.removeImageButtonSmall}
+                        style={styles.removeMediaButton}
                         onPress={() => handleRemoveImage(index)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="close-circle" size={20} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  
+                  {/* Video Previews */}
+                  {formData.videos.map((video, index) => (
+                    <View key={`vid-${index}`} style={styles.mediaPreviewWrapper}>
+                      <View style={styles.videoPreviewContainer}>
+                        <View style={styles.videoPlaceholder}>
+                          <Ionicons name="videocam" size={32} color="#6D6D6D" />
+                        </View>
+                        <View style={styles.videoOverlay}>
+                          <View style={styles.playButton}>
+                            <Ionicons name="play" size={16} color="#FFFFFF" />
+                          </View>
+                          <Text style={styles.videoDurationText}>
+                            {formatDuration(video.duration)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={[styles.mediaTypeBadge, styles.videoBadge]}>
+                        <Ionicons name="videocam" size={12} color="#FFFFFF" />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.removeMediaButton}
+                        onPress={() => handleRemoveVideo(index)}
                         activeOpacity={0.8}
                       >
                         <Ionicons name="close-circle" size={20} color="#FFFFFF" />
@@ -296,39 +417,40 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                 </View>
               )}
 
-              {/* Add Image Button */}
-              {formData.images.length < 5 && (
-                <TouchableOpacity
-                  style={styles.imageUploadButton}
-                  onPress={handleImagePick}
-                  activeOpacity={0.8}
-                  disabled={isCompressing}
-                >
-                  {isCompressing ? (
-                    <View style={styles.compressingContainer}>
-                      <ActivityIndicator size="large" color="#0A1D37" />
-                      <Text style={styles.compressingText}>Compressing image...</Text>
-                      {compressionProgress.total > 0 && (
-                        <Text style={styles.compressingProgress}>
-                          {compressionProgress.current} / {compressionProgress.total}
-                        </Text>
-                      )}
-                    </View>
-                  ) : (
-                    <>
-                      <Ionicons name="camera" size={32} color="#6D6D6D" />
-                      <Text style={styles.imageUploadText}>
-                        {formData.images.length === 0 ? 'Add Photos' : 'Add More Photos'}
-                      </Text>
-                      <Text style={styles.imageUploadSubtext}>
-                        {formData.images.length === 0 
-                          ? 'Tap to upload images (up to 5)' 
-                          : `Add ${5 - formData.images.length} more image${5 - formData.images.length > 1 ? 's' : ''}`
-                        }
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+              {/* Add Media Buttons */}
+              {(formData.images.length + formData.videos.length) < 5 && (
+                <View style={styles.mediaUploadContainer}>
+                  <TouchableOpacity
+                    style={[styles.mediaUploadButton, styles.imageUploadButton]}
+                    onPress={handleImagePick}
+                    activeOpacity={0.8}
+                    disabled={isCompressing}
+                  >
+                    {isCompressing ? (
+                      <View style={styles.compressingContainer}>
+                        <ActivityIndicator size="small" color="#0A1D37" />
+                        <Text style={styles.compressingText}>Compressing...</Text>
+                      </View>
+                    ) : (
+                      <>
+                        <Ionicons name="camera" size={24} color="#0A1D37" />
+                        <Text style={styles.mediaUploadText}>Add Photos</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.mediaUploadButton, styles.videoUploadButton]}
+                    onPress={handleVideoPick}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="videocam" size={24} color="#FFFFFF" />
+                    <Text style={[styles.mediaUploadText, styles.videoUploadTextStyle]}>
+                      Add Video
+                    </Text>
+                    <Text style={styles.videoLimitText}>Max 15 seconds</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
 
@@ -606,22 +728,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
   },
-  imageSection: {
+  mediaSection: {
     marginBottom: 24,
   },
-  imageCountText: {
+  mediaCountText: {
     fontSize: 12,
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     marginBottom: 12,
   },
-  imagesGrid: {
+  mediaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: 12,
     marginHorizontal: -6,
   },
-  imagePreviewWrapper: {
+  mediaPreviewWrapper: {
     width: '18.5%',
     aspectRatio: 1,
     borderRadius: 8,
@@ -632,20 +754,78 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
     marginBottom: 12,
   },
-  imagePreviewSmall: {
+  mediaPreview: {
     width: '100%',
     height: '100%',
   },
-  removeImageButtonSmall: {
+  removeMediaButton: {
     position: 'absolute',
     top: 4,
     right: 4,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 10,
+    zIndex: 2,
   },
-  imageUploadButton: {
+  mediaTypeBadge: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    backgroundColor: 'rgba(10, 29, 55, 0.8)',
+    borderRadius: 4,
+    padding: 4,
+    zIndex: 2,
+  },
+  videoBadge: {
+    backgroundColor: 'rgba(231, 76, 60, 0.8)',
+  },
+  videoPreviewContainer: {
     width: '100%',
-    height: 120,
+    height: '100%',
+    backgroundColor: '#F7F7F7',
+    position: 'relative',
+  },
+  videoPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E8E8E8',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  playButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  videoDurationText: {
+    fontSize: 11,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  mediaUploadContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  mediaUploadButton: {
+    flex: 1,
+    height: 100,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     justifyContent: 'center',
@@ -654,18 +834,29 @@ const styles = StyleSheet.create({
     borderColor: '#E8E8E8',
     borderStyle: 'dashed',
   },
-  imageUploadText: {
-    fontSize: 14,
+  imageUploadButton: {
+    borderColor: '#E8E8E8',
+  },
+  videoUploadButton: {
+    backgroundColor: '#0A1D37',
+    borderColor: '#0A1D37',
+    borderStyle: 'solid',
+  },
+  mediaUploadText: {
+    fontSize: 13,
     fontFamily: FONTS.semiBold,
     color: '#0A1D37',
-    marginTop: 8,
+    marginTop: 6,
     letterSpacing: 0.3,
   },
-  imageUploadSubtext: {
-    fontSize: 12,
+  videoUploadTextStyle: {
+    color: '#FFFFFF',
+  },
+  videoLimitText: {
+    fontSize: 10,
     fontFamily: FONTS.regular,
-    color: '#6D6D6D',
-    marginTop: 4,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
     letterSpacing: 0.2,
   },
   inputGroup: {
