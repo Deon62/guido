@@ -481,7 +481,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
           nestedScrollEnabled={true}
           bounces={false}
         >
-          <Text style={styles.sectionTitle}>Places</Text>
+          <Text style={styles.sectionTitle}>Top Discoveries</Text>
           {isLoading ? (
             // Show skeleton loaders
             Array.from({ length: 6 }).map((_, index) => (
