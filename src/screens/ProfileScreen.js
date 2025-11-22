@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
-export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, user: userProp, hideBottomNav = false }) => {
+export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -123,12 +123,72 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
         {/* Streaks Section */}
         <View style={styles.streaksSection}>
           <View style={styles.streakCard}>
-            <Ionicons name="flame" size={24} color="#FF6B6B" />
+            <Ionicons name="flame" size={18} color="#FF6B6B" />
             <View style={styles.streakInfo}>
               <Text style={styles.streakNumber}>12</Text>
               <Text style={styles.streakLabel}>Day Streak</Text>
             </View>
           </View>
+        </View>
+
+        {/* My Posts Section */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>My Posts</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              if (onMyPostsPress) {
+                onMyPostsPress();
+              } else {
+                console.log('My Posts');
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color="#0A1D37"
+              />
+              <Text style={styles.menuItemText}>View all posts</Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color="#6D6D6D"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* My Communities Section */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>My Communities</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              if (onMyCommunitiesPress) {
+                onMyCommunitiesPress();
+              } else {
+                console.log('My Communities');
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons
+                name="people-outline"
+                size={22}
+                color="#0A1D37"
+              />
+              <Text style={styles.menuItemText}>View joined communities</Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color="#6D6D6D"
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Personal Info Section */}
@@ -280,7 +340,7 @@ const styles = StyleSheet.create({
   },
   streaksSection: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 20,
+    paddingVertical: 12,
     paddingHorizontal: 24,
     marginBottom: 16,
   },
@@ -288,22 +348,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF5F5',
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#FFE5E5',
   },
   streakInfo: {
-    marginLeft: 16,
+    marginLeft: 12,
   },
   streakNumber: {
-    fontSize: 24,
+    fontSize: 18,
     fontFamily: FONTS.bold,
     color: '#FF6B6B',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   streakLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     letterSpacing: 0.2,

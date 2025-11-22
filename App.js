@@ -15,6 +15,8 @@ import { AddFeedPostSuccessScreen } from './src/screens/AddFeedPostSuccessScreen
 import { ChatScreen } from './src/screens/ChatScreen';
 import { CommunitiesScreen } from './src/screens/CommunitiesScreen';
 import { PostDetailScreen } from './src/screens/PostDetailScreen';
+import { MyPostsScreen } from './src/screens/MyPostsScreen';
+import { MyCommunitiesScreen } from './src/screens/MyCommunitiesScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
@@ -63,6 +65,8 @@ export default function App() {
   const [savedFeedPostData, setSavedFeedPostData] = useState(null);
   const [showPostDetail, setShowPostDetail] = useState(false);
   const [selectedPostData, setSelectedPostData] = useState(null);
+  const [showMyPosts, setShowMyPosts] = useState(false);
+  const [showMyCommunities, setShowMyCommunities] = useState(false);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -77,7 +81,11 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showPostDetail) {
+    if (showMyCommunities) {
+      setShowMyCommunities(false);
+    } else if (showMyPosts) {
+      setShowMyPosts(false);
+    } else if (showPostDetail) {
       setShowPostDetail(false);
       setSelectedPostData(null);
     } else if (showAddFeedPostSuccess) {
@@ -185,6 +193,22 @@ export default function App() {
         comments: [...(selectedPostData.comments || []), comment],
       });
     }
+  };
+
+  const handleMyPostsPress = () => {
+    setShowMyPosts(true);
+  };
+
+  const handleMyCommunitiesPress = () => {
+    setShowMyCommunities(true);
+  };
+
+  const handleMyCommunitiesCommunityPress = (communityId) => {
+    // Navigate to communities screen with the selected community
+    setShowMyCommunities(false);
+    setActiveTab('communities');
+    // Note: In a real app, you'd want to pass the community ID to CommunitiesScreen
+    // to auto-select it. For now, just navigate to communities tab.
   };
 
   const handleAddFeedPostSave = (postData) => {
@@ -514,6 +538,26 @@ export default function App() {
     );
   }
 
+  // Show my communities screen
+  if (showMyCommunities) {
+    return (
+      <MyCommunitiesScreen
+        onBack={handleBack}
+        onCommunityPress={handleMyCommunitiesCommunityPress}
+      />
+    );
+  }
+
+  // Show my posts screen
+  if (showMyPosts) {
+    return (
+      <MyPostsScreen
+        onBack={handleBack}
+        onPostPress={handlePostDetailPress}
+      />
+    );
+  }
+
   // Show post detail screen
   if (showPostDetail && selectedPostData) {
     return (
@@ -550,6 +594,8 @@ export default function App() {
           onEditProfilePress={handleEditProfilePress}
           onLogoutPress={handleLogoutPress}
           onProfilePicturePress={() => handleProfilePicturePress('profile')}
+          onMyPostsPress={handleMyPostsPress}
+          onMyCommunitiesPress={handleMyCommunitiesPress}
           user={userData}
         />
         
