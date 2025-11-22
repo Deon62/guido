@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { FONTS } from '../constants/fonts';
 
 export const GuideTabSelector = ({ tabs, activeTab, onTabChange }) => {
   return (
@@ -49,13 +50,15 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
+    fontFamily: FONTS.regular,
     fontWeight: '500',
     color: '#6D6D6D',
     letterSpacing: 0.3,
   },
   tabTextActive: {
-    color: '#0A1D37',
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
+    color: '#0A1D37',
   },
   indicator: {
     position: 'absolute',

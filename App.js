@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Alert } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { LandingScreen } from './src/screens/LandingScreen';
 import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -33,6 +35,12 @@ import { GuideVerificationScreen } from './src/screens/GuideVerificationScreen';
 import { GuideBottomNavBar } from './src/components/GuideBottomNavBar';
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+  });
+
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [selectedCity, setSelectedCity] = useState(null);
   const [activeTab, setActiveTab] = useState('home');
@@ -339,6 +347,11 @@ export default function App() {
   const handleSettingsPress = () => {
     setShowSettings(true);
   };
+
+  // Wait for fonts to load before rendering
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const handleHelpSupportPress = () => {
     setShowHelpSupport(true);

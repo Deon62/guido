@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { TourGuideCard } from '../components/TourGuideCard';
 import { TourGuideCardSkeleton } from '../components/TourGuideCardSkeleton';
 import { BottomNavBar } from '../components/BottomNavBar';
+import { FONTS } from '../constants/fonts';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BOTTOM_NAVBAR_HEIGHT = Platform.OS === 'ios' ? 80 : 70; // Approximate height of bottom navbar
@@ -517,6 +518,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 24,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.5,
@@ -527,8 +529,9 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontFamily: FONTS.regular,
     fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: 0.3,
     textShadowColor: 'rgba(0, 0, 0, 0.2)',
     textShadowOffset: { width: 0, height: 1 },
@@ -606,6 +609,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,

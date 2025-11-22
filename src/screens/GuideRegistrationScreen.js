@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { FONTS } from '../constants/fonts';
 
 export const GuideRegistrationScreen = ({ onBack, onSubmit }) => {
   // Get safe area insets
@@ -379,6 +380,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -398,6 +400,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
@@ -429,6 +432,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
@@ -450,6 +454,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#1A1A1A',
     letterSpacing: 0.2,
     padding: 0,
@@ -484,6 +490,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 15,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.6,
@@ -513,6 +520,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     fontSize: 15,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#F7F7F7',
     letterSpacing: 0.6,
@@ -552,10 +560,13 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     fontSize: 15,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#1A1A1A',
     letterSpacing: 0.2,
   },
   dropdownItemTextSelected: {
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#0A1D37',
   },

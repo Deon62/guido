@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, Image, Platform, StatusBar as RNStatusBar } fro
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '../components/Button';
 import { WaveDivider } from '../components/WaveDivider';
+import { FONTS } from '../constants/fonts';
 
 export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
   const handleRegisterAsGuide = () => {
     if (onRegisterAsGuide) {
       onRegisterAsGuide();
     } else {
-      console.log('Register as guide pressed');
+      console.log('Continue as guide pressed');
     }
   };
 
@@ -106,10 +107,11 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 20,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#3A3A3A',
     textAlign: 'center',
     lineHeight: 28,
-    fontWeight: '400',
     letterSpacing: 0.3,
     marginTop: 10,
   },

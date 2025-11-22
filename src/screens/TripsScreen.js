@@ -6,6 +6,7 @@ import { TripCard } from '../components/TripCard';
 import { TripCardSkeleton } from '../components/TripCardSkeleton';
 import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
+import { FONTS } from '../constants/fonts';
 
 export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress }) => {
   const [selectedTab, setSelectedTab] = useState('upcoming');
@@ -217,6 +218,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -237,6 +239,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 8,
@@ -244,6 +247,8 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     textAlign: 'center',
     letterSpacing: 0.2,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { FONTS } from '../constants/fonts';
 
 export const Button = ({ title, onPress, variant = 'primary' }) => {
   const isPrimary = variant === 'primary';
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 15,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     letterSpacing: 0.6,
   },

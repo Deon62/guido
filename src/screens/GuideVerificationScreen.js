@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image,
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { FONTS } from '../constants/fonts';
 
 export const GuideVerificationScreen = ({ onBack, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -271,6 +272,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
@@ -299,6 +301,8 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#0A1D37',
     marginLeft: 12,
     letterSpacing: 0.2,
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 8,
@@ -330,6 +335,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#1A1A1A',
     paddingVertical: 14,
     letterSpacing: 0.2,

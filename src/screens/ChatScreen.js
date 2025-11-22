@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platfo
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ChatBubble } from '../components/ChatBubble';
+import { FONTS } from '../constants/fonts';
 
 export const ChatScreen = ({ message, onBack, onCall }) => {
   const [inputText, setInputText] = useState('');
@@ -157,6 +158,7 @@ const styles = StyleSheet.create({
   },
   headerName: {
     fontSize: 18,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
@@ -164,6 +166,8 @@ const styles = StyleSheet.create({
   },
   headerStatus: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -190,6 +194,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#1A1A1A',
     letterSpacing: 0.2,
     maxHeight: 100,

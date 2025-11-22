@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Platform, StatusBar as RNStatusBar 
 import { StatusBar } from 'expo-status-bar';
 import { MessageCard } from '../components/MessageCard';
 import { BottomNavBar } from '../components/BottomNavBar';
+import { FONTS } from '../constants/fonts';
 
 export const MessagesScreen = ({ activeTab = 'messages', onTabChange, onMessagePress, hideBottomNav = false }) => {
   // Get safe area insets
@@ -119,6 +120,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -139,6 +141,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 8,
@@ -146,6 +149,8 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     textAlign: 'center',
     letterSpacing: 0.2,

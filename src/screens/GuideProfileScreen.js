@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, 
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { GuideBottomNavBar } from '../components/GuideBottomNavBar';
+import { FONTS } from '../constants/fonts';
 
 export const GuideProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onGetBadgePress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
@@ -217,6 +218,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -271,6 +273,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 24,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.5,
@@ -278,6 +281,8 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.3,
   },

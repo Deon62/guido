@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, 
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { FONTS } from '../constants/fonts';
 
 export const GuideBookingDetailsScreen = ({ booking, onBack, onAccept, onReject }) => {
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
@@ -200,6 +201,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
@@ -219,6 +221,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
@@ -251,6 +254,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 18,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.3,

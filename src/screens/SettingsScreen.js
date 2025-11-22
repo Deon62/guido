@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, 
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { FONTS } from '../constants/fonts';
 
 export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPreferencesPress, onLanguagePress, onDeleteAccountPress }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -144,6 +145,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -179,6 +181,7 @@ const styles = StyleSheet.create({
   },
   settingsItemText: {
     fontSize: 15,
+    fontFamily: FONTS.regular,
     fontWeight: '500',
     color: '#1A1A1A',
     marginLeft: 16,

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { CityCard } from '../components/CityCard';
 import { CityCardSkeleton } from '../components/CityCardSkeleton';
+import { FONTS } from '../constants/fonts';
 
 export const CitySelectionScreen = ({ onCitySelect, onBack }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -157,6 +158,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -164,8 +166,9 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#6D6D6D',
+    fontFamily: FONTS.regular,
     fontWeight: '400',
+    color: '#6D6D6D',
     letterSpacing: 0.3,
     marginBottom: 16,
   },
@@ -185,6 +188,8 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#1A1A1A',
     letterSpacing: 0.2,
     padding: 0,

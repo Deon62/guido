@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FONTS } from '../constants/fonts';
 
 export const MessageCard = ({ message, onPress }) => {
   const formatTime = (timestamp) => {
@@ -86,6 +87,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 15,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
@@ -99,6 +101,8 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 11,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -109,14 +113,17 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     flex: 1,
     marginRight: 8,
   },
   messageTextUnread: {
-    color: '#1A1A1A',
+    fontFamily: FONTS.regular,
     fontWeight: '500',
+    color: '#1A1A1A',
   },
   unreadBadge: {
     backgroundColor: '#0A1D37',
@@ -129,6 +136,7 @@ const styles = StyleSheet.create({
   },
   unreadCount: {
     fontSize: 11,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#F7F7F7',
   },

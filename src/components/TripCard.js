@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FONTS } from '../constants/fonts';
 
 export const TripCard = ({ trip, onPress, onRatePress }) => {
   const getStatusColor = (status) => {
@@ -123,6 +124,7 @@ const styles = StyleSheet.create({
   },
   guideName: {
     fontSize: 15,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
@@ -136,11 +138,14 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     letterSpacing: 0.3,
   },
   tourType: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#3A3A3A',
     marginBottom: 6,
     letterSpacing: 0.2,
@@ -158,6 +163,8 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 11,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -168,6 +175,8 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 11,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -185,6 +194,7 @@ const styles = StyleSheet.create({
   },
   rateButtonText: {
     fontSize: 12,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#0A1D37',
     marginLeft: 6,

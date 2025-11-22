@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar as RNStat
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
+import { FONTS } from '../constants/fonts';
 
 export const BookingSuccessScreen = ({ guide, bookingOption, onBack }) => {
   // Get safe area insets
@@ -113,6 +114,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 28,
+    fontFamily: FONTS.bold,
     fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
@@ -121,6 +123,8 @@ const styles = StyleSheet.create({
   },
   successMessage: {
     fontSize: 16,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
     lineHeight: 24,
@@ -155,12 +159,15 @@ const styles = StyleSheet.create({
   },
   guideInfoLabel: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     marginBottom: 4,
   },
   guideInfoText: {
     fontSize: 16,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.3,
@@ -176,6 +183,8 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     lineHeight: 20,

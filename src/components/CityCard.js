@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { FONTS } from '../constants/fonts';
 
 export const CityCard = ({ city, country, image, onPress }) => {
   return (
@@ -60,6 +61,7 @@ const styles = StyleSheet.create({
   },
   cityName: {
     fontSize: 16,
+    fontFamily: FONTS.semiBold,
     fontWeight: '600',
     color: '#F7F7F7',
     letterSpacing: 0.5,
@@ -67,6 +69,8 @@ const styles = StyleSheet.create({
   },
   countryName: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontWeight: '400',
     color: '#F7F7F7',
     opacity: 0.9,
     letterSpacing: 0.3,
