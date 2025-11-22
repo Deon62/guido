@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { TripCard } from '../components/TripCard';
-import { TripCardSkeleton } from '../components/TripCardSkeleton';
+import { PlaceCard } from '../components/PlaceCard';
+import { PlaceCardSkeleton } from '../components/PlaceCardSkeleton';
 import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
 export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress }) => {
-  const [selectedTab, setSelectedTab] = useState('upcoming');
+  const [selectedTab, setSelectedTab] = useState('wishlist');
   const [isLoading, setIsLoading] = useState(true);
   const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
   
@@ -26,81 +26,96 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
     loadTrips();
   }, []);
 
-  // Mock trip data
+  // Mock trip data with places
   const allTrips = [
-    // Upcoming trips
+    // Wishlist trips (places user wants to visit)
     {
       id: '1',
-      guideName: 'Sarah Johnson',
-      guideAvatar: { uri: 'https://i.pravatar.cc/150?img=1' },
-      tourType: 'Historical Tours & Culture',
+      placeName: 'Eiffel Tower',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400' },
+      category: 'Landmarks',
       location: 'Paris, France',
-      date: 'Dec 25, 2024',
-      time: '10:00 AM',
-      status: 'upcoming',
+      date: 'Planning for Dec 25, 2024',
+      status: 'wishlist',
     },
     {
       id: '2',
-      guideName: 'Michael Chen',
-      guideAvatar: { uri: 'https://i.pravatar.cc/150?img=2' },
-      tourType: 'Food & Local Cuisine',
-      location: 'Munich, Germany',
-      date: 'Dec 28, 2024',
-      time: '2:00 PM',
-      status: 'upcoming',
+      placeName: 'Hotel Ritz Paris',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400' },
+      category: 'Hotels',
+      location: 'Paris, France',
+      date: 'Planning for Jan 2025',
+      status: 'wishlist',
     },
     {
       id: '3',
-      guideName: 'Emma Williams',
-      guideAvatar: { uri: 'https://i.pravatar.cc/150?img=3' },
-      tourType: 'Art & Architecture',
-      location: 'Berlin, Germany',
-      date: 'Jan 5, 2025',
-      time: '11:00 AM',
-      status: 'scheduled',
+      placeName: 'Luxembourg Gardens',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400' },
+      category: 'Nature',
+      location: 'Paris, France',
+      date: 'Planning for Spring 2025',
+      status: 'wishlist',
     },
     // Active trips
     {
       id: '4',
-      guideName: 'David Martinez',
-      guideAvatar: { uri: 'https://i.pravatar.cc/150?img=4' },
-      tourType: 'Nightlife & Entertainment',
-      location: 'New York, USA',
+      placeName: 'Notre-Dame Cathedral',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=400' },
+      category: 'Landmarks',
+      location: 'Paris, France',
       date: 'Today',
-      time: '6:00 PM',
+      time: 'Visiting now',
+      status: 'active',
+    },
+    {
+      id: '5',
+      placeName: 'Café de Flore',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400' },
+      category: 'Cafes',
+      location: 'Paris, France',
+      date: 'Today',
+      time: '2:00 PM',
       status: 'active',
     },
     // Past trips
     {
-      id: '5',
-      guideName: 'Lisa Anderson',
-      guideAvatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-      tourType: 'Nature & Outdoor',
-      location: 'Nairobi, Kenya',
+      id: '6',
+      placeName: 'Arc de Triomphe',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=400' },
+      category: 'Landmarks',
+      location: 'Paris, France',
       date: 'Dec 15, 2024',
       status: 'past',
     },
     {
-      id: '6',
-      guideName: 'James Wilson',
-      guideAvatar: { uri: 'https://i.pravatar.cc/150?img=6' },
-      tourType: 'Photography Tours',
-      location: 'Mombasa, Kenya',
+      id: '7',
+      placeName: 'Bois de Vincennes',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400' },
+      category: 'Nature',
+      location: 'Paris, France',
       date: 'Dec 10, 2024',
+      status: 'past',
+    },
+    {
+      id: '8',
+      placeName: 'Les Deux Magots',
+      placeImage: { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400' },
+      category: 'Cafes',
+      location: 'Paris, France',
+      date: 'Nov 28, 2024',
       status: 'past',
     },
   ];
 
   const tabs = [
-    { id: 'upcoming', label: 'Upcoming' },
+    { id: 'wishlist', label: 'Wishlist' },
     { id: 'active', label: 'Active' },
     { id: 'past', label: 'Past' },
-    { id: 'scheduled', label: 'Schedule' },
   ];
 
   const getFilteredTrips = () => {
-    if (selectedTab === 'scheduled') {
-      return allTrips.filter(trip => trip.status === 'scheduled');
+    if (selectedTab === 'wishlist') {
+      return allTrips.filter(trip => trip.status === 'wishlist');
     }
     return allTrips.filter(trip => trip.status === selectedTab);
   };
@@ -153,16 +168,23 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         {isLoading ? (
           // Show skeleton loaders
           Array.from({ length: 4 }).map((_, index) => (
-            <TripCardSkeleton key={`skeleton-${index}`} />
+            <PlaceCardSkeleton key={`skeleton-${index}`} />
           ))
         ) : filteredTrips.length > 0 ? (
-          // Show actual trip cards
+          // Show actual place cards
           filteredTrips.map((trip) => (
-            <TripCard
+            <PlaceCard
               key={trip.id}
-              trip={trip}
+              place={{
+                id: trip.id,
+                name: trip.placeName,
+                category: trip.category,
+                address: trip.location,
+                distance: trip.date,
+                description: trip.time || trip.date,
+                image: trip.placeImage,
+              }}
               onPress={() => handleTripPress(trip)}
-              onRatePress={handleRatePress}
             />
           ))
         ) : (
@@ -170,14 +192,27 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No {selectedTab} trips</Text>
             <Text style={styles.emptySubtext}>
-              {selectedTab === 'upcoming' && 'You have no upcoming trips scheduled'}
+              {selectedTab === 'wishlist' && 'You have no places in your wishlist yet'}
               {selectedTab === 'active' && 'You have no active trips right now'}
               {selectedTab === 'past' && 'You have no past trips yet'}
-              {selectedTab === 'scheduled' && 'You have no scheduled trips'}
             </Text>
           </View>
         )}
       </ScrollView>
+
+      {/* Floating Action Button - Only show on Past trips tab */}
+      {selectedTab === 'past' && (
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => {
+            console.log('Add trip pressed');
+            // TODO: Navigate to add trip screen
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
 
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
     </View>
@@ -249,6 +284,26 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     textAlign: 'center',
     letterSpacing: 0.2,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0A1D37',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 20,
   },
 });
 

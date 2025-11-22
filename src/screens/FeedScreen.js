@@ -1,0 +1,403 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import { BottomNavBar } from '../components/BottomNavBar';
+import { FONTS } from '../constants/fonts';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const HEADER_HEIGHT = 80; // Approximate header height
+const BOTTOM_NAV_HEIGHT = 80; // Approximate bottom nav height
+const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full visible height
+
+export const FeedScreen = ({ activeTab = 'feed', onTabChange }) => {
+  const [likedPosts, setLikedPosts] = useState(new Set());
+  const [savedPosts, setSavedPosts] = useState(new Set());
+
+  // Get safe area insets
+  const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+
+  // Mock feed posts data
+  const feedPosts = [
+    {
+      id: '1',
+      user: {
+        name: 'Travel Explorer',
+        avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
+      },
+      place: {
+        name: 'Eiffel Tower',
+        location: 'Paris, France',
+        category: 'Landmarks',
+      },
+      image: { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
+      caption: 'The iconic Eiffel Tower at sunset! 🌅 A must-visit when in Paris. The view from the top is absolutely breathtaking!',
+      likes: 1247,
+      comments: 89,
+      timestamp: '2 hours ago',
+    },
+    {
+      id: '2',
+      user: {
+        name: 'Wanderlust Sarah',
+        avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
+      },
+      place: {
+        name: 'Café de Flore',
+        location: 'Paris, France',
+        category: 'Cafes',
+      },
+      image: { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
+      caption: 'Morning coffee at this historic café. The atmosphere is incredible! ☕️',
+      likes: 892,
+      comments: 45,
+      timestamp: '5 hours ago',
+    },
+    {
+      id: '3',
+      user: {
+        name: 'Nature Lover',
+        avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
+      },
+      place: {
+        name: 'Luxembourg Gardens',
+        location: 'Paris, France',
+        category: 'Nature',
+      },
+      image: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
+      caption: 'Perfect spot for a peaceful afternoon walk. The gardens are so well maintained! 🌳',
+      likes: 634,
+      comments: 23,
+      timestamp: '1 day ago',
+    },
+    {
+      id: '4',
+      user: {
+        name: 'City Explorer',
+        avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
+      },
+      place: {
+        name: 'Notre-Dame Cathedral',
+        location: 'Paris, France',
+        category: 'Landmarks',
+      },
+      image: { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
+      caption: 'The architecture here is simply stunning. Every detail tells a story! 🏛️',
+      likes: 1456,
+      comments: 112,
+      timestamp: '2 days ago',
+    },
+    {
+      id: '5',
+      user: {
+        name: 'Foodie Travels',
+        avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
+      },
+      place: {
+        name: 'Hotel Ritz Paris',
+        location: 'Paris, France',
+        category: 'Hotels',
+      },
+      image: { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' },
+      caption: 'Luxury at its finest! The service here is impeccable. Highly recommend! ✨',
+      likes: 987,
+      comments: 67,
+      timestamp: '3 days ago',
+    },
+  ];
+
+  const handleLike = (postId) => {
+    setLikedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSave = (postId) => {
+    setSavedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleShare = (post) => {
+    console.log('Share post:', post.id);
+    // TODO: Implement share functionality
+  };
+
+  const getCategoryColor = (category) => {
+    switch (category.toLowerCase()) {
+      case 'landmark':
+      case 'landmarks':
+        return '#FF6B6B';
+      case 'hotel':
+      case 'hotels':
+        return '#4ECDC4';
+      case 'cafe':
+      case 'cafes':
+        return '#FFE66D';
+      case 'nature':
+        return '#95E1D3';
+      default:
+        return '#6D6D6D';
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
+        <Text style={styles.title}>Feed</Text>
+      </View>
+
+      {/* Feed ScrollView */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        snapToInterval={CARD_HEIGHT + 8}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        bounces={true}
+      >
+        {feedPosts.map((post) => (
+          <View key={post.id} style={styles.postCard}>
+            {/* Post Header */}
+            <View style={styles.postHeader}>
+              <View style={styles.userInfo}>
+                <Image source={post.user.avatar} style={styles.avatar} />
+                <View style={styles.userDetails}>
+                  <Text style={styles.userName}>{post.user.name}</Text>
+                  <View style={styles.placeInfo}>
+                    <Ionicons name="location" size={12} color="#6D6D6D" />
+                    <Text style={styles.placeName}>{post.place.name}</Text>
+                    <View style={[styles.categoryTag, { backgroundColor: `${getCategoryColor(post.place.category)}20` }]}>
+                      <Text style={[styles.categoryText, { color: getCategoryColor(post.place.category) }]}>
+                        {post.place.category}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+              <TouchableOpacity>
+                <Ionicons name="ellipsis-horizontal" size={20} color="#1A1A1A" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Post Image */}
+            <Image source={post.image} style={styles.postImage} resizeMode="cover" />
+
+            {/* Post Actions */}
+            <View style={styles.postActions}>
+              <View style={styles.leftActions}>
+                <TouchableOpacity
+                  onPress={() => handleLike(post.id)}
+                  style={styles.actionButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={likedPosts.has(post.id) ? 'heart' : 'heart-outline'}
+                    size={28}
+                    color={likedPosts.has(post.id) ? '#E74C3C' : '#1A1A1A'}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+                  <Ionicons name="chatbubble-outline" size={26} color="#1A1A1A" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleShare(post)}
+                  style={styles.actionButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="paper-plane-outline" size={26} color="#1A1A1A" />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleSave(post.id)}
+                style={styles.actionButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={savedPosts.has(post.id) ? 'bookmark' : 'bookmark-outline'}
+                  size={26}
+                  color={savedPosts.has(post.id) ? '#0A1D37' : '#1A1A1A'}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Post Stats */}
+            <View style={styles.postStats}>
+              <Text style={styles.likesText}>
+                {likedPosts.has(post.id) ? post.likes + 1 : post.likes} likes
+              </Text>
+              <Text style={styles.commentsText}>{post.comments} comments</Text>
+            </View>
+
+            {/* Post Caption */}
+            <View style={styles.postCaption}>
+              <Text style={styles.captionText}>
+                <Text style={styles.captionUserName}>{post.user.name}</Text>
+                {' '}
+                {post.caption}
+              </Text>
+            </View>
+
+            {/* Post Timestamp */}
+            <Text style={styles.timestamp}>{post.timestamp}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+    zIndex: 10,
+  },
+  title: {
+    fontSize: 28,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    letterSpacing: 0.5,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  postCard: {
+    height: CARD_HEIGHT,
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  postHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 14,
+    fontFamily: FONTS.semiBold,
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  placeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  placeName: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginLeft: 4,
+    marginRight: 6,
+  },
+  categoryTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  categoryText: {
+    fontSize: 10,
+    fontFamily: FONTS.semiBold,
+  },
+  postImage: {
+    width: '100%',
+    height: CARD_HEIGHT * 0.65,
+    backgroundColor: '#E8E8E8',
+  },
+  postActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  leftActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButton: {
+    marginRight: 16,
+    padding: 4,
+  },
+  postStats: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  likesText: {
+    fontSize: 14,
+    fontFamily: FONTS.semiBold,
+    color: '#1A1A1A',
+    marginRight: 16,
+  },
+  commentsText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+  },
+  postCaption: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  captionText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#1A1A1A',
+    lineHeight: 20,
+  },
+  captionUserName: {
+    fontFamily: FONTS.semiBold,
+  },
+  timestamp: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+});
+

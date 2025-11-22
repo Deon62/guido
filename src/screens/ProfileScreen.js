@@ -118,19 +118,22 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           </View>
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.email}>{user.email}</Text>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={18} color="#FFB800" />
-            <Text style={styles.ratingText}>4.9</Text>
+        </View>
+
+        {/* Streaks Section */}
+        <View style={styles.streaksSection}>
+          <View style={styles.streakCard}>
+            <Ionicons name="flame" size={24} color="#FF6B6B" />
+            <View style={styles.streakInfo}>
+              <Text style={styles.streakNumber}>12</Text>
+              <Text style={styles.streakLabel}>Day Streak</Text>
+            </View>
           </View>
         </View>
 
         {/* Personal Info Section */}
         <View style={styles.infoSection}>
           <Text style={styles.sectionTitle}>Personal Info</Text>
-          <View style={styles.infoRow}>
-            <Ionicons name="call-outline" size={18} color="#6D6D6D" />
-            <Text style={styles.infoText}>{user.phone}</Text>
-          </View>
           <View style={styles.infoRow}>
             <Ionicons name="location-outline" size={18} color="#6D6D6D" />
             <Text style={styles.infoText}>{user.location}</Text>
@@ -274,19 +277,37 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     letterSpacing: 0.3,
-    marginBottom: 8,
   },
-  ratingContainer: {
+  streaksSection: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  streakCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    backgroundColor: '#FFF5F5',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
   },
-  ratingText: {
-    fontSize: 16,
-    fontFamily: FONTS.semiBold,
-    color: '#1A1A1A',
-    marginLeft: 6,
-    letterSpacing: 0.3,
+  streakInfo: {
+    marginLeft: 16,
+  },
+  streakNumber: {
+    fontSize: 24,
+    fontFamily: FONTS.bold,
+    color: '#FF6B6B',
+    letterSpacing: 0.5,
+  },
+  streakLabel: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    letterSpacing: 0.2,
+    marginTop: 2,
   },
   infoSection: {
     backgroundColor: '#FFFFFF',

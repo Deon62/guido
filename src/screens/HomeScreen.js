@@ -4,8 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
-import { TourGuideCard } from '../components/TourGuideCard';
-import { TourGuideCardSkeleton } from '../components/TourGuideCardSkeleton';
+import { PlaceCard } from '../components/PlaceCard';
+import { PlaceCardSkeleton } from '../components/PlaceCardSkeleton';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
@@ -15,7 +15,7 @@ const BOTTOM_SHEET_MIN_HEIGHT = 120; // Minimum visible height when collapsed
 const HEADER_HEIGHT = 100; // Approximate height for header
 const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT - BOTTOM_NAVBAR_HEIGHT - HEADER_HEIGHT; // Maximum height when expanded (leaving space for header)
 
-export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress, onGuidePress }) => {
+export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNotificationsPress, onPlacePress }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
   const [userLocation, setUserLocation] = useState(null);
@@ -98,19 +98,19 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
 
   // Generate Mapbox HTML
   const getMapHTML = () => {
-    const defaultLat = userLocation?.coords?.latitude || selectedCity?.latitude || 40.7128;
-    const defaultLng = userLocation?.coords?.longitude || selectedCity?.longitude || -74.0060;
+    const defaultLat = userLocation?.coords?.latitude || selectedCity?.latitude || 48.8566;
+    const defaultLng = userLocation?.coords?.longitude || selectedCity?.longitude || 2.3522;
     
-    // Generate markers for guides
-    const markers = !isLoading ? mockGuides.map((guide, index) => {
-      const lat = defaultLat + (index * 0.01) - 0.015;
-      const lng = defaultLng + (index * 0.01) - 0.015;
-      const name = guide.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-      const specialty = guide.specialty.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    // Generate markers for places
+    const markers = !isLoading ? mockPlaces.map((place) => {
+      const lat = place.latitude || defaultLat;
+      const lng = place.longitude || defaultLng;
+      const name = place.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const category = place.category.replace(/'/g, "\\'").replace(/"/g, '&quot;');
       return `
         new mapboxgl.Marker({ color: '#0A1D37' })
           .setLngLat([${lng}, ${lat}])
-          .setPopup(new mapboxgl.Popup().setHTML('<b>${name}</b><br>${specialty}'))
+          .setPopup(new mapboxgl.Popup().setHTML('<b>${name}</b><br>${category}'))
           .addTo(window.map);
       `;
     }).join('') : '';
@@ -173,107 +173,159 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
   };
 
 
-  // Mock tour guide data
-  const mockGuides = [
+  // Mock places data
+  const mockPlaces = [
+    // Landmarks
     {
       id: '1',
-      name: 'Sarah Johnson',
-      specialty: 'Historical Tours & Culture',
-      location: 'Downtown',
-      rating: 4.9,
-      tours: 127,
-      price: 45,
-      avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
-      verified: true,
-      status: 'available', // available, on trip, offline
+      name: 'Eiffel Tower',
+      category: 'Landmarks',
+      address: 'Champ de Mars, 5 Avenue Anatole France',
+      distance: '2.3 km away',
+      rating: 4.7,
+      description: 'Iconic iron lattice tower and symbol of Paris',
+      image: { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400' },
+      latitude: 48.8584,
+      longitude: 2.2945,
     },
     {
       id: '2',
-      name: 'Michael Chen',
-      specialty: 'Food & Local Cuisine',
-      location: 'City Center',
+      name: 'Notre-Dame Cathedral',
+      category: 'Landmarks',
+      address: '6 Parvis Notre-Dame - Pl. Jean-Paul II',
+      distance: '1.8 km away',
       rating: 4.8,
-      tours: 89,
-      price: 50,
-      avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
-      verified: false,
-      status: 'on trip',
+      description: 'Medieval Catholic cathedral with stunning Gothic architecture',
+      image: { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=400' },
+      latitude: 48.8530,
+      longitude: 2.3499,
     },
     {
       id: '3',
-      name: 'Emma Williams',
-      specialty: 'Art & Architecture',
-      location: 'Historic District',
-      rating: 5.0,
-      tours: 156,
-      price: 55,
-      avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
-      verified: true,
-      status: 'available',
+      name: 'Arc de Triomphe',
+      category: 'Landmarks',
+      address: 'Place Charles de Gaulle',
+      distance: '3.5 km away',
+      rating: 4.6,
+      description: 'Monumental arch honoring those who fought for France',
+      image: { uri: 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=400' },
+      latitude: 48.8738,
+      longitude: 2.2950,
     },
+    // Hotels
     {
       id: '4',
-      name: 'David Martinez',
-      specialty: 'Nightlife & Entertainment',
-      location: 'Entertainment Quarter',
-      rating: 4.7,
-      tours: 94,
-      price: 40,
-      avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
-      verified: false,
-      status: 'offline',
+      name: 'Hotel Ritz Paris',
+      category: 'Hotels',
+      address: '15 Place Vendôme',
+      distance: '2.1 km away',
+      rating: 4.9,
+      description: 'Luxury hotel in the heart of Paris',
+      image: { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400' },
+      latitude: 48.8685,
+      longitude: 2.3297,
     },
     {
       id: '5',
-      name: 'Lisa Anderson',
-      specialty: 'Nature & Outdoor',
-      location: 'Parks & Gardens',
-      rating: 4.9,
-      tours: 112,
-      price: 48,
-      avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-      verified: true,
-      status: 'available',
+      name: 'Le Meurice',
+      category: 'Hotels',
+      address: '228 Rue de Rivoli',
+      distance: '1.5 km away',
+      rating: 4.8,
+      description: 'Palace hotel with views of the Tuileries Garden',
+      image: { uri: 'https://images.unsplash.com/photo-1596436889106-be35e843f974?w=400' },
+      latitude: 48.8638,
+      longitude: 2.3286,
     },
+    // Cafes
     {
       id: '6',
-      name: 'James Wilson',
-      specialty: 'Photography Tours',
-      location: 'Scenic Areas',
+      name: 'Café de Flore',
+      category: 'Cafes',
+      address: '172 Boulevard Saint-Germain',
+      distance: '1.2 km away',
+      rating: 4.5,
+      description: 'Historic café known for its intellectual clientele',
+      image: { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400' },
+      latitude: 48.8542,
+      longitude: 2.3328,
+    },
+    {
+      id: '7',
+      name: 'Les Deux Magots',
+      category: 'Cafes',
+      address: '6 Place Saint-Germain des Prés',
+      distance: '1.3 km away',
+      rating: 4.4,
+      description: 'Famous literary café in Saint-Germain-des-Prés',
+      image: { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400' },
+      latitude: 48.8544,
+      longitude: 2.3332,
+    },
+    {
+      id: '8',
+      name: 'Le Comptoir du Relais',
+      category: 'Cafes',
+      address: '9 Carrefour de l\'Odéon',
+      distance: '1.7 km away',
+      rating: 4.6,
+      description: 'Cozy bistro with authentic French cuisine',
+      image: { uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400' },
+      latitude: 48.8520,
+      longitude: 2.3378,
+    },
+    // Nature
+    {
+      id: '9',
+      name: 'Luxembourg Gardens',
+      category: 'Nature',
+      address: 'Rue de Médicis',
+      distance: '0.8 km away',
       rating: 4.8,
-      tours: 73,
-      price: 52,
-      avatar: { uri: 'https://i.pravatar.cc/150?img=6' },
-      verified: false,
-      status: 'on trip',
+      description: 'Beautiful public park with fountains and flowerbeds',
+      image: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400' },
+      latitude: 48.8462,
+      longitude: 2.3372,
+    },
+    {
+      id: '10',
+      name: 'Bois de Vincennes',
+      category: 'Nature',
+      address: 'Route de la Pyramide',
+      distance: '8.5 km away',
+      rating: 4.6,
+      description: 'Large public park with lakes and walking trails',
+      image: { uri: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400' },
+      latitude: 48.8306,
+      longitude: 2.4344,
     },
   ];
 
-  // Simulate loading guides data
+  // Simulate loading places data
   useEffect(() => {
-    const loadGuides = async () => {
+    const loadPlaces = async () => {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       setIsLoading(false);
     };
-    loadGuides();
+    loadPlaces();
   }, []);
 
-  // Add markers to map after guides finish loading
+  // Add markers to map after places finish loading
   useEffect(() => {
     if (!isLoading && webViewRef.current) {
       setTimeout(() => {
-        const defaultLat = userLocation?.coords?.latitude || selectedCity?.latitude || 40.7128;
-        const defaultLng = userLocation?.coords?.longitude || selectedCity?.longitude || -74.0060;
-        const markersScript = mockGuides.map((guide, index) => {
-          const lat = defaultLat + (index * 0.01) - 0.015;
-          const lng = defaultLng + (index * 0.01) - 0.015;
-          const name = guide.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-          const specialty = guide.specialty.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const defaultLat = userLocation?.coords?.latitude || selectedCity?.latitude || 48.8566;
+        const defaultLng = userLocation?.coords?.longitude || selectedCity?.longitude || 2.3522;
+        const markersScript = mockPlaces.map((place) => {
+          const lat = place.latitude || defaultLat;
+          const lng = place.longitude || defaultLng;
+          const name = place.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          const category = place.category.replace(/'/g, "\\'").replace(/"/g, '&quot;');
           return `
             new mapboxgl.Marker({ color: '#0A1D37' })
               .setLngLat([${lng}, ${lat}])
-              .setPopup(new mapboxgl.Popup().setHTML('<b>${name}</b><br>${specialty}'))
+              .setPopup(new mapboxgl.Popup().setHTML('<b>${name}</b><br>${category}'))
               .addTo(window.map);
           `;
         }).join('');
@@ -290,11 +342,11 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
     }
   }, [isLoading, userLocation, selectedCity]);
 
-  const handleGuidePress = (guide) => {
-    if (onGuidePress) {
-      onGuidePress(guide);
+  const handlePlacePress = (place) => {
+    if (onPlacePress) {
+      onPlacePress(place);
     } else {
-      console.log('Guide selected:', guide.name);
+      console.log('Place selected:', place.name);
     }
   };
 
@@ -396,7 +448,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Bottom Sheet with Guides */}
+      {/* Bottom Sheet with Places */}
       <Animated.View
         style={[
           styles.bottomSheet,
@@ -429,19 +481,19 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
           nestedScrollEnabled={true}
           bounces={false}
         >
-          <Text style={styles.sectionTitle}>Recommended Guides</Text>
+          <Text style={styles.sectionTitle}>Places</Text>
           {isLoading ? (
             // Show skeleton loaders
             Array.from({ length: 6 }).map((_, index) => (
-              <TourGuideCardSkeleton key={`skeleton-${index}`} />
+              <PlaceCardSkeleton key={`skeleton-${index}`} />
             ))
           ) : (
-            // Show actual guide cards
-            mockGuides.map((guide) => (
-              <TourGuideCard
-                key={guide.id}
-                guide={guide}
-                onPress={() => handleGuidePress(guide)}
+            // Show actual place cards
+            mockPlaces.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onPress={() => handlePlacePress(place)}
               />
             ))
           )}

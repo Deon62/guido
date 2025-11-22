@@ -7,6 +7,7 @@ import { CitySelectionScreen } from './src/screens/CitySelectionScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
+import { FeedScreen } from './src/screens/FeedScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { HotspotsScreen } from './src/screens/HotspotsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
@@ -52,6 +53,7 @@ export default function App() {
   const [showLanguage, setShowLanguage] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [guidesList, setGuidesList] = useState([]);
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [currentGuideIndex, setCurrentGuideIndex] = useState(0);
   const [showBookingOptions, setShowBookingOptions] = useState(false);
   const [showBookingSuccess, setShowBookingSuccess] = useState(false);
@@ -226,81 +228,11 @@ export default function App() {
     setShowLanguage(true);
   };
 
-  const handleGuidePress = (guide) => {
-    // Get guides list from HomeScreen mock data
-    const mockGuides = [
-      {
-        id: '1',
-        name: 'Sarah Johnson',
-        specialty: 'Historical Tours & Culture',
-        location: 'Downtown',
-        rating: 4.9,
-        tours: 127,
-        price: 45,
-        avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
-        verified: true,
-      },
-      {
-        id: '2',
-        name: 'Michael Chen',
-        specialty: 'Food & Local Cuisine',
-        location: 'City Center',
-        rating: 4.8,
-        tours: 89,
-        price: 50,
-        avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
-        verified: false,
-      },
-      {
-        id: '3',
-        name: 'Emma Williams',
-        specialty: 'Art & Architecture',
-        location: 'Historic District',
-        rating: 5.0,
-        tours: 156,
-        price: 55,
-        avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
-        verified: true,
-      },
-      {
-        id: '4',
-        name: 'David Martinez',
-        specialty: 'Nightlife & Entertainment',
-        location: 'Entertainment Quarter',
-        rating: 4.7,
-        tours: 94,
-        price: 40,
-        avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
-        verified: false,
-      },
-      {
-        id: '5',
-        name: 'Lisa Anderson',
-        specialty: 'Nature & Outdoor',
-        location: 'Parks & Gardens',
-        rating: 4.9,
-        tours: 112,
-        price: 48,
-        avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-        verified: true,
-      },
-      {
-        id: '6',
-        name: 'James Wilson',
-        specialty: 'Photography Tours',
-        location: 'Scenic Areas',
-        rating: 4.8,
-        tours: 73,
-        price: 52,
-        avatar: { uri: 'https://i.pravatar.cc/150?img=6' },
-        verified: false,
-      },
-    ];
-    
-    setGuidesList(mockGuides);
-    const guideIndex = mockGuides.findIndex(g => g.id === guide.id);
-    setCurrentGuideIndex(guideIndex >= 0 ? guideIndex : 0);
-    setSelectedGuide(guide);
+  const handlePlacePress = (place) => {
+    // Place selected - navigation to place details will be implemented later
+    console.log('Place selected:', place.name);
+    // TODO: Navigate to place details screen
+    setSelectedPlace(place);
   };
 
   const handleGuideChange = (newIndex) => {
@@ -658,12 +590,11 @@ export default function App() {
   }
 
   // Show messages screen when messages tab is active
-  if (currentScreen === 'home' && activeTab === 'messages') {
+  if (currentScreen === 'home' && activeTab === 'feed') {
     return (
-      <MessagesScreen
+      <FeedScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        onMessagePress={handleMessagePress}
       />
     );
   }
@@ -716,7 +647,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onNotificationsPress={handleNotificationsPress}
-        onGuidePress={handleGuidePress}
+        onPlacePress={handlePlacePress}
       />
     );
   }

@@ -10,9 +10,9 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    nickname: user?.nickname || user?.name || '',
+    username: user?.username || '',
     email: user?.email || '',
-    phone: user?.phone || '',
     city: user?.city || '',
     avatar: currentAvatar || user?.avatar,
   });
@@ -92,18 +92,34 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
             <Text style={styles.profilePictureHint}>Tap camera icon to change</Text>
           </View>
           
-          {/* Name Field */}
+          {/* Nickname Field */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={styles.label}>Nickname</Text>
             <View style={styles.inputContainer}>
               <Ionicons name="person-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your full name"
+                placeholder="Enter your nickname"
                 placeholderTextColor="#6D6D6D"
-                value={formData.name}
-                onChangeText={(value) => updateField('name', value)}
+                value={formData.nickname}
+                onChangeText={(value) => updateField('nickname', value)}
                 autoCapitalize="words"
+              />
+            </View>
+          </View>
+
+          {/* Username Field */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Username</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons name="at" size={20} color="#6D6D6D" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your username"
+                placeholderTextColor="#6D6D6D"
+                value={formData.username}
+                onChangeText={(value) => updateField('username', value)}
+                autoCapitalize="none"
               />
             </View>
           </View>
@@ -121,22 +137,6 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
                 onChangeText={(value) => updateField('email', value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-          {/* Phone Field */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="call-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your phone number"
-                placeholderTextColor="#6D6D6D"
-                value={formData.phone}
-                onChangeText={(value) => updateField('phone', value)}
-                keyboardType="phone-pad"
               />
             </View>
           </View>
