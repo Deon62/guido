@@ -107,7 +107,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
@@ -142,7 +141,6 @@ const styles = StyleSheet.create({
   languageLabel: {
     fontSize: 15,
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginBottom: 4,
@@ -150,7 +148,6 @@ const styles = StyleSheet.create({
   languageNative: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },

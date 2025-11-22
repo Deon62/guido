@@ -189,7 +189,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
@@ -208,7 +207,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
     marginBottom: 24,
@@ -219,7 +217,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginBottom: 8,
@@ -241,7 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#1A1A1A',
     letterSpacing: 0.2,
     padding: 0,
@@ -285,7 +281,6 @@ const styles = StyleSheet.create({
   profilePictureHint: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },

@@ -153,7 +153,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
   },
@@ -193,7 +192,6 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: 20,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginRight: 6,
@@ -204,7 +202,6 @@ const styles = StyleSheet.create({
   tourType: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -215,7 +212,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
     marginBottom: 16,

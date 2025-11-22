@@ -45,7 +45,6 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     letterSpacing: 0.2,
     lineHeight: 20,
     marginBottom: 4,
@@ -59,7 +58,6 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 10,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     letterSpacing: 0.2,
   },
   ownTime: {

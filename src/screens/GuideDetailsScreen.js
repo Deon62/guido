@@ -148,7 +148,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
@@ -159,7 +158,6 @@ const styles = StyleSheet.create({
   counter: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#6D6D6D',
   },
   scrollView: {
@@ -191,7 +189,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.5,
     marginRight: 8,
@@ -206,13 +203,11 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 16,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
   },
   toursCount: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     marginLeft: 4,
   },
@@ -226,7 +221,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.3,
     marginBottom: 12,
@@ -234,7 +228,6 @@ const styles = StyleSheet.create({
   aboutText: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
     lineHeight: 22,
@@ -242,7 +235,6 @@ const styles = StyleSheet.create({
   specialtyText: {
     fontSize: 15,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
   },
@@ -253,7 +245,6 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
   },
@@ -264,14 +255,12 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 24,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
   },
   priceUnit: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     marginLeft: 4,
   },

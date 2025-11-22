@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
@@ -161,14 +160,12 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 15,
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginRight: 8,
   },
   notificationTitleUnread: {
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
   },
   unreadDot: {
     width: 8,
@@ -179,7 +176,6 @@ const styles = StyleSheet.create({
   notificationMessage: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
     lineHeight: 18,
@@ -188,7 +184,6 @@ const styles = StyleSheet.create({
   notificationTime: {
     fontSize: 11,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -202,7 +197,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     marginTop: 16,
     marginBottom: 8,
@@ -211,7 +205,6 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     textAlign: 'center',
     letterSpacing: 0.2,

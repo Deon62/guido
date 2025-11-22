@@ -273,7 +273,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
   },
@@ -302,7 +301,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#0A1D37',
     marginLeft: 12,
     letterSpacing: 0.2,
@@ -315,7 +313,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 8,
     letterSpacing: 0.2,
@@ -336,7 +333,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#1A1A1A',
     paddingVertical: 14,
     letterSpacing: 0.2,

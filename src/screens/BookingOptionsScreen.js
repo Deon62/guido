@@ -287,7 +287,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
@@ -306,7 +305,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
     marginBottom: 6,
@@ -314,7 +312,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     marginBottom: 16,
@@ -328,7 +325,6 @@ const styles = StyleSheet.create({
   backOptionText: {
     fontSize: 16,
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#0A1D37',
     marginLeft: 8,
     letterSpacing: 0.3,
@@ -369,7 +365,6 @@ const styles = StyleSheet.create({
   optionButtonText: {
     fontSize: 16,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.3,
     marginBottom: 4,
@@ -377,7 +372,6 @@ const styles = StyleSheet.create({
   optionButtonSubtext: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -407,7 +401,6 @@ const styles = StyleSheet.create({
   timeWindowLabel: {
     fontSize: 16,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginBottom: 4,
@@ -418,7 +411,6 @@ const styles = StyleSheet.create({
   timeWindowTime: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -450,7 +442,6 @@ const styles = StyleSheet.create({
   selectedDateLabel: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     marginBottom: 4,
@@ -458,7 +449,6 @@ const styles = StyleSheet.create({
   selectedDateText: {
     fontSize: 16,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.3,
   },
@@ -474,7 +464,6 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: 16,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#F7F7F7',
     letterSpacing: 0.3,
     marginRight: 8,
@@ -492,7 +481,6 @@ const styles = StyleSheet.create({
   selectedDateInfoText: {
     fontSize: 15,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     marginLeft: 12,
     letterSpacing: 0.3,
@@ -531,7 +519,6 @@ const styles = StyleSheet.create({
   timeSlotText: {
     fontSize: 16,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
   },

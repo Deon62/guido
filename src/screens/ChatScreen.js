@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
   headerName: {
     fontSize: 18,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginBottom: 2,
@@ -167,7 +166,6 @@ const styles = StyleSheet.create({
   headerStatus: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -195,7 +193,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#1A1A1A',
     letterSpacing: 0.2,
     maxHeight: 100,

@@ -252,7 +252,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -260,7 +259,6 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -321,7 +319,6 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 10,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     letterSpacing: 0.2,
   },
@@ -356,7 +353,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginRight: 6,
@@ -372,14 +368,12 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 11,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     marginLeft: 3,
   },
   hotspotDescription: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     lineHeight: 16,
@@ -400,7 +394,6 @@ const styles = StyleSheet.create({
   likesText: {
     fontSize: 12,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#E74C3C',
     marginLeft: 4,
     letterSpacing: 0.2,
@@ -412,7 +405,6 @@ const styles = StyleSheet.create({
   distanceText: {
     fontSize: 11,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     marginLeft: 4,
     letterSpacing: 0.2,

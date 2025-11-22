@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 20,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     textAlign: 'center',
     lineHeight: 28,

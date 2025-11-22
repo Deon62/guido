@@ -47,7 +47,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 15,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     letterSpacing: 0.6,
   },
   primaryText: {

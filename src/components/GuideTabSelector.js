@@ -51,13 +51,11 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#6D6D6D',
     letterSpacing: 0.3,
   },
   tabTextActive: {
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
   },
   indicator: {

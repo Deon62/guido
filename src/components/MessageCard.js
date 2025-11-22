@@ -88,7 +88,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginRight: 6,
@@ -102,7 +101,6 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 11,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
@@ -114,7 +112,6 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 13,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     flex: 1,
@@ -122,7 +119,6 @@ const styles = StyleSheet.create({
   },
   messageTextUnread: {
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#1A1A1A',
   },
   unreadBadge: {
@@ -137,7 +133,6 @@ const styles = StyleSheet.create({
   unreadCount: {
     fontSize: 11,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#F7F7F7',
   },
 });

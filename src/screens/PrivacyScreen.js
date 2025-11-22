@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
@@ -146,7 +145,6 @@ const styles = StyleSheet.create({
   lastUpdated: {
     fontSize: 12,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#6D6D6D',
     letterSpacing: 0.2,
     marginBottom: 16,
@@ -155,7 +153,6 @@ const styles = StyleSheet.create({
   intro: {
     fontSize: 15,
     fontFamily: FONTS.regular,
-    fontWeight: '500',
     color: '#3A3A3A',
     letterSpacing: 0.2,
     lineHeight: 24,
@@ -167,7 +164,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: FONTS.bold,
-    fontWeight: '700',
     color: '#0A1D37',
     letterSpacing: 0.3,
     marginBottom: 12,
@@ -175,7 +171,6 @@ const styles = StyleSheet.create({
   sectionContent: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
     lineHeight: 22,
@@ -189,14 +184,12 @@ const styles = StyleSheet.create({
   contactText: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    fontWeight: '400',
     color: '#3A3A3A',
     letterSpacing: 0.2,
     lineHeight: 22,
   },
   contactLink: {
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
   },
   linkButton: {
@@ -211,7 +204,6 @@ const styles = StyleSheet.create({
   linkButtonText: {
     fontSize: 15,
     fontFamily: FONTS.semiBold,
-    fontWeight: '600',
     color: '#0A1D37',
     marginLeft: 12,
     flex: 1,
