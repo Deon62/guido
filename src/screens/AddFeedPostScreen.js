@@ -21,20 +21,72 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
   const [formData, setFormData] = useState({
     placeName: '',
     location: '',
-    category: '',
+    mainCategory: '',
+    subCategory: '',
     caption: '',
     images: [],
   });
   const [fieldErrors, setFieldErrors] = useState({
     placeName: null,
     location: null,
-    category: null,
+    mainCategory: null,
+    subCategory: null,
     caption: null,
     images: null,
   });
 
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const categories = ['Landmarks', 'Hotels', 'Cafes', 'Nature'];
+  const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
+  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+  
+  const mainCategories = ['Core', 'Cultural', 'Relaxation', 'Food & Drink Niche', 'Miscellaneous / Unique'];
+  
+  const categoryOptions = {
+    Core: [
+      'Hotels',
+      'Cafes',
+      'Restaurants',
+      'Museums',
+      'Landmarks',
+      'Nature / Parks',
+      'Beaches',
+      'Nightlife / Bars',
+      'Shopping / Malls',
+      'Theaters / Cinemas',
+      'Adventure & Outdoors',
+      'Hiking Trails',
+      'Mountains',
+      'Lakes / Rivers',
+      'Wildlife / Safari',
+      'Camping Sites',
+      'Sports Facilities / Gyms',
+    ],
+    Cultural: [
+      'Art Galleries',
+      'Historical Sites',
+      'Markets / Bazaars',
+      'Religious Sites (Churches, Temples, Mosques)',
+      'Festivals / Event Venues',
+    ],
+    Relaxation: [
+      'Spas',
+      'Wellness Retreats',
+      'Resorts',
+      'Yoga / Meditation Centers',
+    ],
+    'Food & Drink Niche': [
+      'Bakeries / Pastry Shops',
+      'Juice / Smoothie Bars',
+      'Street Food Spots',
+      'Wine / Brewery Tours',
+    ],
+    'Miscellaneous / Unique': [
+      'Co-working Spaces',
+      'Libraries / Book Cafes',
+      'Scenic Views / Lookouts',
+      'Photography Spots',
+      'Hidden Gems / Secret Spots',
+    ],
+  };
 
   const handleSave = async () => {
     if (isSubmitting) return;
@@ -43,7 +95,8 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     const errors = {
       placeName: validatePlaceName(formData.placeName),
       location: validateLocation(formData.location),
-      category: !formData.category ? 'Category is required' : null,
+      mainCategory: !formData.mainCategory ? 'Main category is required' : null,
+      subCategory: !formData.subCategory ? 'Sub category is required' : null,
       images: formData.images.length === 0 ? 'At least one image is required' : null,
       caption: validateMaxLength(formData.caption, 500, 'Caption'),
     };
@@ -109,23 +162,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     }
   };
 
-  const getCategoryColor = (category) => {
-    switch (category.toLowerCase()) {
-      case 'landmark':
-      case 'landmarks':
-        return '#FF6B6B';
-      case 'hotel':
-      case 'hotels':
-        return '#4ECDC4';
-      case 'cafe':
-      case 'cafes':
-        return '#FFE66D';
-      case 'nature':
-        return '#95E1D3';
-      default:
-        return '#6D6D6D';
-    }
-  };
 
   const handleImagePick = async () => {
     try {
@@ -326,21 +362,52 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
               )}
             </View>
 
-            {/* Category Dropdown */}
+            {/* Main Category Dropdown */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Category *</Text>
+              <Text style={styles.label}>Main Category *</Text>
               <TouchableOpacity
-                style={[styles.categoryButton, fieldErrors.category && styles.inputError]}
-                onPress={() => setShowCategoryModal(true)}
+                style={[styles.categoryButton, fieldErrors.mainCategory && styles.inputError]}
+                onPress={() => setShowMainCategoryModal(true)}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.categoryButtonText, !formData.category && styles.placeholderText]}>
-                  {formData.category || 'Select Category'}
+                <Text style={[styles.categoryButtonText, !formData.mainCategory && styles.placeholderText]}>
+                  {formData.mainCategory || 'Select Main Category'}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6D6D6D" />
               </TouchableOpacity>
-              {fieldErrors.category && (
-                <Text style={styles.fieldError}>{fieldErrors.category}</Text>
+              {fieldErrors.mainCategory && (
+                <Text style={styles.fieldError}>{fieldErrors.mainCategory}</Text>
+              )}
+            </View>
+
+            {/* Sub Category Dropdown */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Sub Category *</Text>
+              <TouchableOpacity
+                style={[
+                  styles.categoryButton, 
+                  fieldErrors.subCategory && styles.inputError,
+                  !formData.mainCategory && styles.categoryButtonDisabled
+                ]}
+                onPress={() => {
+                  if (formData.mainCategory) {
+                    setShowSubCategoryModal(true);
+                  }
+                }}
+                activeOpacity={0.7}
+                disabled={!formData.mainCategory}
+              >
+                <Text style={[
+                  styles.categoryButtonText, 
+                  !formData.subCategory && styles.placeholderText,
+                  !formData.mainCategory && styles.disabledText
+                ]}>
+                  {formData.subCategory || (formData.mainCategory ? 'Select Sub Category' : 'Select main category first')}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color={formData.mainCategory ? "#6D6D6D" : "#C0C0C0"} />
+              </TouchableOpacity>
+              {fieldErrors.subCategory && (
+                <Text style={styles.fieldError}>{fieldErrors.subCategory}</Text>
               )}
             </View>
 
@@ -393,51 +460,107 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Category Modal */}
+      {/* Main Category Modal */}
       <Modal
-        visible={showCategoryModal}
+        visible={showMainCategoryModal}
         transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowCategoryModal(false)}
+        animationType="fade"
+        onRequestClose={() => setShowMainCategoryModal(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowCategoryModal(false)}
-        >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowMainCategoryModal(false)}
+          />
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Category</Text>
+              <Text style={styles.modalTitle}>Select Main Category</Text>
               <TouchableOpacity
-                onPress={() => setShowCategoryModal(false)}
+                onPress={() => setShowMainCategoryModal(false)}
                 activeOpacity={0.7}
               >
                 <Ionicons name="close" size={24} color="#0A1D37" />
               </TouchableOpacity>
             </View>
-            {categories.map((category) => (
+            <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+              {mainCategories.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={styles.categoryOption}
+                  onPress={() => {
+                    updateField('mainCategory', category);
+                    // Reset sub category when main category changes
+                    updateField('subCategory', '');
+                    setFieldErrors(prev => ({
+                      ...prev,
+                      mainCategory: null,
+                      subCategory: null,
+                    }));
+                    setShowMainCategoryModal(false);
+                    triggerHaptic('light');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.categoryOptionText}>{category}</Text>
+                  {formData.mainCategory === category && (
+                    <Ionicons name="checkmark" size={20} color="#0A1D37" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sub Category Modal */}
+      <Modal
+        visible={showSubCategoryModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSubCategoryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowSubCategoryModal(false)}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Sub Category</Text>
               <TouchableOpacity
-                key={category}
-                style={styles.categoryOption}
-                onPress={() => {
-                  updateField('category', category);
-                  setFieldErrors(prev => ({
-                    ...prev,
-                    category: null,
-                  }));
-                  setShowCategoryModal(false);
-                }}
+                onPress={() => setShowSubCategoryModal(false)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.categoryColorDot, { backgroundColor: getCategoryColor(category) }]} />
-                <Text style={styles.categoryOptionText}>{category}</Text>
-                {formData.category === category && (
-                  <Ionicons name="checkmark" size={20} color="#0A1D37" />
-                )}
+                <Ionicons name="close" size={24} color="#0A1D37" />
               </TouchableOpacity>
-            ))}
+            </View>
+            <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+              {formData.mainCategory && categoryOptions[formData.mainCategory]?.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={styles.categoryOption}
+                  onPress={() => {
+                    updateField('subCategory', category);
+                    setFieldErrors(prev => ({
+                      ...prev,
+                      subCategory: null,
+                    }));
+                    setShowSubCategoryModal(false);
+                    triggerHaptic('light');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.categoryOptionText}>{category}</Text>
+                  {formData.subCategory === category && (
+                    <Ionicons name="checkmark" size={20} color="#0A1D37" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </View>
   );
@@ -617,15 +740,29 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    maxHeight: '50%',
+    maxHeight: '70%',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalScrollView: {
+    maxHeight: 400,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -643,19 +780,18 @@ const styles = StyleSheet.create({
     color: '#0A1D37',
     letterSpacing: 0.5,
   },
+  categoryButtonDisabled: {
+    backgroundColor: '#F7F7F7',
+    borderColor: '#E8E8E8',
+  },
+  disabledText: {
+    color: '#C0C0C0',
+  },
   categoryOption: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F7F7F7',
-  },
-  categoryColorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
   },
   categoryOptionText: {
     flex: 1,
