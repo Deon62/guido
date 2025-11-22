@@ -51,12 +51,12 @@ export const AboutDeveloperScreen = ({ onBack }) => {
 
         {/* Why I Built This App */}
         <View style={styles.aboutSection}>
-          <Text style={styles.sectionTitle}>Why I Built Guido</Text>
+          <Text style={styles.sectionTitle}>Why I Built Quest</Text>
           <Text style={styles.aboutText}>
-            Guido was born from my own experiences traveling and wanting a better way to discover amazing places, plan trips, and keep track of all my travel memories in one place.
+            Quest was born from my own experiences traveling and wanting a better way to discover amazing places, plan trips, and keep track of all my travel memories in one place.
           </Text>
           <Text style={styles.aboutText}>
-            The app aims to make travel planning and discovery more personal and organized. Whether you're exploring a new city or revisiting favorite destinations, Guido helps you discover places, plan your trips, and share your experiences with a community of travelers.
+            The app aims to make travel planning and discovery more personal and organized. Whether you're exploring a new city or revisiting favorite destinations, Quest helps you discover places, plan your trips, and share your experiences with a community of travelers.
           </Text>
         </View>
 
@@ -64,7 +64,7 @@ export const AboutDeveloperScreen = ({ onBack }) => {
         <View style={styles.aboutSection}>
           <Text style={styles.sectionTitle}>Vision</Text>
           <Text style={styles.aboutText}>
-            My vision for Guido is to create a global community where travelers can discover amazing places, share their experiences, and build a comprehensive travel journal. I believe that the best travel experiences come from discovering authentic places and connecting with fellow travelers who share their stories and recommendations.
+            My vision for Quest is to create a global community where travelers can discover amazing places, share their experiences, and build a comprehensive travel journal. I believe that the best travel experiences come from discovering authentic places and connecting with fellow travelers who share their stories and recommendations.
           </Text>
         </View>
       </ScrollView>

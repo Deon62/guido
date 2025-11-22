@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { CommentsModal } from '../components/CommentsModal';
 import { ErrorCard } from '../components/ErrorCard';
@@ -14,6 +15,37 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 80; // Approximate header height
 const BOTTOM_NAV_HEIGHT = 80; // Approximate bottom nav height
 const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full visible height
+
+// Video Post Component using expo-video
+const VideoPostItem = ({ videoSource, styles }) => {
+  // Handle video source - expo-video can accept require() directly or URI strings
+  // If videoSource has a uri property, use it; otherwise use the source directly
+  const source = videoSource?.uri || videoSource;
+  
+  const player = useVideoPlayer(source, (player) => {
+    player.loop = false;
+    player.muted = false;
+  });
+
+  return (
+    <View style={styles.videoContainer}>
+      <VideoView
+        style={styles.videoPlayer}
+        player={player}
+        allowsFullscreen
+        allowsPictureInPicture
+        contentFit="cover"
+        nativeControls
+      />
+      <View style={styles.videoBadgeOverlay}>
+        <View style={styles.videoTypeBadge}>
+          <Ionicons name="videocam" size={16} color="#FFFFFF" />
+          <Text style={styles.videoTypeText}>VIDEO</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, onMyFeedPostsPress, onUserProfilePress }) => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -159,7 +191,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
         category: 'Landmarks',
       },
       videos: [
-        { uri: require('../../assets/videos/test.mp4') },
+        require('../../assets/videos/test.mp4'),
       ],
       caption: 'Amazing view from the top! The city looks incredible from up here. 🌆✨',
       likes: 3421,
@@ -588,7 +620,12 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                     <Text style={styles.userName}>{post.user.name}</Text>
                     {post.user.isPremium && (
                       <View style={styles.premiumBadge}>
-                        <Ionicons name="checkmark-circle" size={16} color="#0A1D37" />
+                        <View style={styles.premiumBadgeContainer}>
+                          <View style={styles.premiumBadgeInner}>
+                            <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                          </View>
+                          <View style={styles.premiumBadgeRing} />
+                        </View>
                       </View>
                     )}
                     {post.user.isCEO && (
@@ -628,20 +665,8 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
             {/* Post Media Carousel (Images or Videos) */}
             <View style={styles.imageCarouselContainer}>
               {post.videos && post.videos.length > 0 ? (
-                // Video Display
-                <View style={styles.videoContainer}>
-                  <View style={styles.videoPlaceholder}>
-                    <Ionicons name="videocam" size={48} color="#6D6D6D" />
-                    <Text style={styles.videoPlaceholderText}>Video Preview</Text>
-                    <Text style={styles.videoNote}>Video playback will be implemented</Text>
-                  </View>
-                  <View style={styles.videoBadgeOverlay}>
-                    <View style={styles.videoTypeBadge}>
-                      <Ionicons name="videocam" size={16} color="#FFFFFF" />
-                      <Text style={styles.videoTypeText}>VIDEO</Text>
-                    </View>
-                  </View>
-                </View>
+                // Video Display using expo-video
+                <VideoPostItem videoSource={post.videos[0]} styles={styles} />
               ) : (
                 // Image Carousel
                 <ScrollView
@@ -972,6 +997,43 @@ const styles = StyleSheet.create({
   },
   premiumBadge: {
     marginBottom: 2,
+    marginLeft: 4,
+  },
+  premiumBadgeContainer: {
+    position: 'relative',
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  premiumBadgeInner: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#003D82',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#002855',
+    shadowColor: '#003D82',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  premiumBadgeRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#003D82',
+    borderStyle: 'solid',
+    opacity: 0.4,
+    transform: [{ rotate: '45deg' }],
   },
   ceoBadge: {
     marginBottom: 2,
@@ -1054,24 +1116,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: '#000000',
   },
-  videoPlaceholder: {
+  videoPlayer: {
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1A1A1A',
-  },
-  videoPlaceholderText: {
-    fontSize: 16,
-    fontFamily: FONTS.semiBold,
-    color: '#FFFFFF',
-    marginTop: 12,
-  },
-  videoNote: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    color: '#9B9B9B',
-    marginTop: 4,
+    backgroundColor: '#000000',
   },
   videoBadgeOverlay: {
     position: 'absolute',

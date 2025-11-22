@@ -11,11 +11,11 @@ export const TermsScreen = ({ onBack, onPrivacyPress }) => {
   const sections = [
     {
       title: '1. Acceptance of Terms',
-      content: 'By accessing and using the Guido app, you accept and agree to be bound by the terms and provision of this agreement.',
+      content: 'By accessing and using the Quest app, you accept and agree to be bound by the terms and provision of this agreement.',
     },
     {
       title: '2. Service Description',
-      content: 'Guido is a travel companion app that helps you discover amazing places, plan your trips, and share your travel experiences. We provide a platform for users to explore destinations, manage their travel itineraries, and connect with other travelers.',
+      content: 'Quest is a travel companion app that helps you discover amazing places, plan your trips, and share your travel experiences. We provide a platform for users to explore destinations, manage their travel itineraries, and connect with other travelers.',
     },
     {
       title: '3. User Responsibilities',
@@ -35,11 +35,11 @@ export const TermsScreen = ({ onBack, onPrivacyPress }) => {
     },
     {
       title: '7. Limitation of Liability',
-      content: 'Guido provides information about places and travel experiences. We are not responsible for the accuracy of user-generated content, the safety of locations, or any issues that may arise during your travels. Users participate at their own risk.',
+      content: 'Quest provides information about places and travel experiences. We are not responsible for the accuracy of user-generated content, the safety of locations, or any issues that may arise during your travels. Users participate at their own risk.',
     },
     {
       title: '8. Changes to Terms',
-      content: 'Guido reserves the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.',
+      content: 'Quest reserves the right to modify these terms at any time. Continued use of the service after changes constitutes acceptance of the new terms.',
     },
   ];
 
