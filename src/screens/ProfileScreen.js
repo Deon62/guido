@@ -27,11 +27,6 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
     memberSince: 'January 2024',
   };
 
-  const stats = [
-    { label: 'Trips', value: '12', icon: 'airplane-outline' },
-    { label: 'Guides', value: '8', icon: 'people-outline' },
-    { label: 'Rating', value: '4.9', icon: 'star-outline' },
-  ];
 
   const menuItems = [
     { 
@@ -122,19 +117,10 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           </View>
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.email}>{user.email}</Text>
-        </View>
-
-        {/* Stats Section */}
-        <View style={styles.statsContainer}>
-          {stats.map((stat, index) => (
-            <View 
-              key={index} 
-              style={styles.statBadge}
-            >
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={18} color="#FFB800" />
+            <Text style={styles.ratingText}>4.9</Text>
+          </View>
         </View>
 
         {/* Personal Info Section */}
@@ -286,43 +272,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6D6D6D',
     letterSpacing: 0.3,
+    marginBottom: 8,
   },
-  statsContainer: {
+  ratingContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    marginBottom: 16,
-  },
-  statBadge: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#0A1D37',
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0A1D37',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    marginTop: 4,
   },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  ratingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginLeft: 6,
     letterSpacing: 0.3,
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
-    letterSpacing: 0.2,
-    textTransform: 'uppercase',
   },
   infoSection: {
     backgroundColor: '#FFFFFF',

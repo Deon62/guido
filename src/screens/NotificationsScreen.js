@@ -79,7 +79,7 @@ export const NotificationsScreen = ({ onBack }) => {
           notifications.map((notification) => (
             <TouchableOpacity
               key={notification.id}
-              style={[styles.notificationItem, notification.unread && styles.notificationItemUnread]}
+              style={styles.notificationItem}
               activeOpacity={0.7}
             >
               <View style={styles.notificationContent}>
@@ -112,7 +112,7 @@ export const NotificationsScreen = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -145,15 +145,8 @@ const styles = StyleSheet.create({
   },
   notificationItem: {
     backgroundColor: '#FFFFFF',
-    padding: 16,
-    paddingVertical: 14,
-    marginBottom: 8,
-    marginHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  notificationItemUnread: {
-    backgroundColor: '#F7F7F7',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
   },
   notificationContent: {
     flex: 1,
