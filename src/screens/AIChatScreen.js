@@ -19,7 +19,10 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showConversationsPanel, setShowConversationsPanel] = useState(false);
+  const [selectedConversationMenu, setSelectedConversationMenu] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const scrollViewRef = useRef(null);
+  const panelSlideAnim = useRef(new Animated.Value(1)).current;
   const [conversations] = useState([
     { id: '1', title: 'Planning a trip to Paris', lastMessage: 'What are the best places to visit?', timestamp: '2 hours ago' },
     { id: '2', title: 'Budget travel tips', lastMessage: 'How can I travel on a budget?', timestamp: '1 day ago' },
@@ -74,6 +77,23 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
     }, 100);
   }, [messages]);
 
+  useEffect(() => {
+    if (showConversationsPanel) {
+      Animated.spring(panelSlideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }).start();
+    } else {
+      Animated.timing(panelSlideAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showConversationsPanel]);
+
   const handleSend = async () => {
     if (!inputText.trim() || isTyping) return;
 
@@ -115,6 +135,32 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
     ]);
     setShowConversationsPanel(false);
     triggerHaptic('light');
+  };
+
+  const handleConversationMenuPress = (conversationId, event) => {
+    event.stopPropagation();
+    triggerHaptic('light');
+    setSelectedConversationMenu(conversationId);
+  };
+
+  const handleConversationAction = (action, conversationId) => {
+    triggerHaptic('light');
+    setSelectedConversationMenu(null);
+    
+    switch (action) {
+      case 'share':
+        // TODO: Implement share functionality
+        console.log('Share conversation:', conversationId);
+        break;
+      case 'rename':
+        // TODO: Implement rename functionality
+        console.log('Rename conversation:', conversationId);
+        break;
+      case 'delete':
+        // TODO: Implement delete functionality
+        console.log('Delete conversation:', conversationId);
+        break;
+    }
   };
 
   return (
@@ -249,20 +295,41 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
       <Modal
         visible={showConversationsPanel}
         transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowConversationsPanel(false)}
+        animationType="none"
+        onRequestClose={() => {
+          setShowConversationsPanel(false);
+          setSelectedConversationMenu(null);
+        }}
       >
         <View style={styles.panelOverlay}>
           <TouchableOpacity
             style={styles.panelBackdrop}
             activeOpacity={1}
-            onPress={() => setShowConversationsPanel(false)}
+            onPress={() => {
+              setShowConversationsPanel(false);
+              setSelectedConversationMenu(null);
+            }}
           />
-          <View style={styles.panelContent}>
+          <Animated.View 
+            style={[
+              styles.panelContent,
+              {
+                transform: [{
+                  translateX: panelSlideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 400],
+                  }),
+                }],
+              },
+            ]}
+          >
             <View style={styles.panelHeader}>
               <Text style={styles.panelTitle}>Past Conversations</Text>
               <TouchableOpacity
-                onPress={() => setShowConversationsPanel(false)}
+                onPress={() => {
+                  setShowConversationsPanel(false);
+                  setSelectedConversationMenu(null);
+                }}
                 style={styles.panelCloseButton}
                 activeOpacity={0.7}
               >
@@ -287,6 +354,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
                   onPress={() => {
                     // Load conversation
                     setShowConversationsPanel(false);
+                    setSelectedConversationMenu(null);
                     triggerHaptic('light');
                   }}
                   activeOpacity={0.7}
@@ -298,12 +366,78 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
                     </Text>
                     <Text style={styles.conversationTimestamp}>{conversation.timestamp}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#6D6D6D" />
+                  <TouchableOpacity
+                    style={styles.conversationMenuButton}
+                    onPress={(e) => handleConversationMenuPress(conversation.id, e)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={20} color="#6D6D6D" />
+                  </TouchableOpacity>
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </View>
+          </Animated.View>
         </View>
+      </Modal>
+
+      {/* Conversation Actions Modal */}
+      <Modal
+        visible={selectedConversationMenu !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedConversationMenu(null)}
+      >
+        <TouchableOpacity
+          style={styles.actionModalOverlay}
+          activeOpacity={1}
+          onPress={() => setSelectedConversationMenu(null)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.actionModalContent}>
+              <TouchableOpacity
+                style={styles.actionModalItem}
+                onPress={() => {
+                  if (selectedConversationMenu) {
+                    handleConversationAction('share', selectedConversationMenu);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="share-outline" size={22} color="#0A1D37" />
+                <Text style={styles.actionModalItemText}>Share</Text>
+              </TouchableOpacity>
+              <View style={styles.actionModalDivider} />
+              <TouchableOpacity
+                style={styles.actionModalItem}
+                onPress={() => {
+                  if (selectedConversationMenu) {
+                    handleConversationAction('rename', selectedConversationMenu);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="create-outline" size={22} color="#0A1D37" />
+                <Text style={styles.actionModalItemText}>Rename</Text>
+              </TouchableOpacity>
+              <View style={styles.actionModalDivider} />
+              <TouchableOpacity
+                style={styles.actionModalItem}
+                onPress={() => {
+                  if (selectedConversationMenu) {
+                    handleConversationAction('delete', selectedConversationMenu);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={22} color="#E74C3C" />
+                <Text style={[styles.actionModalItemText, styles.actionModalItemTextDanger]}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -568,6 +702,51 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#9B9B9B',
     letterSpacing: 0.2,
+  },
+  conversationMenuButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  actionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: 200,
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  actionModalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  actionModalDivider: {
+    height: 1,
+    backgroundColor: '#E8E8E8',
+    marginHorizontal: 0,
+  },
+  actionModalItemText: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: '#0A1D37',
+    letterSpacing: 0.2,
+  },
+  actionModalItemTextDanger: {
+    color: '#E74C3C',
   },
 });
 
