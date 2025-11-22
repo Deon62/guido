@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { CommentsModal } from '../components/CommentsModal';
 import { ErrorCard } from '../components/ErrorCard';
+import { PaginationIndicator } from '../components/PaginationIndicator';
 import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
+import { usePagination } from '../utils/usePagination';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 80; // Approximate header height
@@ -34,8 +36,9 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock feed posts data
-  const feedPosts = [
+  // Generate more mock posts for pagination
+  const generateMockPosts = () => {
+    const basePosts = [
     {
       id: '1',
       user: {
@@ -142,53 +145,57 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
       comments: 156,
       timestamp: '3 days ago',
     },
-  ];
-
-  // Auto-scroll images for posts with multiple images
-  useEffect(() => {
-    if (!feedPosts || feedPosts.length === 0) return;
+    ];
     
-    feedPosts.forEach((post) => {
-      const images = post.images || (post.image ? [post.image] : []);
-      if (!images || images.length === 0) return;
+    // Generate additional posts for pagination testing
+    const categories = ['Landmarks', 'Cafes', 'Nature', 'Hotels', 'Restaurants', 'Museums'];
+    const locations = ['Paris, France', 'Tokyo, Japan', 'New York, USA', 'London, UK', 'Barcelona, Spain'];
+    const users = [
+      { name: 'Travel Explorer', img: 1 },
+      { name: 'Wanderlust Sarah', img: 2 },
+      { name: 'Nature Lover', img: 3 },
+      { name: 'City Explorer', img: 4 },
+      { name: 'Foodie Travels', img: 5 },
+      { name: 'Adventure Seeker', img: 6 },
+      { name: 'Culture Hunter', img: 7 },
+      { name: 'Urban Wanderer', img: 8 },
+    ];
+    
+    const additionalPosts = [];
+    for (let i = 6; i <= 30; i++) {
+      const category = categories[i % categories.length];
+      const location = locations[i % locations.length];
+      const user = users[i % users.length];
+      const hoursAgo = i * 2;
+      const timestamp = hoursAgo < 24 ? `${hoursAgo} hours ago` : `${Math.floor(hoursAgo / 24)} days ago`;
       
-      const imageCount = Math.min(images.length, 5);
-      
-      if (imageCount > 1) {
-        // Clear existing timer for this post
-        if (autoScrollTimers.current[post.id]) {
-          clearInterval(autoScrollTimers.current[post.id]);
-        }
-
-        // Set up auto-scroll timer
-        autoScrollTimers.current[post.id] = setInterval(() => {
-          // Skip if user is currently scrolling
-          if (isUserScrollingRef.current[post.id]) {
-            return;
-          }
-
-          const currentIndex = currentImageIndexRef.current[post.id] ?? 0;
-          const nextIndex = (currentIndex + 1) % imageCount;
-          const screenWidth = Dimensions.get('window').width;
-
-          if (scrollViewRefs.current[post.id]) {
-            scrollViewRefs.current[post.id].scrollTo({
-              x: nextIndex * screenWidth,
-              animated: true,
-            });
-            setCurrentImageIndex(prev => ({ ...prev, [post.id]: nextIndex }));
-          }
-        }, 3000); // Change image every 3 seconds
-      }
-    });
-
-    // Cleanup timers on unmount
-    return () => {
-      Object.values(autoScrollTimers.current).forEach(timer => {
-        if (timer) clearInterval(timer);
+      additionalPosts.push({
+        id: String(i),
+        user: {
+          name: user.name,
+          avatar: { uri: `https://i.pravatar.cc/150?img=${user.img}` },
+        },
+        place: {
+          name: `Place ${i}`,
+          location,
+          category,
+        },
+        images: [
+          { uri: `https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800&sig=${i}` },
+          { uri: `https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&sig=${i + 1}` },
+        ],
+        caption: `Amazing experience at ${location}! The ${category.toLowerCase()} here are incredible. Can't wait to come back! ✨`,
+        likes: Math.floor(Math.random() * 2000) + 100,
+        comments: Math.floor(Math.random() * 200) + 10,
+        timestamp,
       });
-    };
-  }, [feedPosts.length]); // Only re-run when posts change
+    }
+    
+    return [...basePosts, ...additionalPosts];
+  };
+
+  // Mock feed posts data
+  const allFeedPosts = useMemo(() => generateMockPosts(), []);
 
   // Sync refs with state
   useEffect(() => {
@@ -245,16 +252,81 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
 
   // Filter posts based on search query (memoized)
   const filteredPosts = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return feedPosts;
+    if (!allFeedPosts || allFeedPosts.length === 0) return [];
+    if (!debouncedSearchQuery.trim()) return allFeedPosts;
     const query = debouncedSearchQuery.toLowerCase();
-    return feedPosts.filter((post) => (
+    return allFeedPosts.filter((post) => (
       post.user.name.toLowerCase().includes(query) ||
       post.place.name.toLowerCase().includes(query) ||
       post.place.location.toLowerCase().includes(query) ||
       post.caption.toLowerCase().includes(query) ||
       post.place.category.toLowerCase().includes(query)
     ));
-  }, [feedPosts, debouncedSearchQuery]);
+  }, [allFeedPosts, debouncedSearchQuery]);
+
+  // Use pagination hook for infinite scroll
+  const {
+    displayedItems: paginatedPosts,
+    currentPage,
+    totalPages,
+    hasMore,
+    isLoadingMore,
+    loadMore,
+    reset,
+    totalItems,
+    displayedCount,
+  } = usePagination(filteredPosts || [], 5, 5); // 5 posts per page, initially show 5
+
+  // Reset pagination when filtered posts change
+  useEffect(() => {
+    reset();
+  }, [filteredPosts.length, reset]);
+
+  // Auto-scroll images for posts with multiple images
+  useEffect(() => {
+    if (!paginatedPosts || paginatedPosts.length === 0) return;
+    
+    paginatedPosts.forEach((post) => {
+      const images = post.images || (post.image ? [post.image] : []);
+      if (!images || images.length === 0) return;
+      
+      const imageCount = Math.min(images.length, 5);
+      
+      if (imageCount > 1) {
+        // Clear existing timer for this post
+        if (autoScrollTimers.current[post.id]) {
+          clearInterval(autoScrollTimers.current[post.id]);
+        }
+
+        // Set up auto-scroll timer
+        autoScrollTimers.current[post.id] = setInterval(() => {
+          // Skip if user is currently scrolling
+          if (isUserScrollingRef.current[post.id]) {
+            return;
+          }
+
+          const currentIndex = currentImageIndexRef.current[post.id] ?? 0;
+          const nextIndex = (currentIndex + 1) % imageCount;
+          const screenWidth = Dimensions.get('window').width;
+
+          if (scrollViewRefs.current[post.id]) {
+            scrollViewRefs.current[post.id].scrollTo({
+              x: nextIndex * screenWidth,
+              animated: true,
+            });
+            setCurrentImageIndex(prev => ({ ...prev, [post.id]: nextIndex }));
+          }
+        }, 3000); // Change image every 3 seconds
+      }
+    });
+
+    // Cleanup timers on unmount
+    return () => {
+      Object.values(autoScrollTimers.current).forEach(timer => {
+        if (timer) clearInterval(timer);
+      });
+    };
+  }, [paginatedPosts.length]); // Only re-run when posts change
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -463,34 +535,21 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
         </View>
       </View>
 
-      {/* Feed ScrollView */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        snapToInterval={CARD_HEIGHT + 8}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        bounces={true}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#0A1D37"
-            colors={['#0A1D37']}
+      {/* Feed FlatList with infinite scroll */}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <ErrorCard
+            message={error}
+            onRetry={onRefresh}
           />
-        }
-      >
-        {error ? (
-          <View style={styles.errorContainer}>
-            <ErrorCard
-              message={error}
-              onRetry={onRefresh}
-            />
-          </View>
-        ) : (
-          filteredPosts.map((post) => (
-          <View key={post.id} style={styles.postCard}>
+        </View>
+      ) : (
+        <>
+          <FlatList
+            data={paginatedPosts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item: post }) => (
+              <View style={styles.postCard}>
             {/* Post Header */}
             <View style={styles.postHeader}>
               <TouchableOpacity 
@@ -646,12 +705,52 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
               </Text>
             </View>
 
-            {/* Post Timestamp */}
-            <Text style={styles.timestamp}>{post.timestamp}</Text>
-          </View>
-        ))
-        )}
-      </ScrollView>
+                {/* Post Timestamp */}
+                <Text style={styles.timestamp}>{post.timestamp}</Text>
+              </View>
+            )}
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            snapToInterval={CARD_HEIGHT + 8}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            bounces={true}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#0A1D37"
+                colors={['#0A1D37']}
+              />
+            }
+            onEndReached={() => {
+              if (hasMore && !isLoadingMore) {
+                loadMore();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={() => (
+              <>
+                {hasMore && (
+                  <PaginationIndicator
+                    displayedCount={displayedCount}
+                    totalItems={totalItems}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    isLoading={isLoadingMore}
+                  />
+                )}
+                {!hasMore && paginatedPosts.length > 0 && (
+                  <View style={styles.endIndicator}>
+                    <Text style={styles.endText}>You've reached the end</Text>
+                  </View>
+                )}
+              </>
+            )}
+          />
+        </>
+      )}
 
       {/* Floating Action Button for Adding Post */}
       <TouchableOpacity
@@ -965,6 +1064,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     zIndex: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  endIndicator: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
   },
 });
 

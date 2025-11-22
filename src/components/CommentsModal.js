@@ -1,50 +1,121 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TextInput, TouchableOpacity, Image, Platform, KeyboardAvoidingView, Keyboard } from 'react-native';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, Modal, FlatList, TextInput, TouchableOpacity, Image, Platform, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
+import { usePagination } from '../utils/usePagination';
+import { LoadMoreButton } from './LoadMoreButton';
 
 export const CommentsModal = ({ visible, post, onClose }) => {
-  const [comments, setComments] = useState([]);
+  const [userComments, setUserComments] = useState([]); // User's own comments
   const [commentText, setCommentText] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const scrollViewRef = useRef(null);
 
-  // Mock comments data for the post
+  // Generate mock comments data for the post
+  const generateMockComments = useMemo(() => {
+    if (!visible || !post) return [];
+    
+    const baseComments = [
+      {
+        id: '1',
+        user: {
+          name: 'Sarah Johnson',
+          avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
+        },
+        text: 'This looks amazing! I need to visit this place soon. 📸',
+        timestamp: '2 hours ago',
+      },
+      {
+        id: '2',
+        user: {
+          name: 'Mike Chen',
+          avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
+        },
+        text: 'Been there last month! The views are incredible.',
+        timestamp: '5 hours ago',
+      },
+      {
+        id: '3',
+        user: {
+          name: 'Emma Wilson',
+          avatar: { uri: 'https://i.pravatar.cc/150?img=9' },
+        },
+        text: 'Great recommendation! Adding this to my travel list ✨',
+        timestamp: '1 day ago',
+      },
+    ];
+
+    // Generate additional comments for pagination testing
+    const users = [
+      { name: 'Alex Brown', img: 13 },
+      { name: 'Lisa Park', img: 14 },
+      { name: 'David Lee', img: 15 },
+      { name: 'Maria Garcia', img: 16 },
+      { name: 'Tom Anderson', img: 17 },
+      { name: 'Sophie Martin', img: 18 },
+      { name: 'James Wilson', img: 19 },
+      { name: 'Anna Taylor', img: 20 },
+    ];
+
+    const comments = [
+      'Amazing photos! 📷',
+      'I was there last summer, it\'s beautiful!',
+      'Adding to my bucket list! ✨',
+      'The best place I\'ve ever visited!',
+      'Great recommendation, thanks!',
+      'I need to go there ASAP!',
+      'Looks incredible! 😍',
+      'Been there, done that, loved it!',
+    ];
+
+    const additionalComments = [];
+    for (let i = 4; i <= 20; i++) {
+      const user = users[i % users.length];
+      const comment = comments[i % comments.length];
+      const hoursAgo = i * 2;
+      const timestamp = hoursAgo < 24 
+        ? `${hoursAgo} hours ago` 
+        : `${Math.floor(hoursAgo / 24)} days ago`;
+
+      additionalComments.push({
+        id: String(i),
+        user: {
+          name: user.name,
+          avatar: { uri: `https://i.pravatar.cc/150?img=${user.img}` },
+        },
+        text: comment,
+        timestamp,
+      });
+    }
+
+    return [...baseComments, ...additionalComments];
+  }, [visible, post]);
+
+  // Use pagination hook for comments
+  const {
+    displayedItems: paginatedComments,
+    currentPage,
+    totalPages,
+    hasMore,
+    isLoadingMore,
+    loadMore,
+    reset,
+    totalItems,
+    displayedCount,
+  } = usePagination(generateMockComments, 10, 10); // 10 comments per page, initially show 10
+
+  // Reset pagination when modal opens/closes or post changes
   useEffect(() => {
     if (visible && post) {
-      // Initialize with mock comments if any
-      const mockComments = [
-        {
-          id: '1',
-          user: {
-            name: 'Sarah Johnson',
-            avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-          },
-          text: 'This looks amazing! I need to visit this place soon. 📸',
-          timestamp: '2 hours ago',
-        },
-        {
-          id: '2',
-          user: {
-            name: 'Mike Chen',
-            avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
-          },
-          text: 'Been there last month! The views are incredible.',
-          timestamp: '5 hours ago',
-        },
-        {
-          id: '3',
-          user: {
-            name: 'Emma Wilson',
-            avatar: { uri: 'https://i.pravatar.cc/150?img=9' },
-          },
-          text: 'Great recommendation! Adding this to my travel list ✨',
-          timestamp: '1 day ago',
-        },
-      ];
-      setComments(mockComments);
+      reset();
+      setUserComments([]);
     }
-  }, [visible, post]);
+  }, [visible, post, reset]);
+
+  // Combine user comments with paginated comments
+  const allDisplayedComments = useMemo(() => {
+    return [...userComments, ...paginatedComments];
+  }, [userComments, paginatedComments]);
 
   // Handle keyboard visibility
   useEffect(() => {
@@ -78,12 +149,12 @@ export const CommentsModal = ({ visible, post, onClose }) => {
       timestamp: 'Just now',
     };
 
-    setComments(prev => [newComment, ...prev]);
+    setUserComments(prev => [newComment, ...prev]);
     setCommentText('');
     
     // Scroll to top to show new comment
     setTimeout(() => {
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 100);
   };
 
@@ -119,7 +190,7 @@ export const CommentsModal = ({ visible, post, onClose }) => {
           <View style={styles.headerContainer}>
             <View style={styles.commentsHeader}>
               <Text style={styles.commentsTitle}>Comments</Text>
-              <Text style={styles.commentsCount}>{comments.length}</Text>
+              <Text style={styles.commentsCount}>{allDisplayedComments.length + (hasMore ? '+' : '')}</Text>
             </View>
             <TouchableOpacity
               style={styles.closeButton}
@@ -130,22 +201,19 @@ export const CommentsModal = ({ visible, post, onClose }) => {
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.commentsList}
-            contentContainerStyle={styles.commentsListContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {comments.length === 0 ? (
-              <View style={styles.emptyComments}>
-                <Ionicons name="chatbubble-outline" size={48} color="#C0C0C0" />
-                <Text style={styles.emptyCommentsText}>No comments yet</Text>
-                <Text style={styles.emptyCommentsSubtext}>Be the first to comment!</Text>
-              </View>
-            ) : (
-              comments.map((comment) => (
-                <View key={comment.id} style={styles.commentItem}>
+          {allDisplayedComments.length === 0 && !hasMore ? (
+            <View style={styles.emptyComments}>
+              <Ionicons name="chatbubble-outline" size={48} color="#C0C0C0" />
+              <Text style={styles.emptyCommentsText}>No comments yet</Text>
+              <Text style={styles.emptyCommentsSubtext}>Be the first to comment!</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={scrollViewRef}
+              data={allDisplayedComments}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: comment }) => (
+                <View style={styles.commentItem}>
                   <Image source={comment.user.avatar} style={styles.commentAvatar} />
                   <View style={styles.commentContent}>
                     <View style={styles.commentBubble}>
@@ -155,9 +223,37 @@ export const CommentsModal = ({ visible, post, onClose }) => {
                     <Text style={styles.commentTimestamp}>{comment.timestamp}</Text>
                   </View>
                 </View>
-              ))
-            )}
-          </ScrollView>
+              )}
+              style={styles.commentsList}
+              contentContainerStyle={styles.commentsListContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              inverted={false}
+              onEndReached={() => {
+                if (hasMore && !isLoadingMore) {
+                  loadMore();
+                }
+              }}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={() => (
+                <>
+                  {hasMore && (
+                    <LoadMoreButton
+                      onPress={loadMore}
+                      isLoading={isLoadingMore}
+                      hasMore={hasMore}
+                      text="Load More Comments"
+                    />
+                  )}
+                  {!hasMore && allDisplayedComments.length > 0 && (
+                    <View style={styles.endIndicator}>
+                      <Text style={styles.endText}>All comments loaded</Text>
+                    </View>
+                  )}
+                </>
+              )}
+            />
+          )}
 
           {/* Input Area */}
           <View style={styles.inputContainer}>
@@ -329,6 +425,15 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#E8E8E8',
+  },
+  endIndicator: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  endText: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
   },
 });
 

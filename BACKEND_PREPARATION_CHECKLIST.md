@@ -21,23 +21,17 @@
   - Form validation errors
   - Delete confirmations
 
-### 4. **Form Validation & Feedback**
-- [x] Add real-time form validation
-- [x] Show inline error messages for form fields
-- [x] Add character counters (for captions, comments)
-- [x] Validate image file sizes/types before upload
-- [x] Add loading states to submit buttons
 
 
 
 ### 7. **Pagination & Infinite Scroll**
-- [ ] Add pagination indicators
-- [ ] Implement infinite scroll for:
+- [x] Add pagination indicators
+- [x] Implement infinite scroll for:
   - Feed posts
   - Communities list
   - Comments
   - Search results
-- [ ] Add "Load More" buttons where appropriate
+- [x] Add "Load More" buttons where appropriate
 
 ### 8. **Optimistic Updates**
 - [ ] Add optimistic UI updates for:

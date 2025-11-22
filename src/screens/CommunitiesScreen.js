@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { ErrorCard } from '../components/ErrorCard';
+import { LoadMoreButton } from '../components/LoadMoreButton';
+import { PaginationIndicator } from '../components/PaginationIndicator';
 import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
+import { usePagination } from '../utils/usePagination';
 
 export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress, onCreateCommunityPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -69,57 +72,86 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     debouncedSetSearch(searchQuery);
   }, [searchQuery, debouncedSetSearch]);
 
-  // Mock communities data (must be defined before useMemo)
-  const communities = [
-    {
-      id: 'hotels',
-      name: 'q/hotels',
-      description: 'Discuss hotels, accommodations, and stays',
-      members: 12450,
-      posts: 3420,
-      icon: 'bed-outline',
-    },
-    {
-      id: 'museums',
-      name: 'q/museums',
-      description: 'Share experiences and tips about museums',
-      members: 8920,
-      posts: 2150,
-      icon: 'library-outline',
-    },
-    {
-      id: 'landmarks',
-      name: 'q/landmarks',
-      description: 'Iconic places and landmarks discussions',
-      members: 15680,
-      posts: 4890,
-      icon: 'location-outline',
-    },
-    {
-      id: 'cafes',
-      name: 'q/cafes',
-      description: 'Coffee shops, cafes, and dining spots',
-      members: 7450,
-      posts: 1890,
-      icon: 'cafe-outline',
-    },
-    {
-      id: 'nature',
-      name: 'q/nature',
-      description: 'Parks, trails, and natural attractions',
-      members: 11320,
-      posts: 3120,
-      icon: 'leaf-outline',
-    },
-    {
-      id: 'restaurants',
-      name: 'q/restaurants',
-      description: 'Restaurant reviews and recommendations',
-      members: 9830,
-      posts: 2560,
-      icon: 'restaurant-outline',
-    },
-  ];
+  // Generate mock communities data (must be defined before useMemo)
+  const generateCommunities = () => {
+    const baseCommunities = [
+      {
+        id: 'hotels',
+        name: 'q/hotels',
+        description: 'Discuss hotels, accommodations, and stays',
+        members: 12450,
+        posts: 3420,
+        icon: 'bed-outline',
+      },
+      {
+        id: 'museums',
+        name: 'q/museums',
+        description: 'Share experiences and tips about museums',
+        members: 8920,
+        posts: 2150,
+        icon: 'library-outline',
+      },
+      {
+        id: 'landmarks',
+        name: 'q/landmarks',
+        description: 'Iconic places and landmarks discussions',
+        members: 15680,
+        posts: 4890,
+        icon: 'location-outline',
+      },
+      {
+        id: 'cafes',
+        name: 'q/cafes',
+        description: 'Coffee shops, cafes, and dining spots',
+        members: 7450,
+        posts: 1890,
+        icon: 'cafe-outline',
+      },
+      {
+        id: 'nature',
+        name: 'q/nature',
+        description: 'Parks, trails, and natural attractions',
+        members: 11320,
+        posts: 3120,
+        icon: 'leaf-outline',
+      },
+      {
+        id: 'restaurants',
+        name: 'q/restaurants',
+        description: 'Restaurant reviews and recommendations',
+        members: 9830,
+        posts: 2560,
+        icon: 'restaurant-outline',
+      },
+    ];
+
+    // Generate additional communities for pagination testing
+    const categories = [
+      { name: 'beaches', icon: 'water-outline', desc: 'Beach destinations and coastal areas' },
+      { name: 'shopping', icon: 'bag-outline', desc: 'Shopping districts and markets' },
+      { name: 'nightlife', icon: 'musical-notes-outline', desc: 'Bars, clubs, and nightlife spots' },
+      { name: 'adventure', icon: 'trail-sign-outline', desc: 'Adventure activities and extreme sports' },
+      { name: 'photography', icon: 'camera-outline', desc: 'Photography spots and tips' },
+      { name: 'budget', icon: 'wallet-outline', desc: 'Budget-friendly travel tips' },
+      { name: 'luxury', icon: 'diamond-outline', desc: 'Luxury travel experiences' },
+      { name: 'solo', icon: 'person-outline', desc: 'Solo travel advice and stories' },
+      { name: 'family', icon: 'people-outline', desc: 'Family-friendly destinations' },
+      { name: 'romance', icon: 'heart-outline', desc: 'Romantic getaways and date spots' },
+    ];
+
+    const additionalCommunities = categories.map((cat, index) => ({
+      id: cat.name,
+      name: `q/${cat.name}`,
+      description: cat.desc,
+      members: Math.floor(Math.random() * 15000) + 5000,
+      posts: Math.floor(Math.random() * 5000) + 1000,
+      icon: cat.icon,
+    }));
+
+    return [...baseCommunities, ...additionalCommunities];
+  };
+
+  const allCommunities = useMemo(() => generateCommunities(), []);
 
   // Mock posts data for selected community
   const getCommunityPosts = (communityId) => {
@@ -299,17 +331,35 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
 
   // Filter communities based on search query (memoized) - MUST be before early return
   const filteredCommunities = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return communities;
+    if (!debouncedSearchQuery.trim()) return allCommunities;
     const query = debouncedSearchQuery.toLowerCase();
-    return communities.filter((community) => (
+    return allCommunities.filter((community) => (
       community.name.toLowerCase().includes(query) ||
       community.description.toLowerCase().includes(query)
     ));
-  }, [debouncedSearchQuery]);
+  }, [allCommunities, debouncedSearchQuery]);
+
+  // Use pagination hook for communities list
+  const {
+    displayedItems: paginatedCommunities,
+    currentPage,
+    totalPages,
+    hasMore,
+    isLoadingMore,
+    loadMore,
+    reset,
+    totalItems,
+    displayedCount,
+  } = usePagination(filteredCommunities, 6, 6); // 6 communities per page, initially show 6
+
+  // Reset pagination when filtered communities change
+  useEffect(() => {
+    reset();
+  }, [filteredCommunities.length, reset]);
 
   // If a community is selected, show its posts
   if (selectedCommunity) {
-    const community = communities.find(c => c.id === selectedCommunity);
+    const community = allCommunities.find(c => c.id === selectedCommunity);
     const posts = getCommunityPosts(selectedCommunity);
     const isJoined = joinedCommunities.has(selectedCommunity);
 
@@ -615,40 +665,27 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#0A1D37"
-            colors={['#0A1D37']}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <ErrorCard
+            message={error}
+            onRetry={onRefresh}
           />
-        }
-      >
-        {error ? (
-          <View style={styles.errorContainer}>
-            <ErrorCard
-              message={error}
-              onRetry={onRefresh}
-            />
-          </View>
-        ) : (
-          <View style={styles.communitiesList}>
-          {filteredCommunities.length === 0 ? (
-            <View style={styles.emptySearchResults}>
-              <Ionicons name="search-outline" size={48} color="#C0C0C0" />
-              <Text style={styles.emptySearchText}>No communities found</Text>
-              <Text style={styles.emptySearchSubtext}>Try a different search term</Text>
-            </View>
-          ) : (
-            filteredCommunities.map((community) => {
+        </View>
+      ) : paginatedCommunities.length === 0 ? (
+        <View style={styles.emptySearchResults}>
+          <Ionicons name="search-outline" size={48} color="#C0C0C0" />
+          <Text style={styles.emptySearchText}>No communities found</Text>
+          <Text style={styles.emptySearchSubtext}>Try a different search term</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={paginatedCommunities}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: community }) => {
             const isJoined = joinedCommunities.has(community.id);
             return (
               <TouchableOpacity
-                key={community.id}
                 style={styles.communityCard}
                 onPress={() => setSelectedCommunity(community.id)}
                 activeOpacity={0.85}
@@ -676,11 +713,46 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
                 </View>
               </TouchableOpacity>
             );
-            })
+          }}
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, styles.communitiesList]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#0A1D37"
+              colors={['#0A1D37']}
+            />
+          }
+          ListFooterComponent={() => (
+            <>
+              {hasMore && (
+                <>
+                  <LoadMoreButton
+                    onPress={loadMore}
+                    isLoading={isLoadingMore}
+                    hasMore={hasMore}
+                    text="Load More Communities"
+                  />
+                  <PaginationIndicator
+                    displayedCount={displayedCount}
+                    totalItems={totalItems}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    isLoading={isLoadingMore}
+                  />
+                </>
+              )}
+              {!hasMore && paginatedCommunities.length > 0 && (
+                <View style={styles.endIndicator}>
+                  <Text style={styles.endText}>All communities loaded</Text>
+                </View>
+              )}
+            </>
           )}
-          </View>
-        )}
-          </ScrollView>
+        />
+      )}
 
         {/* Floating Action Button for Creating Community */}
         <TouchableOpacity
@@ -1104,6 +1176,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     zIndex: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  endIndicator: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
   },
 });
 
