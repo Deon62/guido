@@ -35,6 +35,8 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { ComingSoonScreen } from './src/screens/ComingSoonScreen';
 import { FollowersFollowingScreen } from './src/screens/FollowersFollowingScreen';
 import { AIChatScreen } from './src/screens/AIChatScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
+import { SignupScreen } from './src/screens/SignupScreen';
 
 function AppContent() {
   const [fontsLoaded] = useFonts({
@@ -78,6 +80,9 @@ function AppContent() {
   const [comingSoonData, setComingSoonData] = useState(null);
   const [showFollowersFollowing, setShowFollowersFollowing] = useState(false);
   const [followersFollowingTab, setFollowersFollowingTab] = useState('followers');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -92,7 +97,11 @@ function AppContent() {
   };
 
   const handleBack = () => {
-    if (showMyFeedPosts) {
+    if (showSignup) {
+      setShowSignup(false);
+    } else if (showLogin) {
+      setShowLogin(false);
+    } else if (showMyFeedPosts) {
       setShowMyFeedPosts(false);
     } else if (showMyCommunities) {
       setShowMyCommunities(false);
@@ -195,7 +204,38 @@ function AppContent() {
   };
 
   const handleAddFeedPostPress = () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      setShowSignup(true);
+      return;
+    }
     setShowAddFeedPost(true);
+  };
+
+  const handleLogin = (credentials) => {
+    console.log('Login:', credentials);
+    setIsAuthenticated(true);
+    setShowLogin(false);
+    setShowSignup(false);
+  };
+
+  const handleSignup = (credentials) => {
+    console.log('Signup:', credentials);
+    setIsAuthenticated(true);
+    setShowLogin(false);
+    setShowSignup(false);
+    // After signup, allow them to post
+    setShowAddFeedPost(true);
+  };
+
+  const handleLoginPress = () => {
+    setShowSignup(false);
+    setShowLogin(true);
+  };
+
+  const handleSignupPress = () => {
+    setShowLogin(false);
+    setShowSignup(true);
   };
 
   const handlePostDetailPress = (post, community, comments) => {
@@ -538,6 +578,32 @@ function AppContent() {
         tripData={savedTripData}
         onBack={handleAddTripSuccessBack}
       />
+    );
+  }
+
+  // Show signup screen
+  if (showSignup) {
+    return (
+      <PageTransition isVisible={showSignup}>
+        <SignupScreen
+          onSignup={handleSignup}
+          onLoginPress={handleLoginPress}
+          onBack={handleBack}
+        />
+      </PageTransition>
+    );
+  }
+
+  // Show login screen
+  if (showLogin) {
+    return (
+      <PageTransition isVisible={showLogin}>
+        <LoginScreen
+          onLogin={handleLogin}
+          onSignupPress={handleSignupPress}
+          onBack={handleBack}
+        />
+      </PageTransition>
     );
   }
 
