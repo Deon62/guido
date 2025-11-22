@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
@@ -8,17 +8,46 @@ import { FONTS } from '../constants/fonts';
 export const AddTripSuccessScreen = ({ tripData, onBack }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+  
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        delay: 100,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        delay: 100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       
       <View style={[styles.content, { paddingTop: statusBarHeight + 40 }]}>
-        <View style={styles.successIconContainer}>
+        <Animated.View 
+          style={[
+            styles.successIconContainer,
+            {
+              transform: [{ scale: scaleAnim }],
+              opacity: fadeAnim,
+            },
+          ]}
+        >
           <View style={styles.successIconCircle}>
             <Ionicons name="checkmark" size={48} color="#FFFFFF" />
           </View>
-        </View>
+        </Animated.View>
 
         <Text style={styles.successTitle}>Trip Added Successfully!</Text>
         <Text style={styles.successMessage}>

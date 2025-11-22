@@ -30,6 +30,7 @@ import { PrivacyScreen } from './src/screens/PrivacyScreen';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
 import { ConfirmationModal } from './src/components/ConfirmationModal';
 import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelectorScreen';
+import { PageTransition } from './src/components/PageTransition';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -494,20 +495,24 @@ export default function App() {
   // Show add feed post screen
   if (showAddFeedPost) {
     return (
-      <AddFeedPostScreen
-        onBack={handleBack}
-        onSave={handleAddFeedPostSave}
-      />
+      <PageTransition isVisible={showAddFeedPost}>
+        <AddFeedPostScreen
+          onBack={handleBack}
+          onSave={handleAddFeedPostSave}
+        />
+      </PageTransition>
     );
   }
 
   // Show add past trip screen
   if (showAddPastTrip) {
     return (
-      <AddPastTripScreen
-        onBack={handleBack}
-        onSave={handleAddTripSave}
-      />
+      <PageTransition isVisible={showAddPastTrip}>
+        <AddPastTripScreen
+          onBack={handleBack}
+          onSave={handleAddTripSave}
+        />
+      </PageTransition>
     );
   }
 
@@ -525,20 +530,24 @@ export default function App() {
   // Show my feed posts screen (check before activeTab checks)
   if (showMyFeedPosts) {
     return (
-      <MyFeedPostsScreen
-        onBack={handleBack}
-        onPostPress={handlePostDetailPress}
-      />
+      <PageTransition isVisible={showMyFeedPosts}>
+        <MyFeedPostsScreen
+          onBack={handleBack}
+          onPostPress={handlePostDetailPress}
+        />
+      </PageTransition>
     );
   }
 
   // Show my communities screen
   if (showMyCommunities) {
     return (
-      <MyCommunitiesScreen
-        onBack={handleBack}
-        onCommunityPress={handleMyCommunitiesCommunityPress}
-      />
+      <PageTransition isVisible={showMyCommunities}>
+        <MyCommunitiesScreen
+          onBack={handleBack}
+          onCommunityPress={handleMyCommunitiesCommunityPress}
+        />
+      </PageTransition>
     );
   }
 
@@ -579,13 +588,15 @@ export default function App() {
   // Show post detail screen
   if (showPostDetail && selectedPostData) {
     return (
-      <PostDetailScreen
-        post={selectedPostData.post}
-        community={selectedPostData.community}
-        comments={selectedPostData.comments || []}
-        onBack={handlePostDetailBack}
-        onAddComment={handlePostDetailAddComment}
-      />
+      <PageTransition isVisible={showPostDetail}>
+        <PostDetailScreen
+          post={selectedPostData.post}
+          community={selectedPostData.community}
+          comments={selectedPostData.comments || []}
+          onBack={handlePostDetailBack}
+          onAddComment={handlePostDetailAddComment}
+        />
+      </PageTransition>
     );
   }
 

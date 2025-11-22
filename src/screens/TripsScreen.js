@@ -214,7 +214,7 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
           ))
         ) : filteredTrips.length > 0 ? (
           // Show actual place cards
-          filteredTrips.map((trip) => (
+          filteredTrips.map((trip, index) => (
             <PlaceCard
               key={trip.id}
               place={{
@@ -227,6 +227,7 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
                 image: trip.placeImage,
               }}
               onPress={() => handleTripPress(trip)}
+              delay={index * 50}
             />
           ))
         ) : (

@@ -489,11 +489,12 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
             ))
           ) : (
             // Show actual place cards
-            mockPlaces.map((place) => (
+            mockPlaces.map((place, index) => (
               <PlaceCard
                 key={place.id}
                 place={place}
                 onPress={() => handlePlacePress(place)}
+                delay={index * 50}
               />
             ))
           )}

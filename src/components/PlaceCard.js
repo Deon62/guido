@@ -1,9 +1,48 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 
-export const PlaceCard = ({ place, onPress }) => {
+export const PlaceCard = ({ place, onPress, delay = 0 }) => {
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        delay,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        delay,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [delay]);
+
+  const handlePressIn = () => {
+    Animated.spring(pressScale, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(pressScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
   const getCategoryIcon = (category) => {
     switch (category.toLowerCase()) {
       case 'landmark':
@@ -41,11 +80,24 @@ export const PlaceCard = ({ place, onPress }) => {
   };
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.85}
+    <Animated.View
+      style={[
+        {
+          transform: [
+            { scale: scaleAnim },
+            { scale: pressScale },
+          ],
+          opacity: opacityAnim,
+        },
+      ]}
     >
+      <TouchableOpacity
+        style={styles.card}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
       <View style={styles.imageContainer}>
         <Image
           source={place.image}
@@ -81,6 +133,7 @@ export const PlaceCard = ({ place, onPress }) => {
         <Text style={styles.categoryText}>{place.category}</Text>
       </View>
     </TouchableOpacity>
+    </Animated.View>
   );
 };
 
