@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Alert, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
+import { compressImage } from '../utils/imageCompression';
 
 export const AddFeedPostScreen = ({ onBack, onSave }) => {
   // Get safe area insets
@@ -14,6 +15,8 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
 
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState({ current: 0, total: 0 });
   const [formData, setFormData] = useState({
     placeName: '',
     location: '',
@@ -103,15 +106,36 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
-        quality: 0.8,
+        quality: 1, // Get full quality first, we'll compress it
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const newImage = { uri: result.assets[0].uri };
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, newImage].slice(0, 5), // Ensure max 5 images
-        }));
+        const originalUri = result.assets[0].uri;
+        
+        // Show compression indicator
+        setIsCompressing(true);
+        setCompressionProgress({ current: 1, total: 1 });
+        triggerHaptic('light');
+        
+        try {
+          // Compress the image
+          const compressedImage = await compressImage(originalUri, 1200, 1200, 0.8);
+          
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, compressedImage].slice(0, 5), // Ensure max 5 images
+          }));
+        } catch (compressionError) {
+          console.error('Compression error:', compressionError);
+          // Fallback to original image if compression fails
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, { uri: originalUri }].slice(0, 5),
+          }));
+        } finally {
+          setIsCompressing(false);
+          setCompressionProgress({ current: 0, total: 0 });
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -187,17 +211,32 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                   style={styles.imageUploadButton}
                   onPress={handleImagePick}
                   activeOpacity={0.8}
+                  disabled={isCompressing}
                 >
-                  <Ionicons name="camera" size={32} color="#6D6D6D" />
-                  <Text style={styles.imageUploadText}>
-                    {formData.images.length === 0 ? 'Add Photos' : 'Add More Photos'}
-                  </Text>
-                  <Text style={styles.imageUploadSubtext}>
-                    {formData.images.length === 0 
-                      ? 'Tap to upload images (up to 5)' 
-                      : `Add ${5 - formData.images.length} more image${5 - formData.images.length > 1 ? 's' : ''}`
-                    }
-                  </Text>
+                  {isCompressing ? (
+                    <View style={styles.compressingContainer}>
+                      <ActivityIndicator size="large" color="#0A1D37" />
+                      <Text style={styles.compressingText}>Compressing image...</Text>
+                      {compressionProgress.total > 0 && (
+                        <Text style={styles.compressingProgress}>
+                          {compressionProgress.current} / {compressionProgress.total}
+                        </Text>
+                      )}
+                    </View>
+                  ) : (
+                    <>
+                      <Ionicons name="camera" size={32} color="#6D6D6D" />
+                      <Text style={styles.imageUploadText}>
+                        {formData.images.length === 0 ? 'Add Photos' : 'Add More Photos'}
+                      </Text>
+                      <Text style={styles.imageUploadSubtext}>
+                        {formData.images.length === 0 
+                          ? 'Tap to upload images (up to 5)' 
+                          : `Add ${5 - formData.images.length} more image${5 - formData.images.length > 1 ? 's' : ''}`
+                        }
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               )}
             </View>
@@ -527,6 +566,25 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     marginBottom: 16,
+  },
+  compressingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  compressingText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginTop: 12,
+    letterSpacing: 0.2,
+  },
+  compressingProgress: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+    marginTop: 4,
+    letterSpacing: 0.2,
   },
 });
 

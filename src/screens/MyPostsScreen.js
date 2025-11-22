@@ -94,7 +94,20 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
           <View style={styles.emptyState}>
             <Ionicons name="document-text-outline" size={64} color="#C0C0C0" />
             <Text style={styles.emptyStateText}>No posts yet</Text>
-            <Text style={styles.emptyStateSubtext}>Start sharing your experiences with the community!</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Start sharing your experiences with the community! Create your first post to get started.
+            </Text>
+            <TouchableOpacity
+              style={styles.emptyStateButton}
+              onPress={() => {
+                // Navigate to create post - this would be handled by parent
+                console.log('Create post from empty state');
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" style={styles.emptyStateButtonIcon} />
+              <Text style={styles.emptyStateButtonText}>Create Your First Post</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.postsList}>
@@ -196,6 +209,25 @@ const styles = StyleSheet.create({
     color: '#9B9B9B',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A1D37',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  emptyStateButtonIcon: {
+    marginRight: 8,
+  },
+  emptyStateButtonText: {
+    fontSize: 15,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   postsList: {
     padding: 16,

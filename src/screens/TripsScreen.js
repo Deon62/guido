@@ -243,12 +243,36 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         ) : (
           // Show empty state
           <View style={styles.emptyContainer}>
+            <Ionicons 
+              name={
+                selectedTab === 'wishlist' ? 'heart-outline' :
+                selectedTab === 'active' ? 'calendar-outline' :
+                'time-outline'
+              } 
+              size={64} 
+              color="#C0C0C0" 
+            />
             <Text style={styles.emptyText}>No {selectedTab} trips</Text>
             <Text style={styles.emptySubtext}>
-              {selectedTab === 'wishlist' && 'You have no places in your wishlist yet'}
-              {selectedTab === 'active' && 'You have no active trips right now'}
-              {selectedTab === 'past' && 'You have no past trips yet'}
+              {selectedTab === 'wishlist' && 'Start building your dream destinations! Add places you want to visit to your wishlist.'}
+              {selectedTab === 'active' && 'You don\'t have any active trips right now. Plan your next adventure!'}
+              {selectedTab === 'past' && 'You haven\'t added any past trips yet. Share your travel memories!'}
+              {selectedTab === 'recommendations' && 'Get personalized trip recommendations based on your preferences!'}
             </Text>
+            {selectedTab === 'past' && (
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={() => {
+                  if (onAddTripPress) {
+                    onAddTripPress();
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" style={styles.emptyStateButtonIcon} />
+                <Text style={styles.emptyStateButtonText}>Add Past Trip</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
@@ -426,6 +450,24 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     color: '#FFFFFF',
     marginLeft: 8,
+    letterSpacing: 0.3,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A1D37',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  emptyStateButtonIcon: {
+    marginRight: 8,
+  },
+  emptyStateButtonText: {
+    fontSize: 15,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
 });

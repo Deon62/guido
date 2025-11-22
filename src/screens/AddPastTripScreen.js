@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image,
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { compressImage } from '../utils/imageCompression';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
 
@@ -75,11 +76,21 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 1, // Get full quality first, we'll compress it
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        updateField('image', { uri: result.assets[0].uri });
+        const originalUri = result.assets[0].uri;
+        
+        try {
+          // Compress the image
+          const compressedImage = await compressImage(originalUri, 1200, 1200, 0.8);
+          updateField('image', compressedImage);
+        } catch (compressionError) {
+          console.error('Compression error:', compressionError);
+          // Fallback to original image if compression fails
+          updateField('image', { uri: originalUri });
+        }
       }
     } catch (error) {
       console.error('Error picking image:', error);
