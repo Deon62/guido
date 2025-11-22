@@ -596,6 +596,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onPostPress={handlePostDetailPress}
+        onMyCommunitiesPress={handleMyCommunitiesPress}
       />
     );
   }

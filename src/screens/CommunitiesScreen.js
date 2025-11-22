@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
-export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress }) => {
+export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress }) => {
+  const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+  
   const [selectedCommunity, setSelectedCommunity] = useState(null);
   const [joinedCommunities, setJoinedCommunities] = useState(new Set(['hotels', 'museums']));
   const [newPostText, setNewPostText] = useState('');
-  const [showNewPostInput, setShowNewPostInput] = useState(false);
+  const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Get safe area insets
-  const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+  const searchBarWidth = useRef(new Animated.Value(0)).current;
+  const searchBarOpacity = useRef(new Animated.Value(0)).current;
+  const [showNewPostInput, setShowNewPostInput] = useState(false);
 
   // Mock communities data
   const communities = [
@@ -416,6 +418,38 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress }) => {
     );
   }
 
+  // Animate search bar
+  useEffect(() => {
+    if (showSearchBar) {
+      Animated.parallel([
+        Animated.timing(searchBarWidth, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchBarOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(searchBarWidth, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchBarOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+      setSearchQuery(''); // Clear search when closing
+    }
+  }, [showSearchBar]);
+
   // Filter communities based on search query
   const filteredCommunities = communities.filter((community) => {
     if (!searchQuery.trim()) return true;
@@ -433,45 +467,102 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress }) => {
       
       {/* Header */}
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
-        <View>
-          <Text style={styles.headerTitle}>Communities</Text>
-          <Text style={styles.headerSubtitle}>Join discussions about places</Text>
+        <View style={styles.headerLeft}>
+          <Animated.View
+            style={[
+              styles.animatedSearchContainer,
+              {
+                width: searchBarWidth.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, Dimensions.get('window').width - 180],
+                }),
+                opacity: searchBarOpacity,
+                marginRight: searchBarWidth.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 8],
+                }),
+              },
+            ]}
+          >
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={20} color="#6D6D6D" style={styles.searchBarIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search communities..."
+                placeholderTextColor="#9B9B9B"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus={showSearchBar}
+              />
+              {searchQuery.length > 0 ? (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.searchClearButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={20} color="#6D6D6D" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setShowSearchBar(false)}
+                  style={styles.searchCloseButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={20} color="#6D6D6D" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+          {!showSearchBar && (
+            <View>
+              <Text style={styles.headerTitle}>Communities</Text>
+              <Text style={styles.headerSubtitle}>Join discussions about places</Text>
+            </View>
+          )}
         </View>
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => onTabChange && onTabChange('profile')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.profileImageContainer}>
-            <Image
-              source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
-              style={styles.profileImage}
-              resizeMode="cover"
-            />
-            <View style={styles.onlineIndicator} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#6D6D6D" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search communities..."
-          placeholderTextColor="#9B9B9B"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
+        <View style={styles.headerRight}>
+          <Animated.View
+            style={{
+              opacity: searchBarOpacity.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 0],
+              }),
+            }}
+          >
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => setShowSearchBar(!showSearchBar)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="search" size={24} color="#0A1D37" />
+            </TouchableOpacity>
+          </Animated.View>
           <TouchableOpacity
-            onPress={() => setSearchQuery('')}
-            style={styles.searchClearButton}
+            style={styles.myCommunitiesButton}
+            onPress={() => {
+              if (onMyCommunitiesPress) {
+                onMyCommunitiesPress();
+              }
+            }}
             activeOpacity={0.7}
           >
-            <Ionicons name="close-circle" size={20} color="#6D6D6D" />
+            <Ionicons name="people" size={24} color="#0A1D37" />
           </TouchableOpacity>
-        )}
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => onTabChange && onTabChange('profile')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.profileImageContainer}>
+              <Image
+                source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+                style={styles.profileImage}
+                resizeMode="cover"
+              />
+              <View style={styles.onlineIndicator} />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -544,6 +635,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E8E8E8',
   },
+  headerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  animatedSearchContainer: {
+    overflow: 'hidden',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchButton: {
+    padding: 4,
+  },
+  myCommunitiesButton: {
+    padding: 4,
+  },
   profileButton: {
     padding: 4,
   },
@@ -590,20 +701,18 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     letterSpacing: 0.2,
   },
-  searchContainer: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
+    backgroundColor: '#F7F7F7',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E8E8E8',
+    minHeight: 44,
   },
-  searchIcon: {
+  searchBarIcon: {
     marginRight: 8,
   },
   searchInput: {
@@ -614,6 +723,10 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   searchClearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  searchCloseButton: {
     padding: 4,
     marginLeft: 8,
   },

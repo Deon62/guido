@@ -161,35 +161,6 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           </TouchableOpacity>
         </View>
 
-        {/* My Communities Section */}
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>My Communities</Text>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              if (onMyCommunitiesPress) {
-                onMyCommunitiesPress();
-              } else {
-                console.log('My Communities');
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons
-                name="people-outline"
-                size={22}
-                color="#0A1D37"
-              />
-              <Text style={styles.menuItemText}>View joined communities</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color="#6D6D6D"
-            />
-          </TouchableOpacity>
-        </View>
 
         {/* Personal Info Section */}
         <View style={styles.infoSection}>
