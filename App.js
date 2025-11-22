@@ -33,6 +33,7 @@ import { ProfilePictureSelectorScreen } from './src/screens/ProfilePictureSelect
 import { PageTransition } from './src/components/PageTransition';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { ComingSoonScreen } from './src/screens/ComingSoonScreen';
+import { FollowersFollowingScreen } from './src/screens/FollowersFollowingScreen';
 
 function AppContent() {
   const [fontsLoaded] = useFonts({
@@ -74,6 +75,8 @@ function AppContent() {
   const [showMyFeedPosts, setShowMyFeedPosts] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [comingSoonData, setComingSoonData] = useState(null);
+  const [showFollowersFollowing, setShowFollowersFollowing] = useState(false);
+  const [followersFollowingTab, setFollowersFollowingTab] = useState('followers');
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -129,6 +132,8 @@ function AppContent() {
       setShowNotifications(false);
     } else if (showSettings) {
       setShowSettings(false);
+    } else if (showFollowersFollowing) {
+      setShowFollowersFollowing(false);
     } else if (selectedMessage) {
       setSelectedMessage(null);
     } else if (currentScreen === 'home' && activeTab !== 'home') {
@@ -136,6 +141,16 @@ function AppContent() {
     } else {
       setCurrentScreen('landing');
     }
+  };
+
+  const handleFollowersPress = () => {
+    setFollowersFollowingTab('followers');
+    setShowFollowersFollowing(true);
+  };
+
+  const handleFollowingPress = () => {
+    setFollowersFollowingTab('following');
+    setShowFollowersFollowing(true);
   };
 
   const handleAboutDeveloperPress = () => {
@@ -350,6 +365,18 @@ function AppContent() {
   const handleChatBack = () => {
     setSelectedMessage(null);
   };
+
+  // Show followers/following screen
+  if (showFollowersFollowing) {
+    return (
+      <PageTransition>
+        <FollowersFollowingScreen
+          initialTab={followersFollowingTab}
+          onBack={handleBack}
+        />
+      </PageTransition>
+    );
+  }
 
   // Show coming soon screen
   if (showComingSoon && comingSoonData) {
@@ -660,6 +687,8 @@ function AppContent() {
           onMyPostsPress={handleMyPostsPress}
           onMyCommunitiesPress={handleMyCommunitiesPress}
           onComingSoonPress={handleComingSoonPress}
+          onFollowersPress={handleFollowersPress}
+          onFollowingPress={handleFollowingPress}
           user={userData}
         />
         

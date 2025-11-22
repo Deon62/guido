@@ -6,7 +6,7 @@ import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
 
-export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, user: userProp, hideBottomNav = false }) => {
+export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, onFollowersPress, onFollowingPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
@@ -126,12 +126,26 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
 
         {/* Followers/Following Section */}
         <View style={styles.followStatsSection}>
-          <TouchableOpacity style={styles.followStatItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.followStatItem} 
+            activeOpacity={0.7}
+            onPress={() => {
+              triggerHaptic('light');
+              if (onFollowersPress) onFollowersPress();
+            }}
+          >
             <Text style={styles.followStatNumber}>1.2k</Text>
             <Text style={styles.followStatLabel}>Followers</Text>
           </TouchableOpacity>
           <View style={styles.followStatDivider} />
-          <TouchableOpacity style={styles.followStatItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.followStatItem} 
+            activeOpacity={0.7}
+            onPress={() => {
+              triggerHaptic('light');
+              if (onFollowingPress) onFollowingPress();
+            }}
+          >
             <Text style={styles.followStatNumber}>456</Text>
             <Text style={styles.followStatLabel}>Following</Text>
           </TouchableOpacity>
