@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
+import { CommentsModal } from '../components/CommentsModal';
 import { FONTS } from '../constants/fonts';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -13,6 +14,7 @@ const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full v
 export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) => {
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [savedPosts, setSavedPosts] = useState(new Set());
+  const [selectedPostForComments, setSelectedPostForComments] = useState(null);
 
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -130,6 +132,14 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
     });
   };
 
+  const handleCommentsPress = (post) => {
+    setSelectedPostForComments(post);
+  };
+
+  const handleCloseComments = () => {
+    setSelectedPostForComments(null);
+  };
+
   const handleShare = async (post) => {
     try {
       const shareMessage = `${post.user.name} visited ${post.place.name} in ${post.place.location}\n\n${post.caption}\n\n📍 ${post.place.category}\n❤️ ${post.likes} likes | 💬 ${post.comments} comments\n\nCheck it out on Quest!`;
@@ -235,7 +245,11 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
                     color={likedPosts.has(post.id) ? '#E74C3C' : '#1A1A1A'}
                   />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => handleCommentsPress(post)}
+                  activeOpacity={0.7}
+                >
                   <Ionicons name="chatbubble-outline" size={26} color="#1A1A1A" />
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -296,6 +310,13 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
+
+      {/* Comments Modal */}
+      <CommentsModal
+        visible={selectedPostForComments !== null}
+        post={selectedPostForComments}
+        onClose={handleCloseComments}
+      />
 
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
     </View>
