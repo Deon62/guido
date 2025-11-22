@@ -346,13 +346,21 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                 onChangeText={setSearchQuery}
                 autoFocus={showSearchBar}
               />
-              {searchQuery.length > 0 && (
+              {searchQuery.length > 0 ? (
                 <TouchableOpacity
                   onPress={() => setSearchQuery('')}
                   style={styles.searchClearButton}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="close-circle" size={20} color="#6D6D6D" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => setShowSearchBar(false)}
+                  style={styles.searchCloseButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={20} color="#6D6D6D" />
                 </TouchableOpacity>
               )}
             </View>
@@ -673,6 +681,10 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   searchClearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  searchCloseButton: {
     padding: 4,
     marginLeft: 8,
   },
