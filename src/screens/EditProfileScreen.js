@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Alert, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
+import { validateEmail, validateUsername, validateMaxLength } from '../utils/formValidation';
+import { triggerHaptic } from '../utils/haptics';
 
 export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress, currentAvatar }) => {
   // Get safe area insets
@@ -16,6 +18,18 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     city: user?.city || '',
     avatar: currentAvatar || user?.avatar,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({
+    nickname: null,
+    username: null,
+    email: null,
+    city: null,
+  });
+  const scrollViewRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const cityInputRef = useRef(null);
+  const emailInputLayout = useRef({ y: 0 });
+  const cityInputLayout = useRef({ y: 0 });
 
   // Update avatar when currentAvatar prop changes
   useEffect(() => {
@@ -27,12 +41,44 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     }
   }, [currentAvatar]);
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave(formData);
+  const handleSave = async () => {
+    if (isSubmitting) return;
+
+    // Validate all fields
+    const errors = {
+      nickname: validateMaxLength(formData.nickname, 50, 'Nickname'),
+      username: formData.username ? validateUsername(formData.username) : null,
+      email: formData.email ? validateEmail(formData.email) : null,
+      city: validateMaxLength(formData.city, 100, 'City'),
+    };
+    
+    setFieldErrors(errors);
+    
+    const hasErrors = Object.values(errors).some(err => err !== null);
+    if (hasErrors) {
+      triggerHaptic('error');
+      return;
     }
-    if (onBack) {
-      onBack();
+
+    setIsSubmitting(true);
+    triggerHaptic('medium');
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (onSave) {
+        onSave(formData);
+      }
+      triggerHaptic('success');
+      if (onBack) {
+        onBack();
+      }
+    } catch (error) {
+      triggerHaptic('error');
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -40,6 +86,23 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     setFormData(prev => ({
       ...prev,
       [field]: value,
+    }));
+    
+    // Real-time validation
+    let error = null;
+    if (field === 'nickname') {
+      error = validateMaxLength(value, 50, 'Nickname');
+    } else if (field === 'username') {
+      error = value ? validateUsername(value) : null;
+    } else if (field === 'email') {
+      error = value ? validateEmail(value) : null;
+    } else if (field === 'city') {
+      error = validateMaxLength(value, 100, 'City');
+    }
+    
+    setFieldErrors(prev => ({
+      ...prev,
+      [field]: error,
     }));
   };
 
@@ -60,12 +123,19 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
         <View style={styles.content}>
           {/* Profile Picture Section */}
           <View style={styles.profilePictureSection}>
@@ -95,8 +165,8 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
           {/* Nickname Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Nickname</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.nickname && styles.inputContainerError]}>
+              <Ionicons name="person-outline" size={20} color={fieldErrors.nickname ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your nickname"
@@ -104,15 +174,19 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
                 value={formData.nickname}
                 onChangeText={(value) => updateField('nickname', value)}
                 autoCapitalize="words"
+                maxLength={50}
               />
             </View>
+            {fieldErrors.nickname && (
+              <Text style={styles.fieldError}>{fieldErrors.nickname}</Text>
+            )}
           </View>
 
           {/* Username Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Username</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="at" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.username && styles.inputContainerError]}>
+              <Ionicons name="at" size={20} color={fieldErrors.username ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your username"
@@ -120,16 +194,26 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
                 value={formData.username}
                 onChangeText={(value) => updateField('username', value)}
                 autoCapitalize="none"
+                maxLength={20}
               />
             </View>
+            {fieldErrors.username && (
+              <Text style={styles.fieldError}>{fieldErrors.username}</Text>
+            )}
           </View>
 
           {/* Email Field */}
-          <View style={styles.inputGroup}>
+          <View 
+            style={styles.inputGroup}
+            onLayout={(event) => {
+              emailInputLayout.current.y = event.nativeEvent.layout.y;
+            }}
+          >
             <Text style={styles.label}>Email Address</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.email && styles.inputContainerError]}>
+              <Ionicons name="mail-outline" size={20} color={fieldErrors.email ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
+                ref={emailInputRef}
                 style={styles.input}
                 placeholder="Enter your email"
                 placeholderTextColor="#6D6D6D"
@@ -137,33 +221,64 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
                 onChangeText={(value) => updateField('email', value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollTo({
+                      y: emailInputLayout.current.y - 50,
+                      animated: true,
+                    });
+                  }, 300);
+                }}
               />
             </View>
+            {fieldErrors.email && (
+              <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+            )}
           </View>
 
           {/* City Field */}
-          <View style={styles.inputGroup}>
+          <View 
+            style={styles.inputGroup}
+            onLayout={(event) => {
+              cityInputLayout.current.y = event.nativeEvent.layout.y;
+            }}
+          >
             <Text style={styles.label}>City</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="location-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.city && styles.inputContainerError]}>
+              <Ionicons name="location-outline" size={20} color={fieldErrors.city ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
+                ref={cityInputRef}
                 style={styles.input}
                 placeholder="Enter your city"
                 placeholderTextColor="#6D6D6D"
                 value={formData.city}
                 onChangeText={(value) => updateField('city', value)}
                 autoCapitalize="words"
+                maxLength={100}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollTo({
+                      y: cityInputLayout.current.y - 50,
+                      animated: true,
+                    });
+                  }, 300);
+                }}
               />
             </View>
+            {fieldErrors.city && (
+              <Text style={styles.fieldError}>{fieldErrors.city}</Text>
+            )}
           </View>
 
           <Button
-            title="Save Changes"
+            title={isSubmitting ? "Saving..." : "Save Changes"}
             onPress={handleSave}
             variant="primary"
+            disabled={isSubmitting}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -195,11 +310,14 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 32,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   content: {
     padding: 24,
@@ -282,6 +400,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
+    letterSpacing: 0.2,
+  },
+  inputContainerError: {
+    borderColor: '#E74C3C',
+    borderWidth: 1.5,
+  },
+  fieldError: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#E74C3C',
+    marginTop: 6,
     letterSpacing: 0.2,
   },
 });

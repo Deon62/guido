@@ -34,6 +34,7 @@ import { PageTransition } from './src/components/PageTransition';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { ComingSoonScreen } from './src/screens/ComingSoonScreen';
 import { FollowersFollowingScreen } from './src/screens/FollowersFollowingScreen';
+import { AIChatScreen } from './src/screens/AIChatScreen';
 
 function AppContent() {
   const [fontsLoaded] = useFonts({
@@ -672,6 +673,18 @@ function AppContent() {
     );
   }
 
+  if (currentScreen === 'home' && activeTab === 'ai') {
+    return (
+      <AIChatScreen
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onBack={() => handleTabChange('feed')}
+      />
+    );
+  }
+
+  // Profile is only accessible from Feed and Communities headers
+  // We'll handle profile navigation separately when needed
   if (currentScreen === 'home' && activeTab === 'profile') {
     return (
       <>

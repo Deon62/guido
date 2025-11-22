@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { compressImage } from '../utils/imageCompression';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
+import { validatePlaceName, validateLocation, validateImageFile, validateMaxLength } from '../utils/formValidation';
+import { triggerHaptic } from '../utils/haptics';
 
 export const AddPastTripScreen = ({ onBack, onSave }) => {
   // Get safe area insets
@@ -21,19 +23,56 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
   });
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({
+    placeName: null,
+    location: null,
+    category: null,
+    date: null,
+    description: null,
+    image: null,
+  });
   const categories = ['Landmarks', 'Hotels', 'Cafes', 'Nature'];
 
-  const handleSave = () => {
-    if (!formData.placeName || !formData.location || !formData.category || !formData.date) {
-      alert('Please fill in all required fields');
+  const handleSave = async () => {
+    if (isSubmitting) return;
+
+    // Validate all fields
+    const errors = {
+      placeName: validatePlaceName(formData.placeName),
+      location: validateLocation(formData.location),
+      category: !formData.category ? 'Category is required' : null,
+      date: !formData.date || formData.date.trim() === '' ? 'Date is required' : null,
+      description: validateMaxLength(formData.description, 500, 'Description'),
+    };
+    
+    setFieldErrors(errors);
+    
+    const hasErrors = Object.values(errors).some(err => err !== null);
+    if (hasErrors) {
+      triggerHaptic('error');
       return;
     }
 
-    if (onSave) {
-      onSave(formData);
-    }
-    if (onBack) {
-      onBack();
+    setIsSubmitting(true);
+    triggerHaptic('medium');
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (onSave) {
+        onSave(formData);
+      }
+      triggerHaptic('success');
+      if (onBack) {
+        onBack();
+      }
+    } catch (error) {
+      triggerHaptic('error');
+      Alert.alert('Error', 'Failed to save trip. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -41,6 +80,23 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
+    }));
+    
+    // Real-time validation
+    let error = null;
+    if (field === 'placeName') {
+      error = validatePlaceName(value);
+    } else if (field === 'location') {
+      error = validateLocation(value);
+    } else if (field === 'date') {
+      error = !value || value.trim() === '' ? 'Date is required' : null;
+    } else if (field === 'description') {
+      error = validateMaxLength(value, 500, 'Description');
+    }
+    
+    setFieldErrors(prev => ({
+      ...prev,
+      [field]: error,
     }));
   };
 
@@ -82,14 +138,27 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
       if (!result.canceled && result.assets && result.assets[0]) {
         const originalUri = result.assets[0].uri;
         
+        // Validate image file
+        const imageError = await validateImageFile(originalUri);
+        if (imageError) {
+          Alert.alert('Invalid Image', imageError);
+          triggerHaptic('error');
+          return;
+        }
+        
         try {
           // Compress the image
           const compressedImage = await compressImage(originalUri, 1200, 1200, 0.8);
           updateField('image', compressedImage);
+          setFieldErrors(prev => ({
+            ...prev,
+            image: null,
+          }));
+          triggerHaptic('light');
         } catch (compressionError) {
           console.error('Compression error:', compressionError);
-          // Fallback to original image if compression fails
-          updateField('image', { uri: originalUri });
+          Alert.alert('Error', 'Failed to process image. Please try again.');
+          triggerHaptic('error');
         }
       }
     } catch (error) {
@@ -161,8 +230,8 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
           {/* Place Name Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Place Name *</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="location-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.placeName && styles.inputContainerError]}>
+              <Ionicons name="location-outline" size={20} color={fieldErrors.placeName ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="e.g., Eiffel Tower"
@@ -172,13 +241,16 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
                 autoCapitalize="words"
               />
             </View>
+            {fieldErrors.placeName && (
+              <Text style={styles.fieldError}>{fieldErrors.placeName}</Text>
+            )}
           </View>
 
           {/* Location Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Location *</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="map-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.location && styles.inputContainerError]}>
+              <Ionicons name="map-outline" size={20} color={fieldErrors.location ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="e.g., Paris, France"
@@ -188,17 +260,20 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
                 autoCapitalize="words"
               />
             </View>
+            {fieldErrors.location && (
+              <Text style={styles.fieldError}>{fieldErrors.location}</Text>
+            )}
           </View>
 
           {/* Category Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category *</Text>
             <TouchableOpacity
-              style={styles.inputContainer}
+              style={[styles.inputContainer, fieldErrors.category && styles.inputContainerError]}
               onPress={() => setShowCategoryModal(true)}
               activeOpacity={0.7}
             >
-              <Ionicons name="pricetag-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+              <Ionicons name="pricetag-outline" size={20} color={fieldErrors.category ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <Text
                 style={[
                   styles.input,
@@ -207,15 +282,18 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
               >
                 {formData.category || 'Select category'}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#6D6D6D" />
+              <Ionicons name="chevron-down" size={20} color={fieldErrors.category ? '#E74C3C' : '#6D6D6D'} />
             </TouchableOpacity>
+            {fieldErrors.category && (
+              <Text style={styles.fieldError}>{fieldErrors.category}</Text>
+            )}
           </View>
 
           {/* Date Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Date Visited *</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="calendar-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, fieldErrors.date && styles.inputContainerError]}>
+              <Ionicons name="calendar-outline" size={20} color={fieldErrors.date ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="e.g., Dec 15, 2024"
@@ -224,12 +302,15 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
                 onChangeText={(value) => updateField('date', value)}
               />
             </View>
+            {fieldErrors.date && (
+              <Text style={styles.fieldError}>{fieldErrors.date}</Text>
+            )}
           </View>
 
           {/* Description Field */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Description</Text>
-            <View style={[styles.inputContainer, styles.textAreaContainer]}>
+            <View style={[styles.inputContainer, styles.textAreaContainer, fieldErrors.description && styles.inputContainerError]}>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Tell us about your experience..."
@@ -239,14 +320,25 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                maxLength={500}
               />
+            </View>
+            <View style={styles.descriptionFooter}>
+              {fieldErrors.description ? (
+                <Text style={styles.fieldError}>{fieldErrors.description}</Text>
+              ) : (
+                <Text style={styles.characterCount}>
+                  {formData.description.length} / 500
+                </Text>
+              )}
             </View>
           </View>
 
           <Button
-            title="Add Trip"
+            title={isSubmitting ? "Adding Trip..." : "Add Trip"}
             onPress={handleSave}
             variant="primary"
+            disabled={isSubmitting}
           />
         </View>
         </ScrollView>
@@ -284,6 +376,10 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
                   ]}
                   onPress={() => {
                     updateField('category', category);
+                    setFieldErrors(prev => ({
+                      ...prev,
+                      category: null,
+                    }));
                     setShowCategoryModal(false);
                   }}
                   activeOpacity={0.7}
@@ -480,6 +576,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.regular,
     color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+  inputContainerError: {
+    borderColor: '#E74C3C',
+    borderWidth: 1.5,
+  },
+  fieldError: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#E74C3C',
+    marginTop: 6,
+    letterSpacing: 0.2,
+  },
+  descriptionFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 6,
+  },
+  characterCount: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
     letterSpacing: 0.2,
   },
 });

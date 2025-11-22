@@ -220,18 +220,23 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
 
         {/* Floating Input Area */}
         <View style={[styles.floatingInputContainer, isKeyboardVisible && styles.floatingInputContainerKeyboard]}>
-          <TextInput
-            style={styles.input}
-            placeholder="Add a comment..."
-            placeholderTextColor="#9B9B9B"
-            value={commentText}
-            onChangeText={setCommentText}
-            multiline
-            maxLength={500}
-            returnKeyType="done"
-            blurOnSubmit={true}
-            onSubmitEditing={Keyboard.dismiss}
-          />
+          <View style={styles.commentInputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Add a comment..."
+              placeholderTextColor="#9B9B9B"
+              value={commentText}
+              onChangeText={setCommentText}
+              multiline
+              maxLength={500}
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={Keyboard.dismiss}
+            />
+            <Text style={styles.commentCharacterCount}>
+              {commentText.length} / 500
+            </Text>
+          </View>
           <TouchableOpacity
             style={[styles.sendButton, (commentText.trim() === '' || isSubmitting) && styles.sendButtonDisabled]}
             onPress={handleSendComment}
@@ -439,6 +444,11 @@ const styles = StyleSheet.create({
   floatingInputContainerKeyboard: {
     backgroundColor: 'transparent',
   },
+  commentInputWrapper: {
+    flex: 1,
+    position: 'relative',
+    marginRight: 8,
+  },
   input: {
     flex: 1,
     fontSize: 14,
@@ -447,9 +457,9 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     paddingVertical: 12,
     paddingHorizontal: 16,
+    paddingBottom: 28,
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    marginRight: 8,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -458,6 +468,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  commentCharacterCount: {
+    position: 'absolute',
+    bottom: 8,
+    right: 12,
+    fontSize: 11,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+    letterSpacing: 0.2,
   },
   sendButton: {
     width: 36,

@@ -8,7 +8,7 @@ export const BottomNavBar = ({ activeTab, onTabChange }) => {
     { id: 'trips', icon: 'map', label: 'Trips' },
     { id: 'feed', icon: 'grid', label: 'Feed' },
     { id: 'communities', icon: 'people', label: 'Communities' },
-    { id: 'profile', icon: 'person', label: 'Profile' },
+    { id: 'ai', icon: 'sparkles', label: 'AI' },
   ];
 
   return (

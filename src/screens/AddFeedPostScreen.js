@@ -8,6 +8,7 @@ import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
 import { compressImage } from '../utils/imageCompression';
+import { validatePlaceName, validateLocation, validateImageFile, validateMaxLength } from '../utils/formValidation';
 
 export const AddFeedPostScreen = ({ onBack, onSave }) => {
   // Get safe area insets
@@ -24,6 +25,13 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     caption: '',
     images: [],
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    placeName: null,
+    location: null,
+    category: null,
+    caption: null,
+    images: null,
+  });
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const categories = ['Landmarks', 'Hotels', 'Cafes', 'Nature'];
@@ -31,8 +39,21 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
   const handleSave = async () => {
     if (isSubmitting) return;
 
-    if (!formData.placeName || !formData.location || !formData.category || formData.images.length === 0) {
-      setError('Please fill in all required fields and add at least one image');
+    // Validate all fields
+    const errors = {
+      placeName: validatePlaceName(formData.placeName),
+      location: validateLocation(formData.location),
+      category: !formData.category ? 'Category is required' : null,
+      images: formData.images.length === 0 ? 'At least one image is required' : null,
+      caption: validateMaxLength(formData.caption, 500, 'Caption'),
+    };
+    
+    setFieldErrors(errors);
+    
+    const hasErrors = Object.values(errors).some(err => err !== null);
+    if (hasErrors) {
+      setError('Please fix the errors below');
+      triggerHaptic('error');
       return;
     }
 
@@ -66,6 +87,26 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
       ...prev,
       [field]: value,
     }));
+    
+    // Real-time validation
+    let error = null;
+    if (field === 'placeName') {
+      error = validatePlaceName(value);
+    } else if (field === 'location') {
+      error = validateLocation(value);
+    } else if (field === 'caption') {
+      error = validateMaxLength(value, 500, 'Caption');
+    }
+    
+    setFieldErrors(prev => ({
+      ...prev,
+      [field]: error,
+    }));
+    
+    // Clear general error when user types
+    if (error === null && fieldErrors[field]) {
+      setError(null);
+    }
   };
 
   const getCategoryColor = (category) => {
@@ -112,6 +153,14 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const originalUri = result.assets[0].uri;
         
+        // Validate image file
+        const imageError = await validateImageFile(originalUri);
+        if (imageError) {
+          Alert.alert('Invalid Image', imageError);
+          triggerHaptic('error');
+          return;
+        }
+        
         // Show compression indicator
         setIsCompressing(true);
         setCompressionProgress({ current: 1, total: 1 });
@@ -125,13 +174,16 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
             ...prev,
             images: [...prev.images, compressedImage].slice(0, 5), // Ensure max 5 images
           }));
+          
+          // Clear image error if any
+          setFieldErrors(prev => ({
+            ...prev,
+            images: null,
+          }));
         } catch (compressionError) {
           console.error('Compression error:', compressionError);
-          // Fallback to original image if compression fails
-          setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, { uri: originalUri }].slice(0, 5),
-          }));
+          Alert.alert('Error', 'Failed to process image. Please try again.');
+          triggerHaptic('error');
         } finally {
           setIsCompressing(false);
           setCompressionProgress({ current: 0, total: 0 });
@@ -186,6 +238,9 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
               <Text style={styles.imageCountText}>
                 {formData.images.length} / 5 images selected
               </Text>
+              {fieldErrors.images && (
+                <Text style={styles.fieldError}>{fieldErrors.images}</Text>
+              )}
               
               {/* Image Previews Grid */}
               {formData.images.length > 0 && (
@@ -245,31 +300,37 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Place Name *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, fieldErrors.placeName && styles.inputError]}
                 placeholder="e.g., Eiffel Tower"
                 placeholderTextColor="#9B9B9B"
                 value={formData.placeName}
                 onChangeText={(text) => updateField('placeName', text)}
               />
+              {fieldErrors.placeName && (
+                <Text style={styles.fieldError}>{fieldErrors.placeName}</Text>
+              )}
             </View>
 
             {/* Location */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Location *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, fieldErrors.location && styles.inputError]}
                 placeholder="e.g., Paris, France"
                 placeholderTextColor="#9B9B9B"
                 value={formData.location}
                 onChangeText={(text) => updateField('location', text)}
               />
+              {fieldErrors.location && (
+                <Text style={styles.fieldError}>{fieldErrors.location}</Text>
+              )}
             </View>
 
             {/* Category Dropdown */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Category *</Text>
               <TouchableOpacity
-                style={styles.categoryButton}
+                style={[styles.categoryButton, fieldErrors.category && styles.inputError]}
                 onPress={() => setShowCategoryModal(true)}
                 activeOpacity={0.7}
               >
@@ -278,12 +339,15 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6D6D6D" />
               </TouchableOpacity>
+              {fieldErrors.category && (
+                <Text style={styles.fieldError}>{fieldErrors.category}</Text>
+              )}
             </View>
 
             {/* Caption */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Caption</Text>
-              {error && (
+              {error && !fieldErrors.caption && (
                 <View style={styles.errorContainer}>
                   <ErrorCard
                     message={error}
@@ -292,7 +356,7 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                 </View>
               )}
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, fieldErrors.caption && styles.inputError]}
                 placeholder="Share your experience..."
                 placeholderTextColor="#9B9B9B"
                 value={formData.caption}
@@ -303,7 +367,17 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                maxLength={500}
               />
+              <View style={styles.captionFooter}>
+                {fieldErrors.caption ? (
+                  <Text style={styles.fieldError}>{fieldErrors.caption}</Text>
+                ) : (
+                  <Text style={styles.characterCount}>
+                    {formData.caption.length} / 500
+                  </Text>
+                )}
+              </View>
             </View>
 
             {/* Save Button */}
@@ -347,6 +421,10 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                 style={styles.categoryOption}
                 onPress={() => {
                   updateField('category', category);
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    category: null,
+                  }));
                   setShowCategoryModal(false);
                 }}
                 activeOpacity={0.7}
@@ -487,6 +565,28 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     borderWidth: 1,
     borderColor: '#E8E8E8',
+  },
+  inputError: {
+    borderColor: '#E74C3C',
+    borderWidth: 1.5,
+  },
+  fieldError: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#E74C3C',
+    marginTop: 6,
+    letterSpacing: 0.2,
+  },
+  captionFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 6,
+  },
+  characterCount: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    letterSpacing: 0.2,
   },
   textArea: {
     minHeight: 100,
