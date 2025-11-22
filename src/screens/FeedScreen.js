@@ -25,6 +25,7 @@ const VideoPostItem = ({ videoSource, styles }) => {
   const player = useVideoPlayer(source, (player) => {
     player.loop = false;
     player.muted = false;
+    player.play(); // Auto-play the video
   });
 
   return (
