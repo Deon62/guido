@@ -101,6 +101,20 @@ export const SettingsScreen = ({ onBack, onAboutDeveloperPress, onNotificationPr
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* App Version Section */}
+        <View style={styles.versionSection}>
+          <View style={styles.versionHeader}>
+            <Ionicons name="information-circle-outline" size={20} color="#6D6D6D" />
+            <Text style={styles.versionTitle}>App Version</Text>
+          </View>
+          <View style={styles.versionBadge}>
+            <Text style={styles.versionBadgeText}>Beta</Text>
+          </View>
+          <Text style={styles.versionDescription}>
+            This is the earliest version of the app with many features not yet working end-to-end. We're continuously improving and adding new features based on your feedback.
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Delete Account Confirmation Modal */}
@@ -187,6 +201,52 @@ const styles = StyleSheet.create({
   },
   settingsItemTextDanger: {
     color: '#E74C3C',
+  },
+  versionSection: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    marginHorizontal: 24,
+    marginTop: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  versionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  versionTitle: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#0A1D37',
+    letterSpacing: 0.3,
+  },
+  versionBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF5E6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFE5B4',
+  },
+  versionBadgeText: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: '#D97706',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  versionDescription: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    lineHeight: 20,
+    letterSpacing: 0.2,
   },
 });
 

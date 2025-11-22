@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
+import { FeedbackModal } from '../components/FeedbackModal';
 
 export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, onFollowersPress, onFollowingPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+  
+  // Feedback modal state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('feedback'); // 'feedback' or 'feature'
 
   const handleSettingsPress = () => {
     if (onSettingsPress) {
@@ -242,6 +247,37 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           ))}
         </View>
 
+        {/* Feedback Section */}
+        <View style={styles.feedbackSection}>
+          <Text style={styles.sectionTitle}>Help Us Improve</Text>
+          <View style={styles.feedbackButtonsContainer}>
+            <TouchableOpacity
+              style={styles.feedbackButton}
+              onPress={() => {
+                triggerHaptic('light');
+                setFeedbackType('feedback');
+                setShowFeedbackModal(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chatbubble-outline" size={20} color="#0A1D37" />
+              <Text style={styles.feedbackButtonText}>Share Feedback</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.feedbackButton}
+              onPress={() => {
+                triggerHaptic('light');
+                setFeedbackType('feature');
+                setShowFeedbackModal(true);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="bulb-outline" size={20} color="#0A1D37" />
+              <Text style={styles.feedbackButtonText}>Request Feature</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Logout Button */}
         <View style={styles.logoutSection}>
           <TouchableOpacity
@@ -259,6 +295,17 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        visible={showFeedbackModal}
+        type={feedbackType}
+        onClose={() => setShowFeedbackModal(false)}
+        onSubmit={(data) => {
+          console.log('Feedback submitted:', data);
+          // Here you would typically send the feedback to your backend
+        }}
+      />
 
       {!hideBottomNav && <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />}
     </View>
@@ -517,6 +564,36 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     color: '#E74C3C',
     letterSpacing: 0.6,
+  },
+  feedbackSection: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  feedbackButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  feedbackButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#F7F7F7',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    gap: 8,
+  },
+  feedbackButtonText: {
+    fontSize: 14,
+    fontFamily: FONTS.semiBold,
+    color: '#0A1D37',
+    letterSpacing: 0.3,
   },
 });
 
