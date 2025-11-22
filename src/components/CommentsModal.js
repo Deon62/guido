@@ -115,32 +115,19 @@ export const CommentsModal = ({ visible, post, onClose }) => {
 
         {/* Bottom Sheet */}
         <View style={[styles.bottomSheet, isKeyboardVisible && styles.bottomSheetKeyboardVisible]}>
-          {/* Handle */}
-          <View style={styles.handleContainer}>
-            <View style={styles.handle} />
-          </View>
-
-          {/* Post Preview Header */}
-          <View style={styles.postPreview}>
-            <View style={styles.postPreviewHeader}>
-              <Image source={post.user.avatar} style={styles.postUserAvatar} />
-              <View style={styles.postPreviewInfo}>
-                <Text style={styles.postUserName} numberOfLines={1}>{post.user.name}</Text>
-                <Text style={styles.postPlaceName} numberOfLines={1}>
-                  {post.place.name} • {post.place.location}
-                </Text>
-              </View>
+          {/* Header with Close Button */}
+          <View style={styles.headerContainer}>
+            <View style={styles.commentsHeader}>
+              <Text style={styles.commentsTitle}>Comments</Text>
+              <Text style={styles.commentsCount}>{comments.length}</Text>
             </View>
-            <Image source={post.image} style={styles.postPreviewImage} resizeMode="cover" />
-            <Text style={styles.postPreviewCaption} numberOfLines={2}>
-              {post.caption}
-            </Text>
-          </View>
-
-          {/* Comments List */}
-          <View style={styles.commentsHeader}>
-            <Text style={styles.commentsTitle}>Comments</Text>
-            <Text style={styles.commentsCount}>{comments.length}</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={handleClose}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-down" size={24} color="#0A1D37" />
+            </TouchableOpacity>
           </View>
 
           <ScrollView
@@ -174,25 +161,23 @@ export const CommentsModal = ({ visible, post, onClose }) => {
 
           {/* Input Area */}
           <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Add a comment..."
-                placeholderTextColor="#9B9B9B"
-                value={commentText}
-                onChangeText={setCommentText}
-                multiline
-                maxLength={500}
-              />
-              <TouchableOpacity
-                style={[styles.sendButton, commentText.trim() === '' && styles.sendButtonDisabled]}
-                onPress={handleSendComment}
-                activeOpacity={0.7}
-                disabled={commentText.trim() === ''}
-              >
-                <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
-              </TouchableOpacity>
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Add a comment..."
+              placeholderTextColor="#9B9B9B"
+              value={commentText}
+              onChangeText={setCommentText}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, commentText.trim() === '' && styles.sendButtonDisabled]}
+              onPress={handleSendComment}
+              activeOpacity={0.7}
+              disabled={commentText.trim() === ''}
+            >
+              <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
+            </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -213,78 +198,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '85%',
-    minHeight: '60%',
+    maxHeight: '90%',
+    minHeight: '75%',
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
   bottomSheetKeyboardVisible: {
-    maxHeight: '90%',
+    maxHeight: '95%',
   },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#E8E8E8',
-    borderRadius: 2,
-  },
-  postPreview: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F7F7F7',
-  },
-  postPreviewHeader: {
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  postUserAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  postPreviewInfo: {
-    flex: 1,
-  },
-  postUserName: {
-    fontSize: 13,
-    fontFamily: FONTS.semiBold,
-    color: '#1A1A1A',
-    marginBottom: 2,
-  },
-  postPlaceName: {
-    fontSize: 11,
-    fontFamily: FONTS.regular,
-    color: '#6D6D6D',
-  },
-  postPreviewImage: {
-    width: '100%',
-    height: 120,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  postPreviewCaption: {
-    fontSize: 12,
-    fontFamily: FONTS.regular,
-    color: '#3A3A3A',
-    lineHeight: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7F7F7',
   },
   commentsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F7F7F7',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
   },
   commentsTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: FONTS.bold,
     color: '#0A1D37',
     marginRight: 8,
@@ -359,20 +299,12 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   inputContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#E8E8E8',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 20 : 12,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#F7F7F7',
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
   input: {
     flex: 1,
@@ -380,8 +312,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#1A1A1A',
     maxHeight: 100,
-    paddingVertical: 4,
-    paddingHorizontal: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F7F7F7',
+    borderRadius: 20,
+    marginRight: 8,
   },
   sendButton: {
     width: 32,
