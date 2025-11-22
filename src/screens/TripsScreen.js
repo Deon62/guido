@@ -8,7 +8,7 @@ import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 
-export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress, onAddTripPress }) => {
+export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsPress, onRatePress, onAddTripPress, onAIRecommend }) => {
   const [selectedTab, setSelectedTab] = useState('wishlist');
   const [isLoading, setIsLoading] = useState(true);
   const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
@@ -111,11 +111,15 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
     { id: 'wishlist', label: 'Wishlist' },
     { id: 'active', label: 'Active' },
     { id: 'past', label: 'Past' },
+    { id: 'recommendations', label: 'Recommendations' },
   ];
 
   const getFilteredTrips = () => {
     if (selectedTab === 'wishlist') {
       return allTrips.filter(trip => trip.status === 'wishlist');
+    }
+    if (selectedTab === 'recommendations') {
+      return []; // Recommendations will be shown via AI Recommend button
     }
     return allTrips.filter(trip => trip.status === selectedTab);
   };
@@ -134,6 +138,23 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
       onRatePress(trip);
     } else {
       console.log('onRatePress prop is not defined');
+    }
+  };
+
+  const handleAIRecommend = () => {
+    // Get user's trip data for AI recommendations
+    const wishlistTrips = allTrips.filter(trip => trip.status === 'wishlist');
+    const activeTrips = allTrips.filter(trip => trip.status === 'active');
+    const pastTrips = allTrips.filter(trip => trip.status === 'past');
+    
+    if (onAIRecommend) {
+      onAIRecommend({
+        wishlist: wishlistTrips,
+        active: activeTrips,
+        past: pastTrips,
+      });
+    } else {
+      console.log('AI Recommend pressed - wishlist:', wishlistTrips.length, 'active:', activeTrips.length, 'past:', pastTrips.length);
     }
   };
 
@@ -165,7 +186,28 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {isLoading ? (
+        {selectedTab === 'recommendations' ? (
+          // Show AI Recommendations section
+          <View style={styles.recommendationsContainer}>
+            <View style={styles.aiRecommendCard}>
+              <View style={styles.aiRecommendHeader}>
+                <Ionicons name="sparkles" size={32} color="#0A1D37" />
+                <Text style={styles.aiRecommendTitle}>Get AI Recommendations</Text>
+              </View>
+              <Text style={styles.aiRecommendDescription}>
+                Discover personalized places based on your wishlist, active trips, and past experiences. Our AI analyzes your travel patterns to suggest destinations you'll love.
+              </Text>
+              <TouchableOpacity
+                style={styles.aiRecommendButton}
+                onPress={handleAIRecommend}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+                <Text style={styles.aiRecommendButtonText}>Get Recommendations</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : isLoading ? (
           // Show skeleton loaders
           Array.from({ length: 4 }).map((_, index) => (
             <PlaceCardSkeleton key={`skeleton-${index}`} />
@@ -307,6 +349,59 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     zIndex: 20,
+  },
+  recommendationsContainer: {
+    paddingTop: 20,
+  },
+  aiRecommendCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  aiRecommendHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  aiRecommendTitle: {
+    fontSize: 22,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    marginLeft: 12,
+    letterSpacing: 0.3,
+  },
+  aiRecommendDescription: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    lineHeight: 20,
+    marginBottom: 24,
+    letterSpacing: 0.2,
+  },
+  aiRecommendButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A1D37',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  aiRecommendButtonText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    marginLeft: 8,
+    letterSpacing: 0.3,
   },
 });
 

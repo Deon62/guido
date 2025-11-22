@@ -7,6 +7,7 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { TripsScreen } from './src/screens/TripsScreen';
 import { AddPastTripScreen } from './src/screens/AddPastTripScreen';
 import { AddTripSuccessScreen } from './src/screens/AddTripSuccessScreen';
+import { AIRecommendationsScreen } from './src/screens/AIRecommendationsScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
 import { FeedScreen } from './src/screens/FeedScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
@@ -52,6 +53,8 @@ export default function App() {
   const [showAddPastTrip, setShowAddPastTrip] = useState(false);
   const [showAddTripSuccess, setShowAddTripSuccess] = useState(false);
   const [savedTripData, setSavedTripData] = useState(null);
+  const [showAIRecommendations, setShowAIRecommendations] = useState(false);
+  const [aiRecommendationData, setAIRecommendationData] = useState(null);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -66,7 +69,10 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showAddTripSuccess) {
+    if (showAIRecommendations) {
+      setShowAIRecommendations(false);
+      setAIRecommendationData(null);
+    } else if (showAddTripSuccess) {
       handleAddTripSuccessBack();
     } else if (showAddPastTrip) {
       setShowAddPastTrip(false);
@@ -129,6 +135,12 @@ export default function App() {
     setSavedTripData(tripData);
     setShowAddPastTrip(false);
     setShowAddTripSuccess(true);
+  };
+
+  const handleAIRecommend = (tripData) => {
+    console.log('AI Recommend requested with data:', tripData);
+    setAIRecommendationData(tripData);
+    setShowAIRecommendations(true);
   };
 
   const handleAddTripSuccessBack = () => {
@@ -395,6 +407,16 @@ export default function App() {
     );
   }
 
+  // Show AI recommendations screen
+  if (showAIRecommendations && aiRecommendationData) {
+    return (
+      <AIRecommendationsScreen
+        tripData={aiRecommendationData}
+        onBack={handleBack}
+        onPlacePress={handlePlacePress}
+      />
+    );
+  }
 
   // Show trips screen when trips tab is active
   if (currentScreen === 'home' && activeTab === 'trips') {
@@ -404,6 +426,7 @@ export default function App() {
         onTabChange={handleTabChange}
         onNotificationsPress={handleNotificationsPress}
         onAddTripPress={handleAddTripPress}
+        onAIRecommend={handleAIRecommend}
       />
     );
   }

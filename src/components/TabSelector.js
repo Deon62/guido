@@ -38,13 +38,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E8E8E8',
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 6,
   },
   tab: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 10,
-    marginRight: 20,
+    marginRight: 14,
     alignItems: 'center',
     position: 'relative',
   },
