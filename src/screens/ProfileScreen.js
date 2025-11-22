@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
+import { triggerHaptic } from '../utils/haptics';
 
 export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
@@ -144,6 +145,13 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               <Text style={styles.streakNumber}>12</Text>
               <Text style={styles.streakLabel}>Day Streak</Text>
             </View>
+          </View>
+          {/* Progress Indicator */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '75%' }]} />
+            </View>
+            <Text style={styles.progressText}>9 days until next milestone</Text>
           </View>
         </View>
 
@@ -388,6 +396,30 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     letterSpacing: 0.2,
     marginTop: 2,
+  },
+  progressContainer: {
+    marginTop: 12,
+    width: '100%',
+  },
+  progressBar: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#FF6B6B',
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 11,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    textAlign: 'center',
+    letterSpacing: 0.2,
   },
   infoSection: {
     backgroundColor: '#FFFFFF',

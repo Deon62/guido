@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
+import { triggerHaptic } from '../utils/haptics';
 
 export const PostDetailScreen = ({ post, community, comments: initialComments, onBack, onAddComment }) => {
   const [comments, setComments] = useState(initialComments || []);
@@ -64,6 +65,7 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
       };
       setComments(prev => [...prev, newComment]);
       setCommentText('');
+      triggerHaptic('success');
       
       // Call the callback if provided
       if (onAddComment) {
@@ -76,6 +78,7 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
       }, 100);
     } catch (err) {
       setError('Failed to post comment. Please try again.');
+      triggerHaptic('error');
       console.error('Error posting comment:', err);
     } finally {
       setIsSubmitting(false);
@@ -119,14 +122,15 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
         {/* Header */}
         <View style={[styles.header, { paddingTop: statusBarHeight + 12 }]}>
           <TouchableOpacity
@@ -224,6 +228,9 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
             onChangeText={setCommentText}
             multiline
             maxLength={500}
+            returnKeyType="done"
+            blurOnSubmit={true}
+            onSubmitEditing={Keyboard.dismiss}
           />
           <TouchableOpacity
             style={[styles.sendButton, (commentText.trim() === '' || isSubmitting) && styles.sendButtonDisabled]}
@@ -235,7 +242,8 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 

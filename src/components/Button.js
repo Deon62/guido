@@ -1,9 +1,17 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { FONTS } from '../constants/fonts';
+import { triggerHaptic } from '../utils/haptics';
 
 export const Button = ({ title, onPress, variant = 'primary', disabled = false }) => {
   const isPrimary = variant === 'primary';
+  
+  const handlePress = () => {
+    if (!disabled && onPress) {
+      triggerHaptic('light');
+      onPress();
+    }
+  };
   
   return (
     <TouchableOpacity
@@ -12,7 +20,7 @@ export const Button = ({ title, onPress, variant = 'primary', disabled = false }
         isPrimary ? styles.primaryButton : styles.secondaryButton,
         disabled && styles.buttonDisabled
       ]}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.8}
       disabled={disabled}
     >

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Alert, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Button } from '../components/Button';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
+import { triggerHaptic } from '../utils/haptics';
 
 export const AddFeedPostScreen = ({ onBack, onSave }) => {
   // Get safe area insets
@@ -47,8 +48,10 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
       if (onSave) {
         onSave(formData);
       }
+      triggerHaptic('success');
     } catch (err) {
       setError('Failed to post. Please try again.');
+      triggerHaptic('error');
       console.error('Error posting:', err);
     } finally {
       setIsSubmitting(false);
