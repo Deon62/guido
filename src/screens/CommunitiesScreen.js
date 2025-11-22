@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
+import { debounce } from '../utils/debounce';
 
 export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress, onCreateCommunityPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -19,6 +20,17 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
   const searchBarWidth = useRef(new Animated.Value(0)).current;
   const searchBarOpacity = useRef(new Animated.Value(0)).current;
   const [showNewPostInput, setShowNewPostInput] = useState(false);
+
+  // Debounced search handler - MUST be before any early returns
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  // Debounce search query updates
+  const debouncedSetSearch = useCallback(
+    debounce((query) => {
+      setDebouncedSearchQuery(query);
+    }, 300),
+    []
+  );
 
   // Animate search bar
   useEffect(() => {
@@ -52,7 +64,12 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     }
   }, [showSearchBar]);
 
-  // Mock communities data
+  // Debounce search query updates
+  useEffect(() => {
+    debouncedSetSearch(searchQuery);
+  }, [searchQuery, debouncedSetSearch]);
+
+  // Mock communities data (must be defined before useMemo)
   const communities = [
     {
       id: 'hotels',
@@ -280,6 +297,16 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     return num.toString();
   };
 
+  // Filter communities based on search query (memoized) - MUST be before early return
+  const filteredCommunities = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return communities;
+    const query = debouncedSearchQuery.toLowerCase();
+    return communities.filter((community) => (
+      community.name.toLowerCase().includes(query) ||
+      community.description.toLowerCase().includes(query)
+    ));
+  }, [debouncedSearchQuery]);
+
   // If a community is selected, show its posts
   if (selectedCommunity) {
     const community = communities.find(c => c.id === selectedCommunity);
@@ -460,16 +487,6 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
       </View>
     );
   }
-
-  // Filter communities based on search query
-  const filteredCommunities = communities.filter((community) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      community.name.toLowerCase().includes(query) ||
-      community.description.toLowerCase().includes(query)
-    );
-  });
 
   const onRefresh = async () => {
     setRefreshing(true);

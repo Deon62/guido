@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
 
-export const Button = ({ title, onPress, variant = 'primary', disabled = false }) => {
+export const Button = memo(({ title, onPress, variant = 'primary', disabled = false }) => {
   const isPrimary = variant === 'primary';
   
   const handlePress = () => {
@@ -33,7 +33,7 @@ export const Button = ({ title, onPress, variant = 'primary', disabled = false }
       </Text>
     </TouchableOpacity>
   );
-};
+});
 
 const styles = StyleSheet.create({
   button: {

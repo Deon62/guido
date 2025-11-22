@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 
-export const PlaceCard = ({ place, onPress, delay = 0 }) => {
+export const PlaceCard = memo(({ place, onPress, delay = 0 }) => {
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const pressScale = useRef(new Animated.Value(1)).current;
@@ -103,6 +103,8 @@ export const PlaceCard = ({ place, onPress, delay = 0 }) => {
           source={place.image}
           style={styles.image}
           resizeMode="cover"
+          loadingIndicatorSource={require('../../assets/images/undone.png')}
+          progressiveRenderingEnabled={true}
         />
       </View>
       <View style={styles.content}>
@@ -135,7 +137,14 @@ export const PlaceCard = ({ place, onPress, delay = 0 }) => {
     </TouchableOpacity>
     </Animated.View>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return (
+    prevProps.place.id === nextProps.place.id &&
+    prevProps.place.name === nextProps.place.name &&
+    prevProps.delay === nextProps.delay
+  );
+});
 
 const styles = StyleSheet.create({
   card: {

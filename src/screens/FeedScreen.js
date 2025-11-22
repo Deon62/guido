@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { BottomNavBar } from '../components/BottomNavBar';
 import { CommentsModal } from '../components/CommentsModal';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
+import { debounce } from '../utils/debounce';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 80; // Approximate header height
@@ -227,18 +228,33 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     }
   }, [showSearchBar]);
 
-  // Filter posts based on search query
-  const filteredPosts = feedPosts.filter((post) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
+  // Debounced search handler
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  // Debounce search query updates
+  const debouncedSetSearch = useCallback(
+    debounce((query) => {
+      setDebouncedSearchQuery(query);
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSetSearch(searchQuery);
+  }, [searchQuery, debouncedSetSearch]);
+
+  // Filter posts based on search query (memoized)
+  const filteredPosts = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return feedPosts;
+    const query = debouncedSearchQuery.toLowerCase();
+    return feedPosts.filter((post) => (
       post.user.name.toLowerCase().includes(query) ||
       post.place.name.toLowerCase().includes(query) ||
       post.place.location.toLowerCase().includes(query) ||
       post.caption.toLowerCase().includes(query) ||
       post.place.category.toLowerCase().includes(query)
-    );
-  });
+    ));
+  }, [feedPosts, debouncedSearchQuery]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -550,6 +566,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                     source={image}
                     style={styles.postImage}
                     resizeMode="cover"
+                    progressiveRenderingEnabled={true}
                   />
                 ))}
               </ScrollView>

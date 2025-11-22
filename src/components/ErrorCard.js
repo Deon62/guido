@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 
-export const ErrorCard = ({ 
+export const ErrorCard = memo(({ 
   message = "Something went wrong. Please try again.",
   onRetry,
   style,
@@ -26,7 +26,7 @@ export const ErrorCard = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
