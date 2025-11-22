@@ -15,6 +15,7 @@ const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full v
 export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, onMyFeedPostsPress }) => {
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [savedPosts, setSavedPosts] = useState(new Set());
+  const [followedUsers, setFollowedUsers] = useState(new Set());
   const [selectedPostForComments, setSelectedPostForComments] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const [isUserScrolling, setIsUserScrolling] = useState({});
@@ -282,6 +283,18 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     });
   };
 
+  const handleFollow = (userId) => {
+    setFollowedUsers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
+
   const handleCommentsPress = (post) => {
     setSelectedPostForComments(post);
   };
@@ -479,8 +492,20 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                   </View>
                 </View>
               </View>
-              <TouchableOpacity>
-                <Ionicons name="ellipsis-horizontal" size={20} color="#1A1A1A" />
+              <TouchableOpacity
+                onPress={() => handleFollow(post.user.name)}
+                style={[
+                  styles.followButton,
+                  followedUsers.has(post.user.name) && styles.followButtonFollowing
+                ]}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.followButtonText,
+                  followedUsers.has(post.user.name) && styles.followButtonTextFollowing
+                ]}>
+                  {followedUsers.has(post.user.name) ? 'Following' : 'Follow'}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -785,6 +810,29 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 10,
     fontFamily: FONTS.semiBold,
+  },
+  followButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#0A1D37',
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  followButtonText: {
+    fontSize: 13,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  followButtonTextFollowing: {
+    color: '#0A1D37',
+  },
+  followButtonFollowing: {
+    backgroundColor: '#F7F7F7',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   imageCarouselContainer: {
     position: 'relative',
