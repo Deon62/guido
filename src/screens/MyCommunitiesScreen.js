@@ -7,45 +7,8 @@ import { FONTS } from '../constants/fonts';
 export const MyCommunitiesScreen = ({ onBack, onCommunityPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock joined communities data
-  const [joinedCommunities] = useState([
-    {
-      id: 'hotels',
-      name: 'q/hotels',
-      description: 'Discuss hotels, accommodations, and stays',
-      members: 12450,
-      posts: 3420,
-      icon: 'bed-outline',
-      joinedDate: '2 weeks ago',
-    },
-    {
-      id: 'museums',
-      name: 'q/museums',
-      description: 'Share experiences and tips about museums',
-      members: 8920,
-      posts: 2150,
-      icon: 'library-outline',
-      joinedDate: '1 month ago',
-    },
-    {
-      id: 'cafes',
-      name: 'q/cafes',
-      description: 'Coffee shops, cafes, and dining spots',
-      members: 7450,
-      posts: 1890,
-      icon: 'cafe-outline',
-      joinedDate: '3 weeks ago',
-    },
-    {
-      id: 'nature',
-      name: 'q/nature',
-      description: 'Parks, trails, and natural attractions',
-      members: 11320,
-      posts: 3120,
-      icon: 'leaf-outline',
-      joinedDate: '1 week ago',
-    },
-  ]);
+  // TODO: Replace with API data
+  const [joinedCommunities] = useState([]);
 
   const formatNumber = (num) => {
     if (num >= 1000) {

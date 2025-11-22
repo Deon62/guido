@@ -38,61 +38,10 @@ export const AIRecommendationsScreen = ({ tripData, onBack, onPlacePress }) => {
         .sort((a, b) => categoryCounts[b] - categoryCounts[a])
         .slice(0, 3);
       
-      // Generate mock recommendations based on preferences
-      const mockRecommendations = [
-        {
-          id: 'rec1',
-          name: 'Louvre Museum',
-          category: topCategories[0] || 'Landmarks',
-          address: 'Paris, France',
-          distance: '2.5 km away',
-          description: 'Based on your interest in landmarks',
-          image: { uri: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=400' },
-          rating: 4.8,
-        },
-        {
-          id: 'rec2',
-          name: 'Montmartre',
-          category: topCategories[1] || 'Nature',
-          address: 'Paris, France',
-          distance: '5 km away',
-          description: 'Similar to places you\'ve visited',
-          image: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400' },
-          rating: 4.7,
-        },
-        {
-          id: 'rec3',
-          name: 'Le Marais District',
-          category: topCategories[2] || 'Cafes',
-          address: 'Paris, France',
-          distance: '3 km away',
-          description: 'Matches your wishlist preferences',
-          image: { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400' },
-          rating: 4.6,
-        },
-        {
-          id: 'rec4',
-          name: 'Versailles Palace',
-          category: 'Landmarks',
-          address: 'Versailles, France',
-          distance: '20 km away',
-          description: 'Popular destination for history lovers',
-          image: { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=400' },
-          rating: 4.9,
-        },
-        {
-          id: 'rec5',
-          name: 'Seine River Cruise',
-          category: 'Nature',
-          address: 'Paris, France',
-          distance: '1 km away',
-          description: 'Perfect for your travel style',
-          image: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400' },
-          rating: 4.5,
-        },
-      ];
-      
-      setRecommendations(mockRecommendations);
+      // TODO: Replace with API data - call AI recommendations API
+      // const token = getToken();
+      // const recommendations = await fetchAIRecommendations(token, tripData);
+      setRecommendations([]);
       setIsLoading(false);
     };
     

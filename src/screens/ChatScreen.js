@@ -20,33 +20,8 @@ export const ChatScreen = ({ message, onBack, onCall }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock chat messages
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: '1',
-      text: 'Hi! I\'m excited to show you around Paris tomorrow. Meet at the Eiffel Tower at 10 AM?',
-      time: '10:30 AM',
-      isOwn: false,
-    },
-    {
-      id: '2',
-      text: 'That sounds perfect! I\'ll be there at 10 AM. Looking forward to it!',
-      time: '10:32 AM',
-      isOwn: true,
-    },
-    {
-      id: '3',
-      text: 'Great! I\'ll bring my camera and show you some hidden spots too.',
-      time: '10:33 AM',
-      isOwn: false,
-    },
-    {
-      id: '4',
-      text: 'Amazing! Can\'t wait 😊',
-      time: '10:35 AM',
-      isOwn: true,
-    },
-  ]);
+  // TODO: Replace with API data
+  const [chatMessages, setChatMessages] = useState([]);
 
   const handleSend = () => {
     if (inputText.trim()) {

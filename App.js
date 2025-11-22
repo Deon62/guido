@@ -90,14 +90,7 @@ function AppContent() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showSetNewPassword, setShowSetNewPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    city: 'New York',
-    location: 'New York, USA',
-    avatar: require('./assets/profiles/ic.png'),
-  });
+  const [userData, setUserData] = useState(null);
 
   const handleFindCityGuide = () => {
     setCurrentScreen('home');
@@ -393,11 +386,11 @@ function AppContent() {
   };
 
   const handleSaveProfile = (formData) => {
-    setUserData({
-      ...userData,
+    setUserData(prev => ({
+      ...(prev || {}),
       ...formData,
-      location: formData.city ? `${formData.city}, USA` : userData.location,
-    });
+      location: formData.city ? `${formData.city}, USA` : (prev?.location || ''),
+    }));
     console.log('Profile saved:', formData);
   };
 
@@ -407,10 +400,10 @@ function AppContent() {
   };
 
   const handleProfilePictureSelect = (image) => {
-    setUserData({
-      ...userData,
+    setUserData(prev => ({
+      ...prev,
       avatar: image,
-    });
+    }));
     setShowProfilePictureSelector(false);
     setProfilePictureContext(null);
     console.log('Profile picture updated');
@@ -437,14 +430,7 @@ function AppContent() {
       
       // Reset app state
       setIsAuthenticated(false);
-      setUserData({
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1 234 567 8900',
-        city: 'New York',
-        location: 'New York, USA',
-        avatar: require('./assets/profiles/ic.png'),
-      });
+      setUserData(null);
       
       // Redirect to landing screen
       setCurrentScreen('landing');
@@ -531,11 +517,11 @@ function AppContent() {
   if (showEditProfile) {
     return (
       <EditProfileScreen
-        user={userData}
+        user={userData || null}
         onBack={handleBack}
         onSave={handleSaveProfile}
         onProfilePicturePress={() => handleProfilePicturePress('edit')}
-        currentAvatar={userData.avatar}
+        currentAvatar={userData?.avatar || null}
       />
     );
   }
@@ -882,7 +868,7 @@ function AppContent() {
           onComingSoonPress={handleComingSoonPress}
           onFollowersPress={handleFollowersPress}
           onFollowingPress={handleFollowingPress}
-          user={userData}
+          user={null}
         />
         
         {/* Logout Confirmation Modal */}

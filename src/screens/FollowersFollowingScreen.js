@@ -9,21 +9,9 @@ export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) =
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Mock data - in real app, this would come from props or API
-  const [followers, setFollowers] = useState([
-    { id: '1', name: 'Sarah Johnson', username: '@sarahj', avatar: '👤', isFollowing: false, bio: 'Travel enthusiast and food lover' },
-    { id: '2', name: 'Mike Chen', username: '@mikechen', avatar: '👤', isFollowing: true, bio: 'Photographer exploring the world' },
-    { id: '3', name: 'Emma Wilson', username: '@emmaw', avatar: '👤', isFollowing: false, bio: 'Adventure seeker' },
-    { id: '4', name: 'David Lee', username: '@davidl', avatar: '👤', isFollowing: true, bio: 'City explorer' },
-    { id: '5', name: 'Lisa Park', username: '@lisap', avatar: '👤', isFollowing: false, bio: 'Nature lover' },
-  ]);
-
-  const [following, setFollowing] = useState([
-    { id: '2', name: 'Mike Chen', username: '@mikechen', avatar: '👤', bio: 'Photographer exploring the world' },
-    { id: '4', name: 'David Lee', username: '@davidl', avatar: '👤', bio: 'City explorer' },
-    { id: '6', name: 'Alex Brown', username: '@alexb', avatar: '👤', bio: 'Travel blogger' },
-    { id: '7', name: 'Sophie Martin', username: '@sophiem', avatar: '👤', bio: 'Foodie and traveler' },
-  ]);
+  // TODO: Replace with API data
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
 
   const handleFollow = (userId) => {
     triggerHaptic('light');

@@ -10,6 +10,7 @@ import { PaginationIndicator } from '../components/PaginationIndicator';
 import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
 import { usePagination } from '../utils/usePagination';
+import { getUser } from '../utils/storage';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 80; // Approximate header height
@@ -59,6 +60,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [userData, setUserData] = useState(null);
   const scrollViewRefs = useRef({});
   const autoScrollTimers = useRef({});
   const isUserScrollingRef = useRef({});
@@ -69,187 +71,23 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Generate more mock posts for pagination
+  // TODO: Replace with API data - fetch posts from API
   const generateMockPosts = () => {
-    const basePosts = [
-    {
-      id: '1',
-      user: {
-        name: 'Travel Explorer',
-        avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
-      },
-      place: {
-        name: 'Eiffel Tower',
-        location: 'Paris, France',
-        category: 'Landmarks',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
-      ],
-      caption: 'The iconic Eiffel Tower at sunset! 🌅 A must-visit when in Paris. The view from the top is absolutely breathtaking!',
-      likes: 1247,
-      comments: 89,
-      timestamp: '2 hours ago',
-    },
-    {
-      id: '2',
-      user: {
-        name: 'Wanderlust Sarah',
-        avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
-      },
-      place: {
-        name: 'Café de Flore',
-        location: 'Paris, France',
-        category: 'Cafes',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800' },
-      ],
-      caption: 'Morning coffee at this historic café. The atmosphere is incredible! ☕️',
-      likes: 892,
-      comments: 45,
-      timestamp: '5 hours ago',
-    },
-    {
-      id: '3',
-      user: {
-        name: 'Nature Lover',
-        avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
-      },
-      place: {
-        name: 'Luxembourg Gardens',
-        location: 'Paris, France',
-        category: 'Nature',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
-      ],
-      caption: 'Perfect spot for a peaceful afternoon walk. The gardens are so well maintained! 🌳',
-      likes: 634,
-      comments: 23,
-      timestamp: '1 day ago',
-    },
-    {
-      id: '4',
-      user: {
-        name: 'City Explorer',
-        avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
-      },
-      place: {
-        name: 'Notre-Dame Cathedral',
-        location: 'Paris, France',
-        category: 'Landmarks',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
-      ],
-      caption: 'The architecture here is simply stunning. Every detail tells a story! 🏛️',
-      likes: 1456,
-      comments: 112,
-      timestamp: '2 days ago',
-    },
-    {
-      id: '5',
-      user: {
-        name: 'Foodie Travels',
-        avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-      },
-      place: {
-        name: 'Hotel Ritz Paris',
-        location: 'Paris, France',
-        category: 'Hotels',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800' },
-      ],
-      caption: 'Luxury at its finest! The service here is impeccable. 🏨✨',
-      likes: 2103,
-      comments: 156,
-      timestamp: '3 days ago',
-    },
-    {
-      id: '6',
-      user: {
-        name: 'Deon chinese',
-        avatar: require('../../assets/logo/deon.jpg'),
-        isPremium: true,
-        isCEO: true,
-      },
-      place: {
-        name: 'Tokyo Skytree',
-        location: 'Nakuru',
-        category: 'Landmarks',
-      },
-      videos: [
-        require('../../assets/videos/test.mp4'),
-      ],
-      caption: 'Amazing view from the top! The city looks incredible from up here. 🌆✨',
-      likes: 3421,
-      comments: 287,
-      timestamp: '1 hour ago',
-    },
-    ];
-    
-    // Generate additional posts for pagination testing
-    const categories = ['Landmarks', 'Cafes', 'Nature', 'Hotels', 'Restaurants', 'Museums'];
-    const locations = ['Paris, France', 'Tokyo, Japan', 'New York, USA', 'London, UK', 'Barcelona, Spain'];
-    const users = [
-      { name: 'Travel Explorer', img: 1 },
-      { name: 'Wanderlust Sarah', img: 2 },
-      { name: 'Nature Lover', img: 3 },
-      { name: 'City Explorer', img: 4 },
-      { name: 'Foodie Travels', img: 5 },
-      { name: 'Adventure Seeker', img: 6 },
-      { name: 'Culture Hunter', img: 7 },
-      { name: 'Urban Wanderer', img: 8 },
-    ];
-    
-    const additionalPosts = [];
-    for (let i = 7; i <= 30; i++) {
-      const category = categories[i % categories.length];
-      const location = locations[i % locations.length];
-      const user = users[i % users.length];
-      const hoursAgo = i * 2;
-      const timestamp = hoursAgo < 24 ? `${hoursAgo} hours ago` : `${Math.floor(hoursAgo / 24)} days ago`;
-      
-      additionalPosts.push({
-        id: String(i),
-        user: {
-          name: user.name,
-          avatar: { uri: `https://i.pravatar.cc/150?img=${user.img}` },
-        },
-        place: {
-          name: `Place ${i}`,
-          location,
-          category,
-        },
-        images: [
-          { uri: `https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800&sig=${i}` },
-          { uri: `https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&sig=${i + 1}` },
-        ],
-        caption: `Amazing experience at ${location}! The ${category.toLowerCase()} here are incredible. Can't wait to come back! ✨`,
-        likes: Math.floor(Math.random() * 2000) + 100,
-        comments: Math.floor(Math.random() * 200) + 10,
-        timestamp,
-      });
-    }
-    
-    return [...basePosts, ...additionalPosts];
+    // Return empty array - data should come from API
+    return [];
   };
 
-  // Mock feed posts data
+  // TODO: Replace with API data
   const allFeedPosts = useMemo(() => generateMockPosts(), []);
+
+  // Load user data for profile picture
+  useEffect(() => {
+    const loadUserData = () => {
+      const user = getUser();
+      setUserData(user);
+    };
+    loadUserData();
+  }, []);
 
   // Sync refs with state
   useEffect(() => {
@@ -578,11 +416,17 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
             activeOpacity={0.7}
           >
             <View style={styles.profileImageContainer}>
-              <Image
-                source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
-                style={styles.profileImage}
-                resizeMode="cover"
-              />
+              {userData?.avatar ? (
+                <Image
+                  source={userData.avatar}
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.profileImagePlaceholder}>
+                  <Ionicons name="person" size={20} color="#C0C0C0" />
+                </View>
+              )}
               <View style={styles.onlineIndicator} />
             </View>
           </TouchableOpacity>
@@ -596,6 +440,26 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
             message={error}
             onRetry={onRefresh}
           />
+        </View>
+      ) : paginatedPosts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="images-outline" size={64} color="#C0C0C0" />
+          <Text style={styles.emptyText}>No posts yet</Text>
+          <Text style={styles.emptySubtext}>
+            Start following users or create your first post to see content in your feed!
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyStateButton}
+            onPress={() => {
+              if (onAddPostPress) {
+                onAddPostPress();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="camera-outline" size={20} color="#FFFFFF" style={styles.emptyStateButtonIcon} />
+            <Text style={styles.emptyStateButtonText}>Create Your First Post</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <>
@@ -912,6 +776,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 3,
     borderColor: '#0A1D37',
+  },
+  profileImagePlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#0A1D37',
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   onlineIndicator: {
     position: 'absolute',
@@ -1249,6 +1123,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 120,
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    color: '#6D6D6D',
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyStateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A1D37',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  emptyStateButtonIcon: {
+    marginRight: 8,
+  },
+  emptyStateButtonText: {
+    fontSize: 15,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
 });
 

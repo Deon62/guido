@@ -6,14 +6,20 @@ import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
 import { validateEmail, validateUsername, validateMaxLength } from '../utils/formValidation';
 import { triggerHaptic } from '../utils/haptics';
+import { updateProfile } from '../services/authService';
+import { getToken, storeUser } from '../utils/storage';
 
 export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress, currentAvatar }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
+  // Initialize username - remove @ if present (we'll add it when saving)
+  const initialUsername = user?.username || '';
+  const usernameWithoutAt = initialUsername.startsWith('@') ? initialUsername.slice(1) : initialUsername;
+  
   const [formData, setFormData] = useState({
     nickname: user?.nickname || user?.name || '',
-    username: user?.username || '',
+    username: usernameWithoutAt,
     email: user?.email || '',
     city: user?.city || '',
     avatar: currentAvatar || user?.avatar,
@@ -45,9 +51,14 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     if (isSubmitting) return;
 
     // Validate all fields
+    // For username validation, check without @ prefix
+    const usernameToValidate = formData.username?.startsWith('@') 
+      ? formData.username.slice(1) 
+      : formData.username;
+    
     const errors = {
       nickname: validateMaxLength(formData.nickname, 50, 'Nickname'),
-      username: formData.username ? validateUsername(formData.username) : null,
+      username: usernameToValidate ? validateUsername(usernameToValidate) : null,
       email: formData.email ? (validateEmail(formData.email) ? null : 'Please enter a valid email address') : null,
       city: validateMaxLength(formData.city, 100, 'City'),
     };
@@ -64,40 +75,86 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     triggerHaptic('medium');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = getToken();
+      if (!token) {
+        throw new Error('Not authenticated. Please login again.');
+      }
+
+      // Call update profile API
+      const updatedUser = await updateProfile(token, {
+        nickname: formData.nickname,
+        username: usernameToValidate, // API will add @ prefix
+        email: formData.email,
+        city: formData.city,
+      });
+      
+      // Store updated user data
+      if (updatedUser) {
+        storeUser(updatedUser);
+      }
       
       if (onSave) {
-        onSave(formData);
+        onSave({ ...formData, ...updatedUser });
       }
+      
       triggerHaptic('success');
       if (onBack) {
         onBack();
       }
     } catch (error) {
+      console.error('Profile update error:', error);
       triggerHaptic('error');
-      Alert.alert('Error', 'Failed to save profile. Please try again.');
+      
+      // Handle validation errors
+      if (error.isValidationError && error.errors) {
+        const fieldErrors = {};
+        if (typeof error.errors === 'object') {
+          Object.keys(error.errors).forEach((field) => {
+            const fieldError = error.errors[field];
+            if (Array.isArray(fieldError)) {
+              fieldErrors[field] = fieldError[0] || fieldError;
+            } else if (typeof fieldError === 'string') {
+              fieldErrors[field] = fieldError;
+            }
+          });
+        }
+        
+        if (Object.keys(fieldErrors).length > 0) {
+          setFieldErrors(prev => ({ ...prev, ...fieldErrors }));
+        } else {
+          Alert.alert('Validation Error', error.message || 'Please check your input and try again.');
+        }
+      } else {
+        const errorMessage = error.message || 'Failed to save profile. Please try again.';
+        Alert.alert('Error', errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const updateField = (field, value) => {
+    // For username, remove @ if user types it (we'll add it when saving)
+    let processedValue = value;
+    if (field === 'username' && value.startsWith('@')) {
+      processedValue = value.slice(1);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: processedValue,
     }));
     
     // Real-time validation
     let error = null;
     if (field === 'nickname') {
-      error = validateMaxLength(value, 50, 'Nickname');
+      error = validateMaxLength(processedValue, 50, 'Nickname');
     } else if (field === 'username') {
-      error = value ? validateUsername(value) : null;
+      error = processedValue ? validateUsername(processedValue) : null;
     } else if (field === 'email') {
-      error = value ? (validateEmail(value) ? null : 'Please enter a valid email address') : null;
+      error = processedValue ? (validateEmail(processedValue) ? null : 'Please enter a valid email address') : null;
     } else if (field === 'city') {
-      error = validateMaxLength(value, 100, 'City');
+      error = validateMaxLength(processedValue, 100, 'City');
     }
     
     setFieldErrors(prev => ({
@@ -140,11 +197,17 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
           {/* Profile Picture Section */}
           <View style={styles.profilePictureSection}>
             <View style={styles.avatarContainer}>
-              <Image
-                source={formData.avatar || user?.avatar}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
+              {(formData.avatar || user?.avatar) ? (
+                <Image
+                  source={formData.avatar || user.avatar}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={40} color="#C0C0C0" />
+                </View>
+              )}
               <TouchableOpacity
                 style={styles.cameraButton}
                 onPress={() => {
@@ -189,12 +252,12 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
               <Ionicons name="at" size={20} color={fieldErrors.username ? '#E74C3C' : '#6D6D6D'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your username"
+                placeholder="username (without @)"
                 placeholderTextColor="#6D6D6D"
                 value={formData.username}
                 onChangeText={(value) => updateField('username', value)}
                 autoCapitalize="none"
-                maxLength={20}
+                maxLength={50}
               />
             </View>
             {fieldErrors.username && (
@@ -374,6 +437,16 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     borderWidth: 3,
     borderColor: '#F7F7F7',
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#F7F7F7',
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraButton: {
     position: 'absolute',

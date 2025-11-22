@@ -204,7 +204,7 @@ export const login = async (credentials) => {
  * @returns {Promise<Object>} User data
  */
 export const getCurrentUser = async (token) => {
-  const url = getApiUrl('auth/me');
+  const url = getApiUrl('profile/me');
 
   try {
     const response = await fetchWithTimeout(
@@ -314,6 +314,105 @@ export const logout = async (token) => {
     // Even if API call fails, we should still clear local storage
     // Return success so the app can proceed with logout
     return { message: 'Logged out locally' };
+  }
+};
+
+/**
+ * Update user profile
+ * @param {string} token - Access token
+ * @param {Object} profileData - Profile data to update
+ * @param {string} profileData.nickname - User's nickname
+ * @param {string} profileData.username - Unique username (3-50 characters, will be prefixed with @)
+ * @param {string} profileData.email - Email address (must be unique)
+ * @param {string} profileData.city - City name
+ * @returns {Promise<Object>} Updated user data
+ */
+export const updateProfile = async (token, profileData) => {
+  const url = getApiUrl('profile/update');
+  
+  // Ensure username starts with @
+  let username = profileData.username || '';
+  if (username && !username.startsWith('@')) {
+    username = '@' + username;
+  }
+  
+  const requestBody = {
+    nickname: profileData.nickname,
+    username: username,
+    email: profileData.email,
+    city: profileData.city,
+  };
+  
+  console.log('Update profile request:', { url, body: { ...requestBody } });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+      15000
+    );
+    
+    console.log('Update profile response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Update profile response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = { message: text || 'Profile updated successfully' };
+      console.log('Response text:', text);
+    }
+
+    if (!response.ok) {
+      console.error('API error response:', { status: response.status, data });
+      
+      if (response.status === 422) {
+        const validationError = new Error(data.message || data.detail || 'Validation failed');
+        validationError.status = 422;
+        validationError.errors = data.errors || (data.detail && typeof data.detail === 'object' ? data.detail : {}) || {};
+        validationError.isValidationError = true;
+        console.error('Validation errors:', validationError.errors);
+        throw validationError;
+      }
+      
+      const errorMessage = data.message || data.error || data.detail || `Profile update failed (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
   }
 };
 

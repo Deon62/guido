@@ -8,65 +8,8 @@ export const NotificationsScreen = ({ onBack }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock notifications data
-  const notifications = [
-    {
-      id: '1',
-      title: 'New Place Recommendation',
-      message: 'Eiffel Tower added to your recommended places based on your interests',
-      time: '30m ago',
-      unread: true,
-    },
-    {
-      id: '2',
-      title: 'Streak Reminder',
-      message: 'Keep your streak going! Visit a new place today to maintain your 12-day streak',
-      time: '2h ago',
-      unread: true,
-    },
-    {
-      id: '3',
-      title: 'Wishlist Update',
-      message: 'Hotel Ritz Paris has new reviews and photos. Check it out!',
-      time: '5h ago',
-      unread: true,
-    },
-    {
-      id: '4',
-      title: 'Trip Reminder',
-      message: 'Your visit to Notre-Dame Cathedral is scheduled for today at 2:00 PM',
-      time: '1d ago',
-      unread: false,
-    },
-    {
-      id: '5',
-      title: 'Feed Activity',
-      message: 'Travel Explorer and 5 others liked your post about Luxembourg Gardens',
-      time: '2d ago',
-      unread: false,
-    },
-    {
-      id: '6',
-      title: 'New Place Nearby',
-      message: 'Café de Flore is just 1.2 km away from your current location',
-      time: '3d ago',
-      unread: false,
-    },
-    {
-      id: '7',
-      title: 'Trip Completed',
-      message: 'Arc de Triomphe visit completed. Add it to your past trips!',
-      time: '4d ago',
-      unread: false,
-    },
-    {
-      id: '8',
-      title: 'Welcome to Guido',
-      message: 'Start exploring amazing places and build your travel journey',
-      time: '1w ago',
-      unread: false,
-    },
-  ];
+  // TODO: Replace with API data
+  const notifications = [];
 
   return (
     <View style={styles.container}>

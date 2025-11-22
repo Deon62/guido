@@ -9,6 +9,7 @@ import { PaginationIndicator } from '../components/PaginationIndicator';
 import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
 import { usePagination } from '../utils/usePagination';
+import { getUser } from '../utils/storage';
 
 export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress, onCreateCommunityPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -20,6 +21,7 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [userData, setUserData] = useState(null);
   const searchBarWidth = useRef(new Animated.Value(0)).current;
   const searchBarOpacity = useRef(new Animated.Value(0)).current;
   const [showNewPostInput, setShowNewPostInput] = useState(false);
@@ -72,219 +74,32 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     debouncedSetSearch(searchQuery);
   }, [searchQuery, debouncedSetSearch]);
 
-  // Generate mock communities data (must be defined before useMemo)
-  const generateCommunities = () => {
-    const baseCommunities = [
-      {
-        id: 'hotels',
-        name: 'q/hotels',
-        description: 'Discuss hotels, accommodations, and stays',
-        members: 12450,
-        posts: 3420,
-        icon: 'bed-outline',
-      },
-      {
-        id: 'museums',
-        name: 'q/museums',
-        description: 'Share experiences and tips about museums',
-        members: 8920,
-        posts: 2150,
-        icon: 'library-outline',
-      },
-      {
-        id: 'landmarks',
-        name: 'q/landmarks',
-        description: 'Iconic places and landmarks discussions',
-        members: 15680,
-        posts: 4890,
-        icon: 'location-outline',
-      },
-      {
-        id: 'cafes',
-        name: 'q/cafes',
-        description: 'Coffee shops, cafes, and dining spots',
-        members: 7450,
-        posts: 1890,
-        icon: 'cafe-outline',
-      },
-      {
-        id: 'nature',
-        name: 'q/nature',
-        description: 'Parks, trails, and natural attractions',
-        members: 11320,
-        posts: 3120,
-        icon: 'leaf-outline',
-      },
-      {
-        id: 'restaurants',
-        name: 'q/restaurants',
-        description: 'Restaurant reviews and recommendations',
-        members: 9830,
-        posts: 2560,
-        icon: 'restaurant-outline',
-      },
-    ];
+  // TODO: Replace with API data
+  const allCommunities = useMemo(() => [], []);
 
-    // Generate additional communities for pagination testing
-    const categories = [
-      { name: 'beaches', icon: 'water-outline', desc: 'Beach destinations and coastal areas' },
-      { name: 'shopping', icon: 'bag-outline', desc: 'Shopping districts and markets' },
-      { name: 'nightlife', icon: 'musical-notes-outline', desc: 'Bars, clubs, and nightlife spots' },
-      { name: 'adventure', icon: 'trail-sign-outline', desc: 'Adventure activities and extreme sports' },
-      { name: 'photography', icon: 'camera-outline', desc: 'Photography spots and tips' },
-      { name: 'budget', icon: 'wallet-outline', desc: 'Budget-friendly travel tips' },
-      { name: 'luxury', icon: 'diamond-outline', desc: 'Luxury travel experiences' },
-      { name: 'solo', icon: 'person-outline', desc: 'Solo travel advice and stories' },
-      { name: 'family', icon: 'people-outline', desc: 'Family-friendly destinations' },
-      { name: 'romance', icon: 'heart-outline', desc: 'Romantic getaways and date spots' },
-    ];
+  // Load user data for profile picture
+  useEffect(() => {
+    const loadUserData = () => {
+      const user = getUser();
+      setUserData(user);
+    };
+    loadUserData();
+  }, []);
 
-    const additionalCommunities = categories.map((cat, index) => ({
-      id: cat.name,
-      name: `q/${cat.name}`,
-      description: cat.desc,
-      members: Math.floor(Math.random() * 15000) + 5000,
-      posts: Math.floor(Math.random() * 5000) + 1000,
-      icon: cat.icon,
-    }));
-
-    return [...baseCommunities, ...additionalCommunities];
-  };
-
-  const allCommunities = useMemo(() => generateCommunities(), []);
-
-  // Mock posts data for selected community
+  // TODO: Replace with API data
   const getCommunityPosts = (communityId) => {
-    const allPosts = {
-      hotels: [
-        {
-          id: '1',
-          user: { name: 'Sarah Johnson', avatar: '👤' },
-          title: 'Best budget hotel in Paris?',
-          content: 'Looking for recommendations for a budget-friendly hotel in Paris. Preferably near the city center. Any suggestions?',
-          upvotes: 124,
-          comments: 23,
-          timestamp: '2 hours ago',
-          isUpvoted: false,
-        },
-        {
-          id: '2',
-          user: { name: 'Mike Chen', avatar: '👤' },
-          title: 'Hotel booking tips',
-          content: 'Always book directly with the hotel for better rates and cancellation policies. Also check for seasonal discounts!',
-          upvotes: 89,
-          comments: 15,
-          timestamp: '5 hours ago',
-          isUpvoted: true,
-        },
-        {
-          id: '3',
-          user: { name: 'Emma Wilson', avatar: '👤' },
-          title: 'Boutique hotels vs chains',
-          content: 'What do you prefer? I love the unique character of boutique hotels but chains offer more reliability.',
-          upvotes: 67,
-          comments: 31,
-          timestamp: '1 day ago',
-          isUpvoted: false,
-        },
-      ],
-      museums: [
-        {
-          id: '1',
-          user: { name: 'David Lee', avatar: '👤' },
-          title: 'Louvre Museum - must see exhibits?',
-          content: 'Visiting the Louvre next week. What are the absolute must-see exhibits? I have limited time.',
-          upvotes: 156,
-          comments: 42,
-          timestamp: '3 hours ago',
-          isUpvoted: false,
-        },
-        {
-          id: '2',
-          user: { name: 'Lisa Park', avatar: '👤' },
-          title: 'Museum pass worth it?',
-          content: 'Is the Paris Museum Pass worth buying? Planning to visit 4-5 museums during my stay.',
-          upvotes: 98,
-          comments: 28,
-          timestamp: '8 hours ago',
-          isUpvoted: true,
-        },
-      ],
-      landmarks: [
-        {
-          id: '1',
-          user: { name: 'Alex Brown', avatar: '👤' },
-          title: 'Eiffel Tower - best time to visit?',
-          content: 'When is the best time to visit the Eiffel Tower to avoid crowds? Early morning or late evening?',
-          upvotes: 203,
-          comments: 56,
-          timestamp: '1 hour ago',
-          isUpvoted: false,
-        },
-      ],
-      cafes: [
-        {
-          id: '1',
-          user: { name: 'Maria Garcia', avatar: '👤' },
-          title: 'Cozy cafes for remote work',
-          content: 'Looking for cafes in Paris with good WiFi and a quiet atmosphere for working. Any recommendations?',
-          upvotes: 78,
-          comments: 19,
-          timestamp: '4 hours ago',
-          isUpvoted: false,
-        },
-      ],
-      nature: [
-        {
-          id: '1',
-          user: { name: 'Tom Anderson', avatar: '👤' },
-          title: 'Best parks for a morning run',
-          content: 'Which parks in Paris are best for running? Looking for safe, well-maintained paths.',
-          upvotes: 92,
-          comments: 24,
-          timestamp: '6 hours ago',
-          isUpvoted: true,
-        },
-      ],
-      restaurants: [
-        {
-          id: '1',
-          user: { name: 'Sophie Martin', avatar: '👤' },
-          title: 'Authentic French cuisine recommendations',
-          content: 'Where can I find authentic French food that locals actually eat? Not tourist traps.',
-          upvotes: 145,
-          comments: 38,
-          timestamp: '2 hours ago',
-          isUpvoted: false,
-        },
-      ],
-    };
-    return allPosts[communityId] || [];
+    // TODO: Fetch posts from API
+    // const token = getToken();
+    // const posts = await fetchCommunityPosts(token, communityId);
+    return [];
   };
 
-  // Get comments for a post
+  // TODO: Replace with API data
   const getPostComments = (postId) => {
-    const allComments = {
-      'hotels-1': [
-        { id: '1', user: { name: 'John Doe', avatar: '👤' }, text: 'I stayed at Hotel Central last month. Great location and affordable!', timestamp: '1 hour ago' },
-        { id: '2', user: { name: 'Jane Smith', avatar: '👤' }, text: 'Check out Hotel des Arts, it\'s in the heart of the city.', timestamp: '2 hours ago' },
-        { id: '3', user: { name: 'Bob Wilson', avatar: '👤' }, text: 'I recommend booking through the hotel website directly for better rates.', timestamp: '3 hours ago' },
-      ],
-      'hotels-2': [
-        { id: '1', user: { name: 'Alice Brown', avatar: '👤' }, text: 'Great tip! I always check cancellation policies too.', timestamp: '1 hour ago' },
-        { id: '2', user: { name: 'Charlie Davis', avatar: '👤' }, text: 'Also sign up for hotel loyalty programs for extra discounts.', timestamp: '4 hours ago' },
-      ],
-      'museums-1': [
-        { id: '1', user: { name: 'Sarah Lee', avatar: '👤' }, text: 'Definitely see the Mona Lisa, Venus de Milo, and the Winged Victory of Samothrace!', timestamp: '30 mins ago' },
-        { id: '2', user: { name: 'Mike Johnson', avatar: '👤' }, text: 'The Egyptian antiquities section is amazing too. Don\'t miss it!', timestamp: '1 hour ago' },
-        { id: '3', user: { name: 'Emma White', avatar: '👤' }, text: 'Get there early to avoid the crowds at the Mona Lisa.', timestamp: '2 hours ago' },
-      ],
-      'landmarks-1': [
-        { id: '1', user: { name: 'David Green', avatar: '👤' }, text: 'Early morning (before 9 AM) is best. Much less crowded!', timestamp: '45 mins ago' },
-        { id: '2', user: { name: 'Lisa Chen', avatar: '👤' }, text: 'Sunset is also beautiful but can be busy. Book tickets in advance.', timestamp: '1 hour ago' },
-      ],
-    };
-    return allComments[postId] || [];
+    // TODO: Fetch comments from API
+    // const token = getToken();
+    // const comments = await fetchPostComments(token, postId);
+    return [];
   };
 
   const handleJoinCommunity = (communityId) => {
@@ -668,11 +483,17 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
             activeOpacity={0.7}
           >
             <View style={styles.profileImageContainer}>
-              <Image
-                source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
-                style={styles.profileImage}
-                resizeMode="cover"
-              />
+              {userData?.avatar ? (
+                <Image
+                  source={userData.avatar}
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.profileImagePlaceholder}>
+                  <Ionicons name="person" size={20} color="#C0C0C0" />
+                </View>
+              )}
               <View style={styles.onlineIndicator} />
             </View>
           </TouchableOpacity>
@@ -687,10 +508,22 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
           />
         </View>
       ) : paginatedCommunities.length === 0 ? (
-        <View style={styles.emptySearchResults}>
-          <Ionicons name="search-outline" size={48} color="#C0C0C0" />
-          <Text style={styles.emptySearchText}>No communities found</Text>
-          <Text style={styles.emptySearchSubtext}>Try a different search term</Text>
+        <View style={styles.emptyContainer}>
+          {debouncedSearchQuery.trim() ? (
+            <>
+              <Ionicons name="search-outline" size={64} color="#C0C0C0" />
+              <Text style={styles.emptyText}>No communities found</Text>
+              <Text style={styles.emptySubtext}>Try a different search term</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="people-outline" size={64} color="#C0C0C0" />
+              <Text style={styles.emptyText}>No communities yet</Text>
+              <Text style={styles.emptySubtext}>
+                Communities will appear here once they're available. Check back soon!
+              </Text>
+            </>
+          )}
         </View>
       ) : (
         <FlatList
@@ -852,6 +685,16 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#0A1D37',
   },
+  profileImagePlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#0A1D37',
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   onlineIndicator: {
     position: 'absolute',
     bottom: 0,
@@ -912,22 +755,26 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
-  emptySearchResults: {
+  emptyContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: 120,
+    paddingHorizontal: 32,
   },
-  emptySearchText: {
-    fontSize: 16,
-    fontFamily: FONTS.semiBold,
+  emptyText: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
     color: '#6D6D6D',
-    marginTop: 16,
-    marginBottom: 4,
+    marginTop: 24,
+    marginBottom: 8,
   },
-  emptySearchSubtext: {
-    fontSize: 13,
+  emptySubtext: {
+    fontSize: 14,
     fontFamily: FONTS.regular,
     color: '#9B9B9B',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   joinButton: {
     paddingHorizontal: 16,

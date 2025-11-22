@@ -22,45 +22,44 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
   // Fetch user data from API
   useEffect(() => {
     const fetchUserData = async () => {
-      // Use prop if provided, otherwise fetch from API
-      if (userProp) {
+      // Only use prop if it has valid data (not null and not mock data)
+      // Check for mock data indicators
+      const isMockData = userProp && (
+        userProp.name === 'John Doe' || 
+        userProp.email === 'john.doe@example.com' ||
+        (userProp.avatar && typeof userProp.avatar === 'object' && userProp.avatar.uri && userProp.avatar.uri.includes('pravatar'))
+      );
+      
+      if (userProp && !isMockData) {
         setUserData(userProp);
         setIsLoadingUser(false);
         return;
       }
 
-      const token = getToken();
-      if (!token) {
-        // No token, use stored user or default
-        const storedUser = getUser();
-        setUserData(storedUser || {
-          name: 'Guest User',
-          email: 'guest@example.com',
-          avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
-        });
-        setIsLoadingUser(false);
-        return;
-      }
+            const token = getToken();
+            if (!token) {
+              // No token, use stored user or null
+              const storedUser = getUser();
+              setUserData(storedUser || null);
+              setIsLoadingUser(false);
+              return;
+            }
 
-      try {
-        const user = await getCurrentUser(token);
-        setUserData(user);
-        // Update stored user data
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem('user_data', JSON.stringify(user));
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        // Fallback to stored user or default
-        const storedUser = getUser();
-        setUserData(storedUser || {
-          name: 'Guest User',
-          email: 'guest@example.com',
-          avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
-        });
-      } finally {
-        setIsLoadingUser(false);
-      }
+            try {
+              const user = await getCurrentUser(token);
+              setUserData(user);
+              // Update stored user data
+              if (typeof window !== 'undefined' && window.localStorage) {
+                localStorage.setItem('user_data', JSON.stringify(user));
+              }
+            } catch (error) {
+              console.error('Error fetching user data:', error);
+              // Fallback to stored user or null
+              const storedUser = getUser();
+              setUserData(storedUser || null);
+            } finally {
+              setIsLoadingUser(false);
+            }
     };
 
     fetchUserData();
@@ -75,15 +74,7 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
   };
 
   // Use fetched user data or prop
-  const user = userData || userProp || {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
-    phone: '+1 234 567 8900',
-    location: 'New York, USA',
-    city: 'New York',
-    memberSince: 'January 2024',
-  };
+  const user = userData || userProp;
 
 
   const menuItems = [
@@ -157,11 +148,17 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={user.avatar}
-              style={styles.avatar}
-              resizeMode="cover"
-            />
+            {user?.avatar ? (
+              <Image
+                source={user.avatar}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={40} color="#C0C0C0" />
+              </View>
+            )}
             <TouchableOpacity
               style={styles.cameraButton}
               onPress={() => {
@@ -176,8 +173,12 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               <Ionicons name="camera" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.name}>{user.name || user.email?.split('@')[0] || 'User'}</Text>
-          <Text style={styles.email}>{user.email || 'No email'}</Text>
+          {((user?.nickname && user.nickname.trim()) || (user?.name && user.name.trim())) ? (
+            <Text style={styles.name}>{user.nickname || user.name}</Text>
+          ) : null}
+          {((user?.username && user.username.trim()) || (user?.email && user.email.trim())) ? (
+            <Text style={styles.email}>{user.username || user.email}</Text>
+          ) : null}
         </View>
 
         {/* Followers/Following Section */}
@@ -190,7 +191,7 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               if (onFollowersPress) onFollowersPress();
             }}
           >
-            <Text style={styles.followStatNumber}>1.2k</Text>
+            <Text style={styles.followStatNumber}>{user?.followersCount || 0}</Text>
             <Text style={styles.followStatLabel}>Followers</Text>
           </TouchableOpacity>
           <View style={styles.followStatDivider} />
@@ -202,7 +203,7 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               if (onFollowingPress) onFollowingPress();
             }}
           >
-            <Text style={styles.followStatNumber}>456</Text>
+            <Text style={styles.followStatNumber}>{user?.followingCount || 0}</Text>
             <Text style={styles.followStatLabel}>Following</Text>
           </TouchableOpacity>
         </View>
@@ -212,17 +213,21 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
           <View style={styles.streakCard}>
             <Ionicons name="flame" size={18} color="#FF6B6B" />
             <View style={styles.streakInfo}>
-              <Text style={styles.streakNumber}>12</Text>
+              <Text style={styles.streakNumber}>{user?.streakDays || 0}</Text>
               <Text style={styles.streakLabel}>Day Streak</Text>
             </View>
           </View>
           {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '75%' }]} />
+          {user?.streakDays > 0 && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${Math.min((user.streakDays % 30) / 30 * 100, 100)}%` }]} />
+              </View>
+              <Text style={styles.progressText}>
+                {30 - (user.streakDays % 30)} days until next milestone
+              </Text>
             </View>
-            <Text style={styles.progressText}>9 days until next milestone</Text>
-          </View>
+          )}
         </View>
 
         {/* My Posts Section */}
@@ -257,17 +262,23 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
 
 
         {/* Personal Info Section */}
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Personal Info</Text>
-          <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={18} color="#6D6D6D" />
-            <Text style={styles.infoText}>{user.location}</Text>
+        {((user?.location && user.location.trim()) || (user?.city && user.city.trim()) || (user?.memberSince && user.memberSince.trim())) && (
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>Personal Info</Text>
+            {((user?.location && user.location.trim()) || (user?.city && user.city.trim())) && (
+              <View style={styles.infoRow}>
+                <Ionicons name="location-outline" size={18} color="#6D6D6D" />
+                <Text style={styles.infoText}>{user.location || user.city}</Text>
+              </View>
+            )}
+            {(user?.memberSince && user.memberSince.trim()) && (
+              <View style={styles.infoRow}>
+                <Ionicons name="calendar-outline" size={18} color="#6D6D6D" />
+                <Text style={styles.infoText}>Member since {user.memberSince}</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={18} color="#6D6D6D" />
-            <Text style={styles.infoText}>Member since {user.memberSince}</Text>
-          </View>
-        </View>
+        )}
 
         {/* Account Hub Section */}
         <View style={styles.menuSection}>
@@ -410,6 +421,16 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     borderWidth: 3,
     borderColor: '#F7F7F7',
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#F7F7F7',
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraButton: {
     position: 'absolute',

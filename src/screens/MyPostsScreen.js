@@ -7,39 +7,8 @@ import { FONTS } from '../constants/fonts';
 export const MyPostsScreen = ({ onBack, onPostPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock user posts data
-  const [userPosts] = useState([
-    {
-      id: '1',
-      title: 'Best budget hotel in Paris?',
-      content: 'Looking for recommendations for a budget-friendly hotel in Paris. Preferably near the city center. Any suggestions?',
-      community: 'q/hotels',
-      upvotes: 124,
-      comments: 23,
-      timestamp: '2 days ago',
-      isUpvoted: false,
-    },
-    {
-      id: '2',
-      title: 'Louvre Museum - must see exhibits?',
-      content: 'Visiting the Louvre next week. What are the absolute must-see exhibits? I have limited time.',
-      community: 'q/museums',
-      upvotes: 156,
-      comments: 42,
-      timestamp: '5 days ago',
-      isUpvoted: true,
-    },
-    {
-      id: '3',
-      title: 'Cozy cafes for remote work',
-      content: 'Looking for cafes in Paris with good WiFi and a quiet atmosphere for working. Any recommendations?',
-      community: 'q/cafes',
-      upvotes: 78,
-      comments: 19,
-      timestamp: '1 week ago',
-      isUpvoted: false,
-    },
-  ]);
+  // TODO: Replace with API data
+  const [userPosts] = useState([]);
 
   const formatNumber = (num) => {
     if (num >= 1000) {

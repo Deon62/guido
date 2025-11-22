@@ -9,57 +9,8 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock user's feed posts data
-  const [userFeedPosts, setUserFeedPosts] = useState([
-    {
-      id: '1',
-      place: {
-        name: 'Eiffel Tower',
-        location: 'Paris, France',
-        category: 'Landmarks',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
-      ],
-      caption: 'The iconic Eiffel Tower at sunset! 🌅 A must-visit when in Paris.',
-      likes: 1247,
-      comments: 89,
-      timestamp: '2 days ago',
-    },
-    {
-      id: '2',
-      place: {
-        name: 'Café de Flore',
-        location: 'Paris, France',
-        category: 'Cafes',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800' },
-      ],
-      caption: 'Morning coffee at this historic café. The atmosphere is incredible! ☕️',
-      likes: 892,
-      comments: 45,
-      timestamp: '5 days ago',
-    },
-    {
-      id: '3',
-      place: {
-        name: 'Luxembourg Gardens',
-        location: 'Paris, France',
-        category: 'Nature',
-      },
-      images: [
-        { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800' },
-        { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800' },
-      ],
-      caption: 'Perfect spot for a peaceful afternoon walk. The gardens are so well maintained! 🌳',
-      likes: 634,
-      comments: 23,
-      timestamp: '1 week ago',
-    },
-  ]);
+  // TODO: Replace with API data
+  const [userFeedPosts, setUserFeedPosts] = useState([]);
 
   const handleDeletePost = (postId) => {
     Alert.alert(

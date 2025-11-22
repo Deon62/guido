@@ -9,59 +9,8 @@ export const MessagesScreen = ({ activeTab = 'messages', onTabChange, onMessageP
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Mock messages data
-  const messages = [
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      avatar: { uri: 'https://i.pravatar.cc/150?img=1' },
-      lastMessage: 'Hi! I\'m excited to show you around Paris tomorrow. Meet at the Eiffel Tower at 10 AM?',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      unread: true,
-      unreadCount: 2,
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      avatar: { uri: 'https://i.pravatar.cc/150?img=2' },
-      lastMessage: 'Thanks for booking! Looking forward to our food tour.',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-      unread: false,
-    },
-    {
-      id: '3',
-      name: 'Emma Williams',
-      avatar: { uri: 'https://i.pravatar.cc/150?img=3' },
-      lastMessage: 'The art museum tour was amazing! Thank you so much.',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      unread: false,
-    },
-    {
-      id: '4',
-      name: 'David Martinez',
-      avatar: { uri: 'https://i.pravatar.cc/150?img=4' },
-      lastMessage: 'See you tonight for the nightlife tour!',
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      unread: true,
-      unreadCount: 1,
-    },
-    {
-      id: '5',
-      name: 'Lisa Anderson',
-      avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-      lastMessage: 'Perfect weather for our nature walk today!',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      unread: false,
-    },
-    {
-      id: '6',
-      name: 'James Wilson',
-      avatar: { uri: 'https://i.pravatar.cc/150?img=6' },
-      lastMessage: 'Check out these amazing photos from our tour!',
-      timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-      unread: false,
-    },
-  ];
+  // TODO: Replace with API data
+  const messages = [];
 
   const handleMessagePress = (message) => {
     if (onMessagePress) {

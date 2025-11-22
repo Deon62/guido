@@ -16,96 +16,19 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // Simulate loading trips data
+  // Load trips data from API
   useEffect(() => {
     const loadTrips = async () => {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // TODO: Fetch trips from API
+      // const token = getToken();
+      // const trips = await fetchTrips(token);
       setIsLoading(false);
     };
     loadTrips();
   }, []);
 
-  // Mock trip data with places
-  const allTrips = [
-    // Wishlist trips (places user wants to visit)
-    {
-      id: '1',
-      placeName: 'Eiffel Tower',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400' },
-      category: 'Landmarks',
-      location: 'Paris, France',
-      date: 'Planning for Dec 25, 2024',
-      status: 'wishlist',
-    },
-    {
-      id: '2',
-      placeName: 'Hotel Ritz Paris',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400' },
-      category: 'Hotels',
-      location: 'Paris, France',
-      date: 'Planning for Jan 2025',
-      status: 'wishlist',
-    },
-    {
-      id: '3',
-      placeName: 'Luxembourg Gardens',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400' },
-      category: 'Nature',
-      location: 'Paris, France',
-      date: 'Planning for Spring 2025',
-      status: 'wishlist',
-    },
-    // Active trips
-    {
-      id: '4',
-      placeName: 'Notre-Dame Cathedral',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1563874255670-05953328b14a?w=400' },
-      category: 'Landmarks',
-      location: 'Paris, France',
-      date: 'Today',
-      time: 'Visiting now',
-      status: 'active',
-    },
-    {
-      id: '5',
-      placeName: 'Café de Flore',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400' },
-      category: 'Cafes',
-      location: 'Paris, France',
-      date: 'Today',
-      time: '2:00 PM',
-      status: 'active',
-    },
-    // Past trips
-    {
-      id: '6',
-      placeName: 'Arc de Triomphe',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=400' },
-      category: 'Landmarks',
-      location: 'Paris, France',
-      date: 'Dec 15, 2024',
-      status: 'past',
-    },
-    {
-      id: '7',
-      placeName: 'Bois de Vincennes',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400' },
-      category: 'Nature',
-      location: 'Paris, France',
-      date: 'Dec 10, 2024',
-      status: 'past',
-    },
-    {
-      id: '8',
-      placeName: 'Les Deux Magots',
-      placeImage: { uri: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400' },
-      category: 'Cafes',
-      location: 'Paris, France',
-      date: 'Nov 28, 2024',
-      status: 'past',
-    },
-  ];
+  // TODO: Replace with API data
+  const allTrips = [];
 
   const tabs = [
     { id: 'wishlist', label: 'Wishlist' },
@@ -142,7 +65,7 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
   };
 
   const handleAIRecommend = () => {
-    // Get user's trip data for AI recommendations
+    // TODO: Get user's trip data from API for AI recommendations
     const wishlistTrips = allTrips.filter(trip => trip.status === 'wishlist');
     const activeTrips = allTrips.filter(trip => trip.status === 'active');
     const pastTrips = allTrips.filter(trip => trip.status === 'past');
