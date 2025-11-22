@@ -144,25 +144,23 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
 
         {/* Floating Input Area */}
         <View style={[styles.floatingInputContainer, isKeyboardVisible && styles.floatingInputContainerKeyboard]}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Add a comment..."
-              placeholderTextColor="#9B9B9B"
-              value={commentText}
-              onChangeText={setCommentText}
-              multiline
-              maxLength={500}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, commentText.trim() === '' && styles.sendButtonDisabled]}
-              onPress={handleSendComment}
-              activeOpacity={0.7}
-              disabled={commentText.trim() === ''}
-            >
-              <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
-            </TouchableOpacity>
-          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Add a comment..."
+            placeholderTextColor="#9B9B9B"
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, commentText.trim() === '' && styles.sendButtonDisabled]}
+            onPress={handleSendComment}
+            activeOpacity={0.7}
+            disabled={commentText.trim() === ''}
+          >
+            <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -285,7 +283,7 @@ const styles = StyleSheet.create({
   commentsListContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   emptyComments: {
     alignItems: 'center',
@@ -355,41 +353,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    backgroundColor: 'rgba(247, 247, 247, 0.95)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(232, 232, 232, 0.5)',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: 'transparent',
   },
   floatingInputContainerKeyboard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: 'transparent',
   },
   input: {
     flex: 1,
@@ -397,8 +369,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#1A1A1A',
     maxHeight: 100,
-    paddingVertical: 4,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   sendButton: {
     width: 36,
