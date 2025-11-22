@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,11 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
   const [savedPosts, setSavedPosts] = useState(new Set());
   const [selectedPostForComments, setSelectedPostForComments] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
+  const [isUserScrolling, setIsUserScrolling] = useState({});
+  const scrollViewRefs = useRef({});
+  const autoScrollTimers = useRef({});
+  const isUserScrollingRef = useRef({});
+  const currentImageIndexRef = useRef({});
 
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -123,12 +128,64 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         { uri: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800' },
         { uri: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800' },
       ],
-      caption: 'Luxury at its finest! The service here is impeccable. Highly recommend! ✨',
-      likes: 987,
-      comments: 67,
+      caption: 'Luxury at its finest! The service here is impeccable. 🏨✨',
+      likes: 2103,
+      comments: 156,
       timestamp: '3 days ago',
     },
   ];
+
+  // Auto-scroll images for posts with multiple images
+  useEffect(() => {
+    if (!feedPosts || feedPosts.length === 0) return;
+    
+    feedPosts.forEach((post) => {
+      const images = post.images || (post.image ? [post.image] : []);
+      if (!images || images.length === 0) return;
+      
+      const imageCount = Math.min(images.length, 5);
+      
+      if (imageCount > 1) {
+        // Clear existing timer for this post
+        if (autoScrollTimers.current[post.id]) {
+          clearInterval(autoScrollTimers.current[post.id]);
+        }
+
+        // Set up auto-scroll timer
+        autoScrollTimers.current[post.id] = setInterval(() => {
+          // Skip if user is currently scrolling
+          if (isUserScrollingRef.current[post.id]) {
+            return;
+          }
+
+          const currentIndex = currentImageIndexRef.current[post.id] ?? 0;
+          const nextIndex = (currentIndex + 1) % imageCount;
+          const screenWidth = Dimensions.get('window').width;
+
+          if (scrollViewRefs.current[post.id]) {
+            scrollViewRefs.current[post.id].scrollTo({
+              x: nextIndex * screenWidth,
+              animated: true,
+            });
+            setCurrentImageIndex(prev => ({ ...prev, [post.id]: nextIndex }));
+          }
+        }, 3000); // Change image every 3 seconds
+      }
+    });
+
+    // Cleanup timers on unmount
+    return () => {
+      Object.values(autoScrollTimers.current).forEach(timer => {
+        if (timer) clearInterval(timer);
+      });
+    };
+  }, [feedPosts.length]); // Only re-run when posts change
+
+  // Sync refs with state
+  useEffect(() => {
+    isUserScrollingRef.current = isUserScrolling;
+    currentImageIndexRef.current = currentImageIndex;
+  }, [isUserScrolling, currentImageIndex]);
 
   const handleLike = (postId) => {
     setLikedPosts(prev => {
@@ -253,13 +310,26 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
             {/* Post Image Carousel */}
             <View style={styles.imageCarouselContainer}>
               <ScrollView
+                ref={(ref) => {
+                  if (ref) {
+                    scrollViewRefs.current[post.id] = ref;
+                  }
+                }}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
+                onScrollBeginDrag={() => {
+                  setIsUserScrolling(prev => ({ ...prev, [post.id]: true }));
+                }}
                 onMomentumScrollEnd={(event) => {
                   const screenWidth = Dimensions.get('window').width;
                   const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
                   setCurrentImageIndex(prev => ({ ...prev, [post.id]: index }));
+                  
+                  // Resume auto-scroll after user stops scrolling (after 3 seconds)
+                  setTimeout(() => {
+                    setIsUserScrolling(prev => ({ ...prev, [post.id]: false }));
+                  }, 3000);
                 }}
                 style={styles.imageCarousel}
                 scrollEventThrottle={16}
