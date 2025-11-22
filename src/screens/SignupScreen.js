@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
 import { validateEmail } from '../utils/formValidation';
+import { register } from '../services/authService';
 
 export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -45,17 +46,66 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
   const handleSignup = async () => {
     if (!validateForm()) return;
     
+    console.log('Starting registration...');
     setIsLoading(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the register API
+      console.log('Calling register API...');
+      const response = await register({
+        email: email.trim(),
+        password,
+        confirmPassword: confirmPassword,
+      });
       
+      console.log('Registration successful, response:', response);
+      
+      // Registration successful
       if (onSignup) {
-        onSignup({ email, password });
+        onSignup({ email, password, ...response });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create account. Please try again.');
+      console.error('Registration error in SignupScreen:', error);
+      
+      // Handle validation errors (422)
+      if (error.isValidationError && error.errors) {
+        // Set field-specific errors from backend
+        const fieldErrors = {};
+        
+        // Handle different error formats
+        if (typeof error.errors === 'object') {
+          Object.keys(error.errors).forEach((field) => {
+            const fieldError = error.errors[field];
+            // Handle array of errors or single error message
+            if (Array.isArray(fieldError)) {
+              fieldErrors[field] = fieldError[0] || fieldError;
+            } else if (typeof fieldError === 'string') {
+              fieldErrors[field] = fieldError;
+            } else if (fieldError?.message) {
+              fieldErrors[field] = fieldError.message;
+            }
+          });
+        }
+        
+        // Update form errors
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+        } else {
+          // Fallback to general error message
+          Alert.alert('Validation Error', error.message || 'Please check your input and try again.');
+        }
+      } else {
+        // Handle other API errors
+        const errorMessage = error.message || 'Failed to create account. Please try again.';
+        Alert.alert('Registration Error', errorMessage);
+        
+        // Set form errors if available from API response
+        if (error.field) {
+          setErrors({ ...errors, [error.field]: error.message });
+        }
+      }
     } finally {
+      console.log('Registration process completed, setting isLoading to false');
       setIsLoading(false);
     }
   };

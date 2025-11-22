@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Alert } from 'react-native';
+import { logout as logoutAPI } from './src/services/authService';
+import { getToken, clearAuth } from './src/utils/storage';
 import { useFonts } from 'expo-font';
 import { Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { LandingScreen } from './src/screens/LandingScreen';
@@ -223,18 +225,39 @@ function AppContent() {
     setShowAddFeedPost(true);
   };
 
-  const handleLogin = (credentials) => {
-    console.log('Login:', credentials);
+  const handleLogin = (response) => {
+    console.log('Login successful:', response);
     setIsAuthenticated(true);
     setShowLogin(false);
     setShowSignup(false);
+    
+    // Update user data if provided in response
+    if (response.user) {
+      setUserData(prev => ({
+        ...prev,
+        email: response.user.email,
+        id: response.user.id,
+        is_active: response.user.is_active,
+      }));
+    }
   };
 
-  const handleSignup = (credentials) => {
-    console.log('Signup:', credentials);
+  const handleSignup = (response) => {
+    console.log('Signup successful:', response);
     setIsAuthenticated(true);
     setShowLogin(false);
     setShowSignup(false);
+    
+    // Update user data if provided in response
+    if (response.user) {
+      setUserData(prev => ({
+        ...prev,
+        email: response.user.email,
+        id: response.user.id,
+        is_active: response.user.is_active,
+      }));
+    }
+    
     // After signup, allow them to post
     setShowAddFeedPost(true);
   };
@@ -397,12 +420,45 @@ function AppContent() {
     setShowLogoutConfirm(true);
   };
 
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = async () => {
     setShowLogoutConfirm(false);
-    console.log('User logged out');
-    // TODO: Handle logout logic (clear session, redirect to landing, etc.)
-    setCurrentScreen('landing');
-    setActiveTab('home');
+    
+    try {
+      // Get token before clearing
+      const token = getToken();
+      
+      // Call logout API if token exists
+      if (token) {
+        await logoutAPI(token);
+      }
+      
+      // Clear local storage (token and user data)
+      clearAuth();
+      
+      // Reset app state
+      setIsAuthenticated(false);
+      setUserData({
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        phone: '+1 234 567 8900',
+        city: 'New York',
+        location: 'New York, USA',
+        avatar: require('./assets/profiles/ic.png'),
+      });
+      
+      // Redirect to landing screen
+      setCurrentScreen('landing');
+      setActiveTab('home');
+      
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if API call fails, clear local storage and logout locally
+      clearAuth();
+      setIsAuthenticated(false);
+      setCurrentScreen('landing');
+      setActiveTab('home');
+    }
   };
 
   const handleDeleteAccountPress = () => {

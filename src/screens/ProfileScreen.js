@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,8 @@ import { BottomNavBar } from '../components/BottomNavBar';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
 import { FeedbackModal } from '../components/FeedbackModal';
+import { getCurrentUser } from '../services/authService';
+import { getToken, getUser } from '../utils/storage';
 
 export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, onFollowersPress, onFollowingPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
@@ -14,6 +16,55 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
   // Feedback modal state
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackType, setFeedbackType] = useState('feedback'); // 'feedback' or 'feature'
+  const [userData, setUserData] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // Use prop if provided, otherwise fetch from API
+      if (userProp) {
+        setUserData(userProp);
+        setIsLoadingUser(false);
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        // No token, use stored user or default
+        const storedUser = getUser();
+        setUserData(storedUser || {
+          name: 'Guest User',
+          email: 'guest@example.com',
+          avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
+        });
+        setIsLoadingUser(false);
+        return;
+      }
+
+      try {
+        const user = await getCurrentUser(token);
+        setUserData(user);
+        // Update stored user data
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem('user_data', JSON.stringify(user));
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Fallback to stored user or default
+        const storedUser = getUser();
+        setUserData(storedUser || {
+          name: 'Guest User',
+          email: 'guest@example.com',
+          avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
+        });
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userProp]);
 
   const handleSettingsPress = () => {
     if (onSettingsPress) {
@@ -23,8 +74,8 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
     }
   };
 
-  // Mock user data (use prop if provided)
-  const user = userProp || {
+  // Use fetched user data or prop
+  const user = userData || userProp || {
     name: 'John Doe',
     email: 'john.doe@example.com',
     avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
@@ -125,8 +176,8 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               <Ionicons name="camera" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.email}>{user.email}</Text>
+          <Text style={styles.name}>{user.name || user.email?.split('@')[0] || 'User'}</Text>
+          <Text style={styles.email}>{user.email || 'No email'}</Text>
         </View>
 
         {/* Followers/Following Section */}

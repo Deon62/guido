@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
 import { validateEmail } from '../utils/formValidation';
+import { login } from '../services/authService';
+import { storeToken, storeUser } from '../utils/storage';
 
 export const LoginScreen = ({ onLogin, onSignupPress, onBack, onForgotPasswordPress, onComingSoonPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -39,14 +41,50 @@ export const LoginScreen = ({ onLogin, onSignupPress, onBack, onForgotPasswordPr
     
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the login API
+      const response = await login({
+        email: email.trim(),
+        password,
+      });
       
+      // Store token and user data
+      if (response.access_token) {
+        storeToken(response.access_token);
+      }
+      if (response.user) {
+        storeUser(response.user);
+      }
+      
+      // Call the onLogin callback with response data
       if (onLogin) {
-        onLogin({ email, password });
+        onLogin({ email, ...response });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to login. Please try again.');
+      console.error('Login error:', error);
+      
+      // Handle validation errors
+      if (error.isValidationError && error.errors) {
+        const fieldErrors = {};
+        if (typeof error.errors === 'object') {
+          Object.keys(error.errors).forEach((field) => {
+            const fieldError = error.errors[field];
+            if (Array.isArray(fieldError)) {
+              fieldErrors[field] = fieldError[0] || fieldError;
+            } else if (typeof fieldError === 'string') {
+              fieldErrors[field] = fieldError;
+            }
+          });
+        }
+        
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+        } else {
+          Alert.alert('Login Error', error.message || 'Please check your credentials and try again.');
+        }
+      } else {
+        const errorMessage = error.message || 'Failed to login. Please try again.';
+        Alert.alert('Login Error', errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
