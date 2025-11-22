@@ -14,11 +14,11 @@ export const AIRecommendationsScreen = ({ tripData, onBack, onPlacePress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
   useEffect(() => {
-    // Simulate AI recommendation processing
+    // Simulate Deony recommendation processing
     const generateRecommendations = async () => {
       setIsLoading(true);
       
-      // Simulate AI processing delay
+      // Simulate Deony processing delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Analyze user's trip data to generate recommendations
@@ -114,7 +114,7 @@ export const AIRecommendationsScreen = ({ tripData, onBack, onPlacePress }) => {
           <View style={styles.aiIconContainer}>
             <Ionicons name="sparkles" size={20} color="#0A1D37" />
           </View>
-          <Text style={styles.title}>AI Recommendations</Text>
+          <Text style={styles.title}>Deony Recommendations</Text>
         </View>
         <View style={styles.placeholder} />
       </View>

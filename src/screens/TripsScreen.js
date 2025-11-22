@@ -202,10 +202,10 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
             <View style={styles.aiRecommendCard}>
               <View style={styles.aiRecommendHeader}>
                 <Ionicons name="sparkles" size={32} color="#0A1D37" />
-                <Text style={styles.aiRecommendTitle}>Get AI Recommendations</Text>
+                <Text style={styles.aiRecommendTitle}>Get Deony Recommendations</Text>
               </View>
               <Text style={styles.aiRecommendDescription}>
-                Discover personalized places based on your wishlist, active trips, and past experiences. Our AI analyzes your travel patterns to suggest destinations you'll love.
+                Discover personalized places based on your wishlist, active trips, and past experiences. Deony analyzes your travel patterns to suggest destinations you'll love.
               </Text>
               <TouchableOpacity
                 style={styles.aiRecommendButton}

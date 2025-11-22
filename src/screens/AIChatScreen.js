@@ -12,7 +12,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
     {
       id: '1',
       type: 'ai',
-      text: "Hey there, wanderer! 🌍✨ I'm your travel companion AI, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears (well, all algorithms 😄). What's on your travel mind today?",
+      text: "Hey there, wanderer! 🌍✨ I'm Deony, your travel companion, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears! What's on your travel mind today?",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -129,7 +129,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
       {
         id: '1',
         type: 'ai',
-        text: "Hey there, wanderer! 🌍✨ I'm your travel companion AI, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears (well, all algorithms 😄). What's on your travel mind today?",
+        text: "Hey there, wanderer! 🌍✨ I'm Deony, your travel companion, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears! What's on your travel mind today?",
         timestamp: new Date().toISOString(),
       },
     ]);
@@ -182,7 +182,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Ionicons name="sparkles" size={20} color="#0A1D37" />
-          <Text style={styles.headerTitle}>Travel AI</Text>
+          <Text style={styles.headerTitle}>Deony</Text>
         </View>
         <TouchableOpacity
           onPress={() => {

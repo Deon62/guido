@@ -11,7 +11,8 @@ import { FONTS } from '../constants/fonts';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BOTTOM_NAVBAR_HEIGHT = Platform.OS === 'ios' ? 80 : 70; // Approximate height of bottom navbar
-const BOTTOM_SHEET_MIN_HEIGHT = 120; // Minimum visible height when collapsed
+// Minimum height: title (28px) + one full card (120px) + padding (16px) = ~164px
+const BOTTOM_SHEET_MIN_HEIGHT = 164; // Minimum visible height when collapsed - shows one full place card
 const HEADER_HEIGHT = 100; // Approximate height for header
 const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT - BOTTOM_NAVBAR_HEIGHT - HEADER_HEIGHT; // Maximum height when expanded (leaving space for header)
 
@@ -476,6 +477,30 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
         </TouchableOpacity>
       </Animated.View>
 
+      {/* Arrow Button - Outside the grid */}
+      <View
+        style={[
+          styles.arrowButtonContainer,
+          {
+            bottom: isSheetExpanded 
+              ? BOTTOM_SHEET_MAX_HEIGHT + BOTTOM_NAVBAR_HEIGHT + 12
+              : BOTTOM_SHEET_MIN_HEIGHT + BOTTOM_NAVBAR_HEIGHT + 12,
+          },
+        ]}
+      >
+        <TouchableOpacity 
+          onPress={toggleBottomSheet}
+          activeOpacity={0.7}
+          style={styles.arrowButton}
+        >
+          <Ionicons 
+            name={isSheetExpanded ? "chevron-down" : "chevron-up"} 
+            size={20} 
+            color="#0A1D37" 
+          />
+        </TouchableOpacity>
+      </View>
+
       {/* Bottom Sheet with Places */}
       <Animated.View
         style={[
@@ -486,19 +511,13 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
           },
         ]}
       >
-        {/* Toggle Button */}
+        {/* Toggle Handle - Inside sheet at top */}
         <TouchableOpacity 
-          style={styles.toggleButton}
+          style={styles.toggleHandle}
           onPress={toggleBottomSheet}
           activeOpacity={0.7}
         >
-          <View style={styles.toggleButtonContainer}>
-            <Ionicons 
-              name={isSheetExpanded ? "chevron-down" : "chevron-up"} 
-              size={24} 
-              color="#0A1D37" 
-            />
-          </View>
+          <View style={styles.handleBar} />
         </TouchableOpacity>
 
         {/* Bottom Sheet Content */}
@@ -509,7 +528,7 @@ export const HomeScreen = ({ selectedCity, activeTab = 'home', onTabChange, onNo
           nestedScrollEnabled={true}
           bounces={false}
         >
-          <Text style={styles.sectionTitle}>Top Discoveries</Text>
+          <Text style={styles.sectionTitle}>Awesome Picks</Text>
           {isLoading ? (
             // Show skeleton loaders
             Array.from({ length: 6 }).map((_, index) => (
@@ -640,6 +659,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
+    width: '100%',
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -652,39 +672,64 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 15,
     zIndex: 10,
+    // Ensure the sheet is perfectly straight
+    alignSelf: 'stretch',
+    overflow: 'hidden',
+    alignItems: 'stretch',
   },
-  toggleButton: {
+  toggleHandle: {
     alignItems: 'center',
     paddingVertical: 8,
     paddingTop: 12,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    backgroundColor: '#FFFFFF',
   },
-  toggleButtonContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F5F5F5',
+  handleBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E8E8E8',
+  },
+  arrowButtonContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 20,
+    pointerEvents: 'box-none',
+  },
+  arrowButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#0A1D37',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   bottomSheetContent: {
     flex: 1,
+    width: '100%',
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 20,
     minHeight: '100%',
+    width: '100%',
+    alignItems: 'stretch',
+  },
+  titleContainer: {
+    width: '100%',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
   },
   sectionTitle: {
     fontSize: 20,
@@ -692,6 +737,11 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     letterSpacing: 0.3,
     marginBottom: 16,
+    marginTop: 0,
+    paddingTop: 0,
+    textAlign: 'center',
+    alignSelf: 'center',
+    width: '100%',
   },
   bottomNavContainer: {
     position: 'absolute',
