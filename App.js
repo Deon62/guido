@@ -13,7 +13,7 @@ import { FeedScreen } from './src/screens/FeedScreen';
 import { AddFeedPostScreen } from './src/screens/AddFeedPostScreen';
 import { AddFeedPostSuccessScreen } from './src/screens/AddFeedPostSuccessScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
-import { HotspotsScreen } from './src/screens/HotspotsScreen';
+import { CommunitiesScreen } from './src/screens/CommunitiesScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
@@ -488,11 +488,10 @@ export default function App() {
     );
   }
 
-  // Show profile screen when profile tab is active
-  if (currentScreen === 'home' && activeTab === 'hotspots') {
+  // Show communities screen when communities tab is active
+  if (currentScreen === 'home' && activeTab === 'communities') {
     return (
-      <HotspotsScreen
-        selectedCity={selectedCity}
+      <CommunitiesScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
       />
