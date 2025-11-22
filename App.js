@@ -14,6 +14,7 @@ import { AddFeedPostScreen } from './src/screens/AddFeedPostScreen';
 import { AddFeedPostSuccessScreen } from './src/screens/AddFeedPostSuccessScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { CommunitiesScreen } from './src/screens/CommunitiesScreen';
+import { PostDetailScreen } from './src/screens/PostDetailScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
@@ -60,6 +61,8 @@ export default function App() {
   const [showAddFeedPost, setShowAddFeedPost] = useState(false);
   const [showAddFeedPostSuccess, setShowAddFeedPostSuccess] = useState(false);
   const [savedFeedPostData, setSavedFeedPostData] = useState(null);
+  const [showPostDetail, setShowPostDetail] = useState(false);
+  const [selectedPostData, setSelectedPostData] = useState(null);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -74,7 +77,10 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showAddFeedPostSuccess) {
+    if (showPostDetail) {
+      setShowPostDetail(false);
+      setSelectedPostData(null);
+    } else if (showAddFeedPostSuccess) {
       handleAddFeedPostSuccessBack();
     } else if (showAddFeedPost) {
       setShowAddFeedPost(false);
@@ -159,6 +165,26 @@ export default function App() {
 
   const handleAddFeedPostPress = () => {
     setShowAddFeedPost(true);
+  };
+
+  const handlePostDetailPress = (post, community, comments) => {
+    setSelectedPostData({ post, community, comments });
+    setShowPostDetail(true);
+  };
+
+  const handlePostDetailBack = () => {
+    setShowPostDetail(false);
+    setSelectedPostData(null);
+  };
+
+  const handlePostDetailAddComment = (comment) => {
+    // Update comments in the selected post data
+    if (selectedPostData) {
+      setSelectedPostData({
+        ...selectedPostData,
+        comments: [...(selectedPostData.comments || []), comment],
+      });
+    }
   };
 
   const handleAddFeedPostSave = (postData) => {
@@ -488,12 +514,26 @@ export default function App() {
     );
   }
 
+  // Show post detail screen
+  if (showPostDetail && selectedPostData) {
+    return (
+      <PostDetailScreen
+        post={selectedPostData.post}
+        community={selectedPostData.community}
+        comments={selectedPostData.comments || []}
+        onBack={handlePostDetailBack}
+        onAddComment={handlePostDetailAddComment}
+      />
+    );
+  }
+
   // Show communities screen when communities tab is active
   if (currentScreen === 'home' && activeTab === 'communities') {
     return (
       <CommunitiesScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
+        onPostPress={handlePostDetailPress}
       />
     );
   }
