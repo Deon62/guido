@@ -399,11 +399,45 @@ function AppContent() {
     setShowProfilePictureSelector(true);
   };
 
-  const handleProfilePictureSelect = (image) => {
+  const handleProfilePictureSelect = async (image) => {
+    // Image could be:
+    // 1. A local asset (require) - just use it
+    // 2. An uploaded photo URL from API (string or object with uri)
+    // 3. A local file URI - should have been uploaded already
+    
+    // Update local state immediately
     setUserData(prev => ({
       ...prev,
       avatar: image,
     }));
+    
+    // If it's a URL from API (uploaded photo), refresh user data from API
+    const isUploadedPhoto = image && (
+      (typeof image === 'string' && image.startsWith('http')) ||
+      (typeof image === 'object' && image.uri && image.uri.startsWith('http'))
+    );
+    
+    if (isUploadedPhoto) {
+      const token = getToken();
+      if (token) {
+        try {
+          // Refresh user data from API to get updated profile
+          const { getCurrentUser } = require('./src/services/authService');
+          const { normalizeUserData } = require('./src/utils/storage');
+          const updatedUser = await getCurrentUser(token);
+          const normalizedUser = normalizeUserData(updatedUser);
+          setUserData(normalizedUser);
+          // Update stored user data
+          const { storeUser } = require('./src/utils/storage');
+          storeUser(normalizedUser);
+          console.log('User data refreshed after photo upload');
+        } catch (error) {
+          console.error('Error refreshing user data after photo upload:', error);
+          // Continue anyway - we've already updated the local state
+        }
+      }
+    }
+    
     setShowProfilePictureSelector(false);
     setProfilePictureContext(null);
     console.log('Profile picture updated');
@@ -506,7 +540,7 @@ function AppContent() {
   if (showProfilePictureSelector) {
     return (
       <ProfilePictureSelectorScreen
-        currentAvatar={userData.avatar}
+        currentAvatar={userData?.avatar || null}
         onBack={handleBack}
         onSelect={handleProfilePictureSelect}
       />

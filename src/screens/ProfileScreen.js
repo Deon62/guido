@@ -7,7 +7,7 @@ import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
 import { FeedbackModal } from '../components/FeedbackModal';
 import { getCurrentUser } from '../services/authService';
-import { getToken, getUser } from '../utils/storage';
+import { getToken, getUser, normalizeUserData, storeUser } from '../utils/storage';
 
 export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPress, onHelpSupportPress, onTermsPrivacyPress, onEditProfilePress, onLogoutPress, onProfilePicturePress, onMyPostsPress, onMyCommunitiesPress, onComingSoonPress, onFollowersPress, onFollowingPress, user: userProp, hideBottomNav = false }) => {
   // Get safe area insets
@@ -40,23 +40,24 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
             if (!token) {
               // No token, use stored user or null
               const storedUser = getUser();
-              setUserData(storedUser || null);
+              const normalizedStoredUser = storedUser ? normalizeUserData(storedUser) : null;
+              setUserData(normalizedStoredUser);
               setIsLoadingUser(false);
               return;
             }
 
             try {
               const user = await getCurrentUser(token);
-              setUserData(user);
+              const normalizedUser = normalizeUserData(user);
+              setUserData(normalizedUser);
               // Update stored user data
-              if (typeof window !== 'undefined' && window.localStorage) {
-                localStorage.setItem('user_data', JSON.stringify(user));
-              }
+              storeUser(normalizedUser);
             } catch (error) {
               console.error('Error fetching user data:', error);
               // Fallback to stored user or null
               const storedUser = getUser();
-              setUserData(storedUser || null);
+              const normalizedStoredUser = storedUser ? normalizeUserData(storedUser) : null;
+              setUserData(normalizedStoredUser);
             } finally {
               setIsLoadingUser(false);
             }

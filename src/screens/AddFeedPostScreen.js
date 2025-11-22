@@ -22,7 +22,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     placeName: '',
     location: '',
     mainCategory: '',
-    subCategory: '',
     caption: '',
     images: [],
     videos: [],
@@ -31,7 +30,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     placeName: null,
     location: null,
     mainCategory: null,
-    subCategory: null,
     caption: null,
     images: null,
     videos: null,
@@ -39,57 +37,8 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
   });
 
   const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
-  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
   
   const mainCategories = ['Core', 'Cultural', 'Relaxation', 'Food & Drink Niche', 'Miscellaneous / Unique'];
-  
-  const categoryOptions = {
-    Core: [
-      'Hotels',
-      'Cafes',
-      'Restaurants',
-      'Museums',
-      'Landmarks',
-      'Nature / Parks',
-      'Beaches',
-      'Nightlife / Bars',
-      'Shopping / Malls',
-      'Theaters / Cinemas',
-      'Adventure & Outdoors',
-      'Hiking Trails',
-      'Mountains',
-      'Lakes / Rivers',
-      'Wildlife / Safari',
-      'Camping Sites',
-      'Sports Facilities / Gyms',
-    ],
-    Cultural: [
-      'Art Galleries',
-      'Historical Sites',
-      'Markets / Bazaars',
-      'Religious Sites (Churches, Temples, Mosques)',
-      'Festivals / Event Venues',
-    ],
-    Relaxation: [
-      'Spas',
-      'Wellness Retreats',
-      'Resorts',
-      'Yoga / Meditation Centers',
-    ],
-    'Food & Drink Niche': [
-      'Bakeries / Pastry Shops',
-      'Juice / Smoothie Bars',
-      'Street Food Spots',
-      'Wine / Brewery Tours',
-    ],
-    'Miscellaneous / Unique': [
-      'Co-working Spaces',
-      'Libraries / Book Cafes',
-      'Scenic Views / Lookouts',
-      'Photography Spots',
-      'Hidden Gems / Secret Spots',
-    ],
-  };
 
   const handleSave = async () => {
     if (isSubmitting) return;
@@ -100,7 +49,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
       placeName: validatePlaceName(formData.placeName),
       location: validateLocation(formData.location),
       mainCategory: !formData.mainCategory ? 'Main category is required' : null,
-      subCategory: !formData.subCategory ? 'Sub category is required' : null,
       media: !hasMedia ? 'At least one image or video is required' : null,
       caption: validateMaxLength(formData.caption, 500, 'Caption'),
     };
@@ -509,37 +457,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
               )}
             </View>
 
-            {/* Sub Category Dropdown */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Sub Category *</Text>
-              <TouchableOpacity
-                style={[
-                  styles.categoryButton, 
-                  fieldErrors.subCategory && styles.inputError,
-                  !formData.mainCategory && styles.categoryButtonDisabled
-                ]}
-                onPress={() => {
-                  if (formData.mainCategory) {
-                    setShowSubCategoryModal(true);
-                  }
-                }}
-                activeOpacity={0.7}
-                disabled={!formData.mainCategory}
-              >
-                <Text style={[
-                  styles.categoryButtonText, 
-                  !formData.subCategory && styles.placeholderText,
-                  !formData.mainCategory && styles.disabledText
-                ]}>
-                  {formData.subCategory || (formData.mainCategory ? 'Select Sub Category' : 'Select main category first')}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color={formData.mainCategory ? "#6D6D6D" : "#C0C0C0"} />
-              </TouchableOpacity>
-              {fieldErrors.subCategory && (
-                <Text style={styles.fieldError}>{fieldErrors.subCategory}</Text>
-              )}
-            </View>
-
             {/* Caption */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Caption</Text>
@@ -619,12 +536,9 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                   style={styles.categoryOption}
                   onPress={() => {
                     updateField('mainCategory', category);
-                    // Reset sub category when main category changes
-                    updateField('subCategory', '');
                     setFieldErrors(prev => ({
                       ...prev,
                       mainCategory: null,
-                      subCategory: null,
                     }));
                     setShowMainCategoryModal(false);
                     triggerHaptic('light');
@@ -633,56 +547,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                 >
                   <Text style={styles.categoryOptionText}>{category}</Text>
                   {formData.mainCategory === category && (
-                    <Ionicons name="checkmark" size={20} color="#0A1D37" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Sub Category Modal */}
-      <Modal
-        visible={showSubCategoryModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowSubCategoryModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowSubCategoryModal(false)}
-          />
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Sub Category</Text>
-              <TouchableOpacity
-                onPress={() => setShowSubCategoryModal(false)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={24} color="#0A1D37" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-              {formData.mainCategory && categoryOptions[formData.mainCategory]?.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  style={styles.categoryOption}
-                  onPress={() => {
-                    updateField('subCategory', category);
-                    setFieldErrors(prev => ({
-                      ...prev,
-                      subCategory: null,
-                    }));
-                    setShowSubCategoryModal(false);
-                    triggerHaptic('light');
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.categoryOptionText}>{category}</Text>
-                  {formData.subCategory === category && (
                     <Ionicons name="checkmark" size={20} color="#0A1D37" />
                   )}
                 </TouchableOpacity>

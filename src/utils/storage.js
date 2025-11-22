@@ -32,12 +32,39 @@ export const removeToken = () => {
 };
 
 /**
+ * Normalize user data - convert profile_photo to avatar format
+ * @param {Object} user - User data from API
+ * @returns {Object} Normalized user data
+ */
+export const normalizeUserData = (user) => {
+  if (!user) return user;
+  
+  const normalized = { ...user };
+  
+  // Convert profile_photo (relative path) to avatar (full URL object)
+  if (user.profile_photo) {
+    // Import API_BASE_URL dynamically to avoid circular dependencies
+    const { API_BASE_URL } = require('../config/api');
+    const fullUrl = user.profile_photo.startsWith('http') 
+      ? user.profile_photo 
+      : `${API_BASE_URL}/${user.profile_photo}`;
+    normalized.avatar = { uri: fullUrl };
+  } else if (user.avatar && typeof user.avatar === 'string') {
+    // If avatar is already a string URL, convert to object format
+    normalized.avatar = { uri: user.avatar };
+  }
+  
+  return normalized;
+};
+
+/**
  * Store user data
  * @param {Object} user - User data to store
  */
 export const storeUser = (user) => {
   if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.setItem('user_data', JSON.stringify(user));
+    const normalized = normalizeUserData(user);
+    localStorage.setItem('user_data', JSON.stringify(normalized));
   }
 };
 

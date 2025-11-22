@@ -29,8 +29,8 @@ export const register = async (userData) => {
     password: userData.password,
     confirm_password: userData.confirmPassword, // Backend expects snake_case
   };
-  
-  console.log('Register request:', { url, body: { ...requestBody, password: '***', confirmPassword: '***' } });
+
+  console.log('Register request:', { url, body: { ...requestBody, password: '***', confirm_password: '***' } });
 
   try {
     const response = await fetchWithTimeout(
@@ -44,7 +44,7 @@ export const register = async (userData) => {
       },
       15000 // 15 second timeout
     );
-    
+
     console.log('Response status:', response.status);
 
     // Check if response has content
@@ -69,7 +69,7 @@ export const register = async (userData) => {
 
     if (!response.ok) {
       console.error('API error response:', { status: response.status, data });
-      
+
       // Handle 422 validation errors specifically
       if (response.status === 422) {
         // 422 usually contains detailed validation errors
@@ -84,7 +84,7 @@ export const register = async (userData) => {
         console.error('Validation errors:', validationError.errors);
         throw validationError;
       }
-      
+
       // Handle other API error responses
       const errorMessage = data.message || data.error || data.detail || `Registration failed (${response.status})`;
       const apiError = new Error(errorMessage);
@@ -121,12 +121,12 @@ export const register = async (userData) => {
  */
 export const login = async (credentials) => {
   const url = getApiUrl('auth/login');
-  
+
   const requestBody = {
     email: credentials.email,
     password: credentials.password,
   };
-  
+
   console.log('Login request:', { url, body: { ...requestBody, password: '***' } });
 
   try {
@@ -141,7 +141,7 @@ export const login = async (credentials) => {
       },
       15000
     );
-    
+
     console.log('Response status:', response.status);
 
     const contentType = response.headers.get('content-type');
@@ -164,7 +164,7 @@ export const login = async (credentials) => {
 
     if (!response.ok) {
       console.error('API error response:', { status: response.status, data });
-      
+
       if (response.status === 422) {
         const validationError = new Error(data.message || data.detail || 'Validation failed');
         validationError.status = 422;
@@ -172,7 +172,7 @@ export const login = async (credentials) => {
         validationError.isValidationError = true;
         throw validationError;
       }
-      
+
       const errorMessage = data.message || data.error || data.detail || `Login failed (${response.status})`;
       const apiError = new Error(errorMessage);
       apiError.status = response.status;
@@ -204,7 +204,7 @@ export const login = async (credentials) => {
  * @returns {Promise<Object>} User data
  */
 export const getCurrentUser = async (token) => {
-  const url = getApiUrl('profile/me');
+  const url = getApiUrl('profile/me'); // Updated endpoint
 
   try {
     const response = await fetchWithTimeout(
@@ -218,7 +218,7 @@ export const getCurrentUser = async (token) => {
       },
       15000
     );
-    
+
     console.log('Get current user response status:', response.status);
 
     const contentType = response.headers.get('content-type');
@@ -268,10 +268,11 @@ export const getCurrentUser = async (token) => {
 /**
  * Logout user
  * @param {string} token - Access token
- * @returns {Promise<Object>} Logout response
+ * @returns {Promise<Object>} Response data
  */
 export const logout = async (token) => {
   const url = getApiUrl('auth/logout');
+  console.log('Logout request:', { url });
 
   try {
     const response = await fetchWithTimeout(
@@ -285,7 +286,7 @@ export const logout = async (token) => {
       },
       15000
     );
-    
+
     console.log('Logout response status:', response.status);
 
     const contentType = response.headers.get('content-type');
@@ -298,100 +299,17 @@ export const logout = async (token) => {
         console.log('Logout response data:', data);
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        // Even if parsing fails, logout should succeed
-        data = { message: 'Logged out successfully' };
-      }
-    } else {
-      const text = await response.text();
-      data = { message: text || 'Logged out successfully' };
-    }
-
-    // Logout is successful even if response is not ok (some backends return 200, others might return different codes)
-    // The important thing is we clear local storage
-    return data;
-  } catch (error) {
-    console.error('Logout error:', error);
-    // Even if API call fails, we should still clear local storage
-    // Return success so the app can proceed with logout
-    return { message: 'Logged out locally' };
-  }
-};
-
-/**
- * Update user profile
- * @param {string} token - Access token
- * @param {Object} profileData - Profile data to update
- * @param {string} profileData.nickname - User's nickname
- * @param {string} profileData.username - Unique username (3-50 characters, will be prefixed with @)
- * @param {string} profileData.email - Email address (must be unique)
- * @param {string} profileData.city - City name
- * @returns {Promise<Object>} Updated user data
- */
-export const updateProfile = async (token, profileData) => {
-  const url = getApiUrl('profile/update');
-  
-  // Ensure username starts with @
-  let username = profileData.username || '';
-  if (username && !username.startsWith('@')) {
-    username = '@' + username;
-  }
-  
-  const requestBody = {
-    nickname: profileData.nickname,
-    username: username,
-    email: profileData.email,
-    city: profileData.city,
-  };
-  
-  console.log('Update profile request:', { url, body: { ...requestBody } });
-
-  try {
-    const response = await fetchWithTimeout(
-      url,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
-      },
-      15000
-    );
-    
-    console.log('Update profile response status:', response.status);
-
-    const contentType = response.headers.get('content-type');
-    let data;
-
-    if (contentType && contentType.includes('application/json')) {
-      try {
-        const text = await response.text();
-        data = text ? JSON.parse(text) : {};
-        console.log('Update profile response data:', data);
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
         throw new Error('Invalid response from server. Please try again.');
       }
     } else {
       const text = await response.text();
-      data = { message: text || 'Profile updated successfully' };
-      console.log('Response text:', text);
+      data = { message: text || 'Logout completed' };
+      console.log('Logout response text:', text);
     }
 
     if (!response.ok) {
-      console.error('API error response:', { status: response.status, data });
-      
-      if (response.status === 422) {
-        const validationError = new Error(data.message || data.detail || 'Validation failed');
-        validationError.status = 422;
-        validationError.errors = data.errors || (data.detail && typeof data.detail === 'object' ? data.detail : {}) || {};
-        validationError.isValidationError = true;
-        console.error('Validation errors:', validationError.errors);
-        throw validationError;
-      }
-      
-      const errorMessage = data.message || data.error || data.detail || `Profile update failed (${response.status})`;
+      console.error('Logout API error response:', { status: response.status, data });
+      const errorMessage = data.message || data.error || data.detail || `Logout failed (${response.status})`;
       const apiError = new Error(errorMessage);
       apiError.status = response.status;
       throw apiError;
@@ -399,6 +317,7 @@ export const updateProfile = async (token, profileData) => {
 
     return data;
   } catch (error) {
+    console.error('Logout API error:', error);
     if (error.message) {
       if (error.message.includes('timeout')) {
         throw new Error(
@@ -416,3 +335,270 @@ export const updateProfile = async (token, profileData) => {
   }
 };
 
+/**
+ * Update user profile
+ * @param {string} token - Access token
+ * @param {Object} profileData - Profile data to update
+ * @param {string} profileData.nickname - User's nickname
+ * @param {string} profileData.username - Unique username (without @ prefix)
+ * @param {string} profileData.email - Email address
+ * @param {string} profileData.city - City name
+ * @returns {Promise<Object>} Updated user data
+ */
+export const updateProfile = async (token, profileData) => {
+  const url = getApiUrl('profile/update');
+  
+  // Ensure username has '@' prefix for API
+  const usernameToSend = profileData.username.startsWith('@') 
+    ? profileData.username 
+    : `@${profileData.username}`;
+
+  const requestBody = {
+    nickname: profileData.nickname,
+    username: usernameToSend,
+    email: profileData.email,
+    city: profileData.city,
+  };
+
+  console.log('Update profile request:', { url, body: requestBody });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+      15000
+    );
+
+    console.log('Update profile response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Update profile response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = { message: text || 'Profile update completed' };
+      console.log('Update profile response text:', text);
+    }
+
+    if (!response.ok) {
+      console.error('Update profile API error response:', { status: response.status, data });
+
+      if (response.status === 422) {
+        const validationError = new Error(data.message || data.detail || 'Validation failed');
+        validationError.status = 422;
+        validationError.errors = data.errors || (data.detail && typeof data.detail === 'object' ? data.detail : {}) || {};
+        validationError.isValidationError = true;
+        throw validationError;
+      }
+
+      const errorMessage = data.message || data.error || data.detail || `Profile update failed (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Update profile API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Upload profile photo
+ * @param {string} token - Access token
+ * @param {Object} photoFile - Photo file object (from ImagePicker)
+ * @param {string} photoFile.uri - Local file URI
+ * @param {string} photoFile.type - MIME type (e.g., 'image/jpeg')
+ * @param {string} photoFile.name - File name (optional)
+ * @returns {Promise<Object>} Response data with uploaded photo URL
+ */
+export const uploadProfilePhoto = async (token, photoFile) => {
+  const url = getApiUrl('profile/upload-photo');
+
+  // Create FormData for file upload
+  const formData = new FormData();
+  
+  // Determine file name and type
+  const fileName = photoFile.name || `profile_${Date.now()}.jpg`;
+  const fileType = photoFile.type || 'image/jpeg';
+  
+  // For web, we need to handle file differently
+  if (typeof window !== 'undefined' && photoFile.uri) {
+    // For web, convert URI to Blob/File
+    try {
+      let blob;
+      
+      // Handle different URI types
+      if (photoFile.uri.startsWith('data:')) {
+        // Data URL (data:image/jpeg;base64,...)
+        const response = await fetch(photoFile.uri);
+        blob = await response.blob();
+      } else if (photoFile.uri.startsWith('blob:')) {
+        // Blob URL
+        const response = await fetch(photoFile.uri);
+        blob = await response.blob();
+      } else if (photoFile.uri.startsWith('file://') || photoFile.uri.startsWith('http://') || photoFile.uri.startsWith('https://')) {
+        // File URL or HTTP URL
+        const response = await fetch(photoFile.uri);
+        blob = await response.blob();
+      } else {
+        // Try to fetch as-is
+        const response = await fetch(photoFile.uri);
+        blob = await response.blob();
+      }
+      
+      // Create a File object from the blob (better for FormData on web)
+      const file = new File([blob], fileName, { type: fileType });
+      formData.append('file', file, fileName); // Backend expects field name "file"
+      
+      console.log('FormData prepared for web:', { fileName, fileType, fileSize: blob.size });
+    } catch (error) {
+      console.error('Error converting image to blob:', error);
+      // Fallback: try to create a File from the URI directly
+      try {
+        const response = await fetch(photoFile.uri);
+        const blob = await response.blob();
+        const file = new File([blob], fileName, { type: fileType });
+        formData.append('file', file, fileName); // Backend expects field name "file"
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        throw new Error('Failed to prepare image for upload. Please try again.');
+      }
+    }
+  } else {
+    // For React Native, use the file object directly
+    formData.append('file', { // Backend expects field name "file"
+      uri: photoFile.uri,
+      type: fileType,
+      name: fileName,
+    });
+  }
+
+  console.log('Upload profile photo request:', { url, fileName, fileType });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData - browser will set it with boundary
+        },
+        body: formData,
+      },
+      30000 // 30 second timeout for file uploads
+    );
+
+    console.log('Upload profile photo response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Upload profile photo response data:', JSON.stringify(data, null, 2));
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = { message: text || 'Photo uploaded successfully' };
+      console.log('Upload profile photo response text:', text);
+    }
+
+    if (!response.ok) {
+      console.error('Upload profile photo API error response:', { status: response.status, data });
+
+      if (response.status === 422) {
+        // Handle validation errors - detail might be an array or object
+        let errorMessage = 'Validation failed';
+        let errorDetails = {};
+        
+        if (data.detail) {
+          if (Array.isArray(data.detail)) {
+            // FastAPI validation errors are often arrays
+            errorMessage = data.detail.map(err => {
+              if (typeof err === 'string') return err;
+              if (err.msg) return err.msg;
+              if (err.message) return err.message;
+              if (err.loc && err.msg) return `${err.loc.join('.')}: ${err.msg}`;
+              return JSON.stringify(err);
+            }).join(', ');
+            errorDetails = data.detail;
+          } else if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else if (typeof data.detail === 'object') {
+            errorDetails = data.detail;
+            errorMessage = data.message || data.detail.message || 'Validation failed';
+          }
+        } else if (data.message) {
+          errorMessage = data.message;
+        }
+        
+        const validationError = new Error(errorMessage);
+        validationError.status = 422;
+        validationError.errors = data.errors || errorDetails || {};
+        validationError.isValidationError = true;
+        console.error('Validation errors:', validationError.errors);
+        throw validationError;
+      }
+
+      const errorMessage = data.message || data.error || data.detail || `Photo upload failed (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Upload profile photo API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
