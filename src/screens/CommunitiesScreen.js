@@ -17,6 +17,38 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
   const searchBarOpacity = useRef(new Animated.Value(0)).current;
   const [showNewPostInput, setShowNewPostInput] = useState(false);
 
+  // Animate search bar
+  useEffect(() => {
+    if (showSearchBar) {
+      Animated.parallel([
+        Animated.timing(searchBarWidth, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchBarOpacity, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(searchBarWidth, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchBarOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: false,
+        }),
+      ]).start();
+      setSearchQuery(''); // Clear search when closing
+    }
+  }, [showSearchBar]);
+
   // Mock communities data
   const communities = [
     {
@@ -417,38 +449,6 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
       </View>
     );
   }
-
-  // Animate search bar
-  useEffect(() => {
-    if (showSearchBar) {
-      Animated.parallel([
-        Animated.timing(searchBarWidth, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: false,
-        }),
-        Animated.timing(searchBarOpacity, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: false,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(searchBarWidth, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: false,
-        }),
-        Animated.timing(searchBarOpacity, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: false,
-        }),
-      ]).start();
-      setSearchQuery(''); // Clear search when closing
-    }
-  }, [showSearchBar]);
 
   // Filter communities based on search query
   const filteredCommunities = communities.filter((community) => {
