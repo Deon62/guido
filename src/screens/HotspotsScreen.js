@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar, Share, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { HotspotCardSkeleton } from '../components/HotspotCardSkeleton';
@@ -105,6 +105,35 @@ export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
     });
   };
 
+  const handleShare = async (hotspot, event) => {
+    event.stopPropagation(); // Prevent card press event
+    
+    try {
+      const shareMessage = `Check out ${hotspot.name}!\n\n${hotspot.description}\n\n📍 ${hotspot.category}\n⭐ ${hotspot.rating}/5.0\n❤️ ${formatLikes(hotspot.likes)} likes\n\nDiscover more amazing places on Quest!`;
+      
+      const result = await Share.share({
+        message: shareMessage,
+        title: hotspot.name,
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // Shared with activity type of result.activityType
+          console.log('Shared with activity type:', result.activityType);
+        } else {
+          // Shared
+          console.log('Hotspot shared successfully');
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // Dismissed
+        console.log('Share dismissed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to share hotspot. Please try again.');
+      console.error('Error sharing hotspot:', error);
+    }
+  };
+
   const formatLikes = (likes) => {
     if (likes >= 1000) {
       return `${(likes / 1000).toFixed(1)}k`;
@@ -166,11 +195,7 @@ export const HotspotsScreen = ({ selectedCity, activeTab, onTabChange }) => {
                   {/* Share Button */}
                   <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      console.log('Share hotspot:', hotspot.name);
-                      // TODO: Implement share functionality
-                    }}
+                    onPress={(e) => handleShare(hotspot, e)}
                     activeOpacity={0.8}
                   >
                     <Ionicons

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -10,7 +10,7 @@ const HEADER_HEIGHT = 80; // Approximate header height
 const BOTTOM_NAV_HEIGHT = 80; // Approximate bottom nav height
 const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full visible height
 
-export const FeedScreen = ({ activeTab = 'feed', onTabChange }) => {
+export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) => {
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [savedPosts, setSavedPosts] = useState(new Set());
 
@@ -130,9 +130,31 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange }) => {
     });
   };
 
-  const handleShare = (post) => {
-    console.log('Share post:', post.id);
-    // TODO: Implement share functionality
+  const handleShare = async (post) => {
+    try {
+      const shareMessage = `${post.user.name} visited ${post.place.name} in ${post.place.location}\n\n${post.caption}\n\n📍 ${post.place.category}\n❤️ ${post.likes} likes | 💬 ${post.comments} comments\n\nCheck it out on Quest!`;
+      
+      const result = await Share.share({
+        message: shareMessage,
+        title: `${post.user.name}'s post about ${post.place.name}`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // Shared with activity type of result.activityType
+          console.log('Shared with activity type:', result.activityType);
+        } else {
+          // Shared
+          console.log('Post shared successfully');
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // Dismissed
+        console.log('Share dismissed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to share post. Please try again.');
+      console.error('Error sharing post:', error);
+    }
   };
 
   const getCategoryColor = (category) => {
@@ -259,6 +281,21 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange }) => {
           </View>
         ))}
       </ScrollView>
+
+      {/* Floating Action Button for Adding Post */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          if (onAddPostPress) {
+            onAddPostPress();
+          } else {
+            console.log('Add post pressed');
+          }
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
 
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
     </View>
@@ -398,6 +435,26 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     paddingHorizontal: 16,
     marginBottom: 16,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0A1D37',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 20,
   },
 });
 

@@ -10,6 +10,8 @@ import { AddTripSuccessScreen } from './src/screens/AddTripSuccessScreen';
 import { AIRecommendationsScreen } from './src/screens/AIRecommendationsScreen';
 import { MessagesScreen } from './src/screens/MessagesScreen';
 import { FeedScreen } from './src/screens/FeedScreen';
+import { AddFeedPostScreen } from './src/screens/AddFeedPostScreen';
+import { AddFeedPostSuccessScreen } from './src/screens/AddFeedPostSuccessScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { HotspotsScreen } from './src/screens/HotspotsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
@@ -55,6 +57,9 @@ export default function App() {
   const [savedTripData, setSavedTripData] = useState(null);
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
   const [aiRecommendationData, setAIRecommendationData] = useState(null);
+  const [showAddFeedPost, setShowAddFeedPost] = useState(false);
+  const [showAddFeedPostSuccess, setShowAddFeedPostSuccess] = useState(false);
+  const [savedFeedPostData, setSavedFeedPostData] = useState(null);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -69,7 +74,11 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showAIRecommendations) {
+    if (showAddFeedPostSuccess) {
+      handleAddFeedPostSuccessBack();
+    } else if (showAddFeedPost) {
+      setShowAddFeedPost(false);
+    } else if (showAIRecommendations) {
       setShowAIRecommendations(false);
       setAIRecommendationData(null);
     } else if (showAddTripSuccess) {
@@ -146,6 +155,23 @@ export default function App() {
   const handleAddTripSuccessBack = () => {
     setShowAddTripSuccess(false);
     setSavedTripData(null);
+  };
+
+  const handleAddFeedPostPress = () => {
+    setShowAddFeedPost(true);
+  };
+
+  const handleAddFeedPostSave = (postData) => {
+    console.log('Feed post saved:', postData);
+    // TODO: Save post to database/state
+    setSavedFeedPostData(postData);
+    setShowAddFeedPost(false);
+    setShowAddFeedPostSuccess(true);
+  };
+
+  const handleAddFeedPostSuccessBack = () => {
+    setShowAddFeedPostSuccess(false);
+    setSavedFeedPostData(null);
   };
 
   const handleNotificationsPress = () => {
@@ -397,6 +423,26 @@ export default function App() {
     );
   }
 
+  // Show add feed post success screen
+  if (showAddFeedPostSuccess && savedFeedPostData) {
+    return (
+      <AddFeedPostSuccessScreen
+        postData={savedFeedPostData}
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // Show add feed post screen
+  if (showAddFeedPost) {
+    return (
+      <AddFeedPostScreen
+        onBack={handleBack}
+        onSave={handleAddFeedPostSave}
+      />
+    );
+  }
+
   // Show add past trip screen
   if (showAddPastTrip) {
     return (
@@ -437,6 +483,7 @@ export default function App() {
       <FeedScreen
         activeTab={activeTab}
         onTabChange={handleTabChange}
+        onAddPostPress={handleAddFeedPostPress}
       />
     );
   }
