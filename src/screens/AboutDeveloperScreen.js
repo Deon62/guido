@@ -53,10 +53,10 @@ export const AboutDeveloperScreen = ({ onBack }) => {
         <View style={styles.aboutSection}>
           <Text style={styles.sectionTitle}>Why I Built Guido</Text>
           <Text style={styles.aboutText}>
-            Guido was born from my own experiences traveling to new cities and feeling lost. I wanted to create a platform that connects travelers with local guides who can share authentic experiences and hidden gems that you won't find in guidebooks.
+            Guido was born from my own experiences traveling and wanting a better way to discover amazing places, plan trips, and keep track of all my travel memories in one place.
           </Text>
           <Text style={styles.aboutText}>
-            The app aims to make city exploration more personal, meaningful, and accessible. Whether you're a first-time visitor or a frequent traveler, Guido helps you discover cities through the eyes of locals who are passionate about sharing their knowledge and culture.
+            The app aims to make travel planning and discovery more personal and organized. Whether you're exploring a new city or revisiting favorite destinations, Guido helps you discover places, plan your trips, and share your experiences with a community of travelers.
           </Text>
         </View>
 
@@ -64,7 +64,7 @@ export const AboutDeveloperScreen = ({ onBack }) => {
         <View style={styles.aboutSection}>
           <Text style={styles.sectionTitle}>Vision</Text>
           <Text style={styles.aboutText}>
-            My vision for Guido is to create a global community where travelers and local guides can connect, share experiences, and build meaningful relationships. I believe that the best way to experience a city is through the stories and insights of those who call it home.
+            My vision for Guido is to create a global community where travelers can discover amazing places, share their experiences, and build a comprehensive travel journal. I believe that the best travel experiences come from discovering authentic places and connecting with fellow travelers who share their stories and recommendations.
           </Text>
         </View>
       </ScrollView>

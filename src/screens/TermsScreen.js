@@ -15,27 +15,27 @@ export const TermsScreen = ({ onBack, onPrivacyPress }) => {
     },
     {
       title: '2. Service Description',
-      content: 'Guido is a platform that connects travelers with local tour guides. We facilitate the connection between users seeking guides and independent guides offering their services.',
+      content: 'Guido is a travel companion app that helps you discover amazing places, plan your trips, and share your travel experiences. We provide a platform for users to explore destinations, manage their travel itineraries, and connect with other travelers.',
     },
     {
       title: '3. User Responsibilities',
       content: 'Users are responsible for maintaining the confidentiality of their account information and for all activities that occur under their account. Users must be at least 18 years old to use this service.',
     },
     {
-      title: '4. Guide Services',
-      content: 'Guides are independent contractors and are not employees of Guido. Guides are responsible for their own services, pricing, and compliance with local regulations.',
+      title: '4. User-Generated Content',
+      content: 'Users may post photos, reviews, and other content about places they have visited. You retain ownership of your content but grant Guido a license to use, display, and distribute your content within the app.',
     },
     {
-      title: '5. Booking and Cancellation',
-      content: 'Bookings can be made through the app. Cancellation policies vary by guide and are displayed at the time of booking. Users may cancel bookings through the app, subject to the guide\'s cancellation policy.',
+      title: '5. Trip Management',
+      content: 'Users can add trips, create wishlists, and manage their travel history through the app. All trip data is stored securely and can be accessed, modified, or deleted at any time through your account.',
     },
     {
-      title: '6. Payment',
-      content: 'Payments are processed securely through the app. Users agree to pay all fees associated with their bookings. All prices are displayed in the app and may be subject to change.',
+      title: '6. Location Data',
+      content: 'The app uses location services to show nearby places and provide location-based recommendations. You can control location permissions through your device settings.',
     },
     {
       title: '7. Limitation of Liability',
-      content: 'Guido serves as a platform connecting users and guides. We are not responsible for the quality, safety, or legality of guide services. Users participate at their own risk.',
+      content: 'Guido provides information about places and travel experiences. We are not responsible for the accuracy of user-generated content, the safety of locations, or any issues that may arise during your travels. Users participate at their own risk.',
     },
     {
       title: '8. Changes to Terms',

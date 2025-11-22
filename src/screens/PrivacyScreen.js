@@ -11,7 +11,7 @@ export const PrivacyScreen = ({ onBack, onTermsPress }) => {
   const sections = [
     {
       title: '1. Information We Collect',
-      content: 'We collect information you provide directly to us, such as when you create an account, make a booking, or contact us. This includes your name, email address, phone number, and payment information.',
+      content: 'We collect information you provide directly to us, such as when you create an account, add trips, post content, or contact us. This includes your name, email address, username, location data, and any content you share.',
     },
     {
       title: '2. How We Use Your Information',
@@ -19,7 +19,7 @@ export const PrivacyScreen = ({ onBack, onTermsPress }) => {
     },
     {
       title: '3. Information Sharing',
-      content: 'We do not sell your personal information. We may share your information with guides to facilitate bookings, with service providers who assist us in operating our platform, or as required by law.',
+      content: 'We do not sell your personal information. We may share your information with service providers who assist us in operating our platform, or as required by law. Your public posts and reviews may be visible to other users.',
     },
     {
       title: '4. Data Security',

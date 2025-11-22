@@ -5,15 +5,7 @@ import { Button } from '../components/Button';
 import { WaveDivider } from '../components/WaveDivider';
 import { FONTS } from '../constants/fonts';
 
-export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
-  const handleRegisterAsGuide = () => {
-    if (onRegisterAsGuide) {
-      onRegisterAsGuide();
-    } else {
-      console.log('Continue as guide pressed');
-    }
-  };
-
+export const LandingScreen = ({ onFindCityGuide }) => {
   const handleFindCityGuide = () => {
     if (onFindCityGuide) {
       onFindCityGuide();
@@ -44,21 +36,16 @@ export const LandingScreen = ({ onFindCityGuide, onRegisterAsGuide }) => {
         {/* Main Content */}
         <View style={styles.mainContent}>
           <Text style={styles.welcomeText}>
-            First time in town? Don't sweat it, we've got a guide
+            Discover amazing places and plan your perfect trip
           </Text>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           <Button
-            title="Find City Guide"
+            title="Get Started"
             onPress={handleFindCityGuide}
             variant="primary"
-          />
-          <Button
-            title="Register as Guide"
-            onPress={handleRegisterAsGuide}
-            variant="secondary"
           />
         </View>
       </View>

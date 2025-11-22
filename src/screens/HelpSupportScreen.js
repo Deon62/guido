@@ -10,24 +10,24 @@ export const HelpSupportScreen = ({ onBack, onTermsPress, onPrivacyPress }) => {
 
   const faqItems = [
     {
-      question: 'How do I book a guide?',
-      answer: 'Browse available guides on the home screen, select a guide to view their details, and tap "Request Guide" to book them. You can choose to book now, later today, or schedule for a future date.',
+      question: 'How do I discover places?',
+      answer: 'Browse places on the home screen map or use the Places section. You can filter by category (Landmarks, Hotels, Cafes, Nature) and see recommendations based on your location and interests.',
     },
     {
-      question: 'How much does it cost?',
-      answer: 'Each guide sets their own hourly rate. You can see the pricing on each guide\'s profile before booking.',
+      question: 'How do I add a trip?',
+      answer: 'Go to the Trips section, select the "Past" tab, and tap the + button to add a trip you\'ve completed. You can add place name, location, category, date, and photos.',
     },
     {
-      question: 'Can I cancel a booking?',
-      answer: 'Yes, you can cancel bookings through the Trips section. Cancellation policies may vary depending on the timing and guide preferences.',
+      question: 'What is a wishlist?',
+      answer: 'The wishlist in the Trips section lets you save places you want to visit in the future. You can organize them and plan your trips ahead of time.',
     },
     {
-      question: 'How do I contact my guide?',
-      answer: 'Once you have an active booking, you can message your guide directly through the Messages section in the app.',
+      question: 'How does the feed work?',
+      answer: 'The feed shows posts from other users about places they\'ve visited. You can like, comment, and share posts to discover new destinations and get travel inspiration.',
     },
     {
-      question: 'What if I need to change my booking?',
-      answer: 'You can contact your guide through the Messages section to discuss any changes to your booking.',
+      question: 'How do I manage my trips?',
+      answer: 'In the Trips section, you can view your wishlist, active trips, and past trips. Add new trips, edit existing ones, and keep track of all your travel experiences in one place.',
     },
   ];
 
