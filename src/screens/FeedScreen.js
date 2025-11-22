@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -17,10 +17,14 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
   const [selectedPostForComments, setSelectedPostForComments] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState({});
   const [isUserScrolling, setIsUserScrolling] = useState({});
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const scrollViewRefs = useRef({});
   const autoScrollTimers = useRef({});
   const isUserScrollingRef = useRef({});
   const currentImageIndexRef = useRef({});
+  const searchBarWidth = useRef(new Animated.Value(0)).current;
+  const searchBarOpacity = useRef(new Animated.Value(0)).current;
 
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -187,6 +191,51 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
     currentImageIndexRef.current = currentImageIndex;
   }, [isUserScrolling, currentImageIndex]);
 
+  // Animate search bar
+  useEffect(() => {
+    if (showSearchBar) {
+      Animated.parallel([
+        Animated.timing(searchBarWidth, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchBarOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(searchBarWidth, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+        Animated.timing(searchBarOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+      ]).start();
+      setSearchQuery(''); // Clear search when closing
+    }
+  }, [showSearchBar]);
+
+  // Filter posts based on search query
+  const filteredPosts = feedPosts.filter((post) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      post.user.name.toLowerCase().includes(query) ||
+      post.place.name.toLowerCase().includes(query) ||
+      post.place.location.toLowerCase().includes(query) ||
+      post.caption.toLowerCase().includes(query) ||
+      post.place.category.toLowerCase().includes(query)
+    );
+  });
+
   const handleLike = (postId) => {
     setLikedPosts(prev => {
       const newSet = new Set(prev);
@@ -270,21 +319,65 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
       
       {/* Header */}
       <View style={[styles.header, { paddingTop: statusBarHeight + 16 }]}>
-        <Text style={styles.title}>Feed</Text>
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => onTabChange && onTabChange('profile')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.profileImageContainer}>
-            <Image
-              source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
-              style={styles.profileImage}
-              resizeMode="cover"
-            />
-            <View style={styles.onlineIndicator} />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <Animated.View
+            style={[
+              styles.animatedSearchContainer,
+              {
+                width: searchBarWidth.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, Dimensions.get('window').width - 120], // Width between icon and profile
+                }),
+                opacity: searchBarOpacity,
+              },
+            ]}
+          >
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={20} color="#6D6D6D" style={styles.searchBarIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search posts..."
+                placeholderTextColor="#9B9B9B"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus={showSearchBar}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.searchClearButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={20} color="#6D6D6D" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </Animated.View>
+          {!showSearchBar && <Text style={styles.title}>Feed</Text>}
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={() => setShowSearchBar(!showSearchBar)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={showSearchBar ? "close" : "search"} size={24} color="#0A1D37" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => onTabChange && onTabChange('profile')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.profileImageContainer}>
+              <Image
+                source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+                style={styles.profileImage}
+                resizeMode="cover"
+              />
+              <View style={styles.onlineIndicator} />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Feed ScrollView */}
@@ -297,7 +390,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
         decelerationRate="fast"
         bounces={true}
       >
-        {feedPosts.map((post) => (
+        {filteredPosts.map((post) => (
           <View key={post.id} style={styles.postCard}>
             {/* Post Header */}
             <View style={styles.postHeader}>
@@ -482,11 +575,29 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E8E8E8',
     zIndex: 10,
   },
+  headerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  animatedSearchContainer: {
+    overflow: 'hidden',
+    marginRight: 8,
+  },
   title: {
     fontSize: 28,
     fontFamily: FONTS.bold,
     color: '#0A1D37',
     letterSpacing: 0.5,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  searchButton: {
+    padding: 4,
   },
   profileButton: {
     padding: 4,
@@ -513,6 +624,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     borderWidth: 2,
     borderColor: '#FFFFFF',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F7F7',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    minHeight: 44,
+  },
+  searchBarIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#1A1A1A',
+    padding: 0,
+  },
+  searchClearButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   scrollView: {
     flex: 1,
