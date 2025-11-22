@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -302,9 +302,11 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
   const handlePostPress = (post) => {
     if (onPostPress && selectedCommunity) {
       const community = communities.find(c => c.id === selectedCommunity);
-      const postKey = `${selectedCommunity}-${post.id}`;
-      const comments = getPostComments(postKey);
-      onPostPress(post, community, comments);
+      if (community) {
+        const postKey = `${selectedCommunity}-${post.id}`;
+        const comments = getPostComments(postKey);
+        onPostPress(post, community, comments);
+      }
     }
   };
 

@@ -145,6 +145,27 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
       comments: 156,
       timestamp: '3 days ago',
     },
+    {
+      id: '6',
+      user: {
+        name: 'Deon chinese',
+        avatar: require('../../assets/logo/deon.jpg'),
+        isPremium: true,
+        isCEO: true,
+      },
+      place: {
+        name: 'Tokyo Skytree',
+        location: 'Nakuru',
+        category: 'Landmarks',
+      },
+      videos: [
+        { uri: require('../../assets/videos/test.mp4') },
+      ],
+      caption: 'Amazing view from the top! The city looks incredible from up here. 🌆✨',
+      likes: 3421,
+      comments: 287,
+      timestamp: '1 hour ago',
+    },
     ];
     
     // Generate additional posts for pagination testing
@@ -162,7 +183,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     ];
     
     const additionalPosts = [];
-    for (let i = 6; i <= 30; i++) {
+    for (let i = 7; i <= 30; i++) {
       const category = categories[i % categories.length];
       const location = locations[i % locations.length];
       const user = users[i % users.length];
@@ -563,7 +584,19 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
               >
                 <Image source={post.user.avatar} style={styles.avatar} />
                 <View style={styles.userDetails}>
-                  <Text style={styles.userName}>{post.user.name}</Text>
+                  <View style={styles.userNameContainer}>
+                    <Text style={styles.userName}>{post.user.name}</Text>
+                    {post.user.isPremium && (
+                      <View style={styles.premiumBadge}>
+                        <Ionicons name="checkmark-circle" size={16} color="#0A1D37" />
+                      </View>
+                    )}
+                    {post.user.isCEO && (
+                      <View style={styles.ceoBadge}>
+                        <Text style={styles.ceoBadgeText}>CEO</Text>
+                      </View>
+                    )}
+                  </View>
                   <View style={styles.placeInfo}>
                     <Ionicons name="location" size={12} color="#6D6D6D" />
                     <Text style={styles.placeName}>{post.place.name}</Text>
@@ -592,48 +625,66 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
               </TouchableOpacity>
             </View>
 
-            {/* Post Image Carousel */}
+            {/* Post Media Carousel (Images or Videos) */}
             <View style={styles.imageCarouselContainer}>
-              <ScrollView
-                ref={(ref) => {
-                  if (ref) {
-                    scrollViewRefs.current[post.id] = ref;
-                  }
-                }}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScrollBeginDrag={() => {
-                  setIsUserScrolling(prev => ({ ...prev, [post.id]: true }));
-                }}
-                onMomentumScrollEnd={(event) => {
-                  const screenWidth = Dimensions.get('window').width;
-                  const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
-                  setCurrentImageIndex(prev => ({ ...prev, [post.id]: index }));
-                  
-                  // Resume auto-scroll after user stops scrolling (after 3 seconds)
-                  setTimeout(() => {
-                    setIsUserScrolling(prev => ({ ...prev, [post.id]: false }));
-                  }, 3000);
-                }}
-                style={styles.imageCarousel}
-                scrollEventThrottle={16}
-              >
-                {(post.images || (post.image ? [post.image] : [])).slice(0, 5).map((image, imgIndex) => (
-                  <Image
-                    key={imgIndex}
-                    source={image}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                    progressiveRenderingEnabled={true}
-                  />
-                ))}
-              </ScrollView>
+              {post.videos && post.videos.length > 0 ? (
+                // Video Display
+                <View style={styles.videoContainer}>
+                  <View style={styles.videoPlaceholder}>
+                    <Ionicons name="videocam" size={48} color="#6D6D6D" />
+                    <Text style={styles.videoPlaceholderText}>Video Preview</Text>
+                    <Text style={styles.videoNote}>Video playback will be implemented</Text>
+                  </View>
+                  <View style={styles.videoBadgeOverlay}>
+                    <View style={styles.videoTypeBadge}>
+                      <Ionicons name="videocam" size={16} color="#FFFFFF" />
+                      <Text style={styles.videoTypeText}>VIDEO</Text>
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                // Image Carousel
+                <ScrollView
+                  ref={(ref) => {
+                    if (ref) {
+                      scrollViewRefs.current[post.id] = ref;
+                    }
+                  }}
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onScrollBeginDrag={() => {
+                    setIsUserScrolling(prev => ({ ...prev, [post.id]: true }));
+                  }}
+                  onMomentumScrollEnd={(event) => {
+                    const screenWidth = Dimensions.get('window').width;
+                    const index = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
+                    setCurrentImageIndex(prev => ({ ...prev, [post.id]: index }));
+                    
+                    // Resume auto-scroll after user stops scrolling (after 3 seconds)
+                    setTimeout(() => {
+                      setIsUserScrolling(prev => ({ ...prev, [post.id]: false }));
+                    }, 3000);
+                  }}
+                  style={styles.imageCarousel}
+                  scrollEventThrottle={16}
+                >
+                  {(post.images || (post.image ? [post.image] : [])).slice(0, 5).map((image, imgIndex) => (
+                    <Image
+                      key={imgIndex}
+                      source={image}
+                      style={styles.postImage}
+                      resizeMode="cover"
+                      progressiveRenderingEnabled={true}
+                    />
+                  ))}
+                </ScrollView>
+              )}
               
-              {/* Image Indicators */}
-              {(post.images || []).length > 1 && (
+              {/* Image Indicators (only for images) */}
+              {post.images && post.images.length > 1 && (
                 <View style={styles.imageIndicators}>
-                  {(post.images || []).slice(0, 5).map((_, imgIndex) => (
+                  {post.images.slice(0, 5).map((_, imgIndex) => (
                     <View
                       key={imgIndex}
                       style={[
@@ -908,11 +959,36 @@ const styles = StyleSheet.create({
   userDetails: {
     flex: 1,
   },
+  userNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   userName: {
     fontSize: 14,
     fontFamily: FONTS.semiBold,
     color: '#1A1A1A',
     marginBottom: 2,
+  },
+  premiumBadge: {
+    marginBottom: 2,
+  },
+  ceoBadge: {
+    marginBottom: 2,
+    marginLeft: 4,
+    backgroundColor: '#0A1D37',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    minWidth: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ceoBadgeText: {
+    fontSize: 9,
+    fontFamily: FONTS.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   placeInfo: {
     flexDirection: 'row',
@@ -971,6 +1047,51 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width,
     height: CARD_HEIGHT * 0.65,
     backgroundColor: '#E8E8E8',
+  },
+  videoContainer: {
+    width: '100%',
+    height: CARD_HEIGHT * 0.65,
+    position: 'relative',
+    backgroundColor: '#000000',
+  },
+  videoPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1A1A1A',
+  },
+  videoPlaceholderText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    marginTop: 12,
+  },
+  videoNote: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+    marginTop: 4,
+  },
+  videoBadgeOverlay: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+  },
+  videoTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    gap: 4,
+  },
+  videoTypeText: {
+    fontSize: 10,
+    fontFamily: FONTS.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   imageIndicators: {
     position: 'absolute',
