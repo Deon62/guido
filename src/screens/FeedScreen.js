@@ -197,12 +197,12 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
       Animated.parallel([
         Animated.timing(searchBarWidth, {
           toValue: 1,
-          duration: 300,
+          duration: 250,
           useNativeDriver: false,
         }),
         Animated.timing(searchBarOpacity, {
           toValue: 1,
-          duration: 300,
+          duration: 250,
           useNativeDriver: false,
         }),
       ]).start();
@@ -210,12 +210,12 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
       Animated.parallel([
         Animated.timing(searchBarWidth, {
           toValue: 0,
-          duration: 300,
+          duration: 250,
           useNativeDriver: false,
         }),
         Animated.timing(searchBarOpacity, {
           toValue: 0,
-          duration: 300,
+          duration: 250,
           useNativeDriver: false,
         }),
       ]).start();
@@ -326,9 +326,13 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
               {
                 width: searchBarWidth.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0, Dimensions.get('window').width - 120], // Width between icon and profile
+                  outputRange: [0, Dimensions.get('window').width - 180], // Width accounting for search icon, my posts icon, and profile
                 }),
                 opacity: searchBarOpacity,
+                marginRight: searchBarWidth.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 8],
+                }),
               },
             ]}
           >
@@ -356,13 +360,22 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
           {!showSearchBar && <Text style={styles.title}>Feed</Text>}
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={() => setShowSearchBar(!showSearchBar)}
-            activeOpacity={0.7}
+          <Animated.View
+            style={{
+              opacity: searchBarOpacity.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 0],
+              }),
+            }}
           >
-            <Ionicons name={showSearchBar ? "close" : "search"} size={24} color="#0A1D37" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => setShowSearchBar(!showSearchBar)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="search" size={24} color="#0A1D37" />
+            </TouchableOpacity>
+          </Animated.View>
           <TouchableOpacity
             style={styles.myPostsButton}
             onPress={() => {
@@ -594,7 +607,6 @@ const styles = StyleSheet.create({
   },
   animatedSearchContainer: {
     overflow: 'hidden',
-    marginRight: 8,
   },
   title: {
     fontSize: 28,
