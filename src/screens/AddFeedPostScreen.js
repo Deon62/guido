@@ -36,9 +36,8 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     media: null,
   });
 
-  const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
-  
-  const mainCategories = ['Core', 'Cultural', 'Relaxation', 'Food & Drink Niche', 'Miscellaneous / Unique'];
+  // Main categories for reference (users can type any category)
+  // const mainCategories = ['Core', 'Cultural', 'Relaxation', 'Food & Drink Niche', 'Miscellaneous / Unique'];
 
   const handleSave = async () => {
     if (isSubmitting) return;
@@ -439,19 +438,18 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
               )}
             </View>
 
-            {/* Main Category Dropdown */}
+            {/* Main Category Input */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Main Category *</Text>
-              <TouchableOpacity
-                style={[styles.categoryButton, fieldErrors.mainCategory && styles.inputError]}
-                onPress={() => setShowMainCategoryModal(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.categoryButtonText, !formData.mainCategory && styles.placeholderText]}>
-                  {formData.mainCategory || 'Select Main Category'}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color="#6D6D6D" />
-              </TouchableOpacity>
+              <TextInput
+                style={[styles.input, fieldErrors.mainCategory && styles.inputError]}
+                placeholder="e.g., Core, Cultural, Relaxation"
+                placeholderTextColor="#9B9B9B"
+                value={formData.mainCategory}
+                onChangeText={(text) => {
+                  updateField('mainCategory', text);
+                }}
+              />
               {fieldErrors.mainCategory && (
                 <Text style={styles.fieldError}>{fieldErrors.mainCategory}</Text>
               )}
@@ -505,56 +503,6 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Main Category Modal */}
-      <Modal
-        visible={showMainCategoryModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowMainCategoryModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowMainCategoryModal(false)}
-          />
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Main Category</Text>
-              <TouchableOpacity
-                onPress={() => setShowMainCategoryModal(false)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={24} color="#0A1D37" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-              {mainCategories.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  style={styles.categoryOption}
-                  onPress={() => {
-                    updateField('mainCategory', category);
-                    setFieldErrors(prev => ({
-                      ...prev,
-                      mainCategory: null,
-                    }));
-                    setShowMainCategoryModal(false);
-                    triggerHaptic('light');
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.categoryOptionText}>{category}</Text>
-                  {formData.mainCategory === category && (
-                    <Ionicons name="checkmark" size={20} color="#0A1D37" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
