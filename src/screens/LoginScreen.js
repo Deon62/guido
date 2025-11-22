@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
 import { validateEmail } from '../utils/formValidation';
 
-export const LoginScreen = ({ onLogin, onSignupPress, onBack }) => {
+export const LoginScreen = ({ onLogin, onSignupPress, onBack, onForgotPasswordPress, onComingSoonPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   
   const [email, setEmail] = useState('');
@@ -52,29 +52,15 @@ export const LoginScreen = ({ onLogin, onSignupPress, onBack }) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate Google login
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      Alert.alert('Coming Soon', 'Google login will be available soon!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to login with Google.');
-    } finally {
-      setIsLoading(false);
+  const handleGoogleLogin = () => {
+    if (onComingSoonPress) {
+      onComingSoonPress('Google Login', "We're working on making Google login available. You'll be able to sign in with your Google account soon!");
     }
   };
 
-  const handleAppleLogin = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate Apple login
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      Alert.alert('Coming Soon', 'Apple login will be available soon!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to login with Apple.');
-    } finally {
-      setIsLoading(false);
+  const handleAppleLogin = () => {
+    if (onComingSoonPress) {
+      onComingSoonPress('Apple Login', "We're working on making Apple login available. You'll be able to sign in with your Apple account soon!");
     }
   };
 
@@ -178,7 +164,11 @@ export const LoginScreen = ({ onLogin, onSignupPress, onBack }) => {
           {/* Forgot Password */}
           <TouchableOpacity
             style={styles.forgotPassword}
-            onPress={() => Alert.alert('Coming Soon', 'Password reset will be available soon!')}
+            onPress={() => {
+              if (onForgotPasswordPress) {
+                onForgotPasswordPress(email);
+              }
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -204,7 +194,6 @@ export const LoginScreen = ({ onLogin, onSignupPress, onBack }) => {
             style={styles.socialButton}
             onPress={handleGoogleLogin}
             activeOpacity={0.8}
-            disabled={isLoading}
           >
             <Ionicons name="logo-google" size={20} color="#0A1D37" />
             <Text style={styles.socialButtonText}>Continue with Google</Text>
@@ -214,7 +203,6 @@ export const LoginScreen = ({ onLogin, onSignupPress, onBack }) => {
             style={styles.socialButton}
             onPress={handleAppleLogin}
             activeOpacity={0.8}
-            disabled={isLoading}
           >
             <Ionicons name="logo-apple" size={20} color="#0A1D37" />
             <Text style={styles.socialButtonText}>Continue with Apple</Text>

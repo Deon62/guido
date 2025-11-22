@@ -20,9 +20,10 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [showConversationsPanel, setShowConversationsPanel] = useState(false);
   const [selectedConversationMenu, setSelectedConversationMenu] = useState(null);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const scrollViewRef = useRef(null);
   const panelSlideAnim = useRef(new Animated.Value(1)).current;
+  const menuButtonRefs = useRef({});
   const [conversations] = useState([
     { id: '1', title: 'Planning a trip to Paris', lastMessage: 'What are the best places to visit?', timestamp: '2 hours ago' },
     { id: '2', title: 'Budget travel tips', lastMessage: 'How can I travel on a budget?', timestamp: '1 day ago' },
@@ -140,6 +141,18 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   const handleConversationMenuPress = (conversationId, event) => {
     event.stopPropagation();
     triggerHaptic('light');
+    
+    // Get button position relative to window
+    const buttonRef = menuButtonRefs.current[conversationId];
+    if (buttonRef) {
+      buttonRef.measureInWindow((x, y, width, height) => {
+        setMenuPosition({ x, y, width, height });
+      });
+    } else {
+      // Fallback: position near right edge
+      setMenuPosition({ x: 0, y: 200, width: 0, height: 0 });
+    }
+    
     setSelectedConversationMenu(conversationId);
   };
 
@@ -361,12 +374,12 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
                 >
                   <View style={styles.conversationContent}>
                     <Text style={styles.conversationTitle}>{conversation.title}</Text>
-                    <Text style={styles.conversationMessage} numberOfLines={1}>
-                      {conversation.lastMessage}
-                    </Text>
                     <Text style={styles.conversationTimestamp}>{conversation.timestamp}</Text>
                   </View>
                   <TouchableOpacity
+                    ref={(ref) => {
+                      if (ref) menuButtonRefs.current[conversation.id] = ref;
+                    }}
                     style={styles.conversationMenuButton}
                     onPress={(e) => handleConversationMenuPress(conversation.id, e)}
                     activeOpacity={0.7}
@@ -396,7 +409,14 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}
           >
-            <View style={styles.actionModalContent}>
+            <View style={[
+              styles.actionModalContent,
+              {
+                position: 'absolute',
+                top: menuPosition.y > 0 ? menuPosition.y + menuPosition.height + 8 : 200,
+                right: 20,
+              }
+            ]}>
               <TouchableOpacity
                 style={styles.actionModalItem}
                 onPress={() => {
@@ -677,8 +697,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F7F7F7',
   },
   conversationContent: {
     flex: 1,
@@ -689,13 +707,6 @@ const styles = StyleSheet.create({
     color: '#0A1D37',
     marginBottom: 4,
     letterSpacing: 0.3,
-  },
-  conversationMessage: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: '#6D6D6D',
-    marginBottom: 4,
-    letterSpacing: 0.2,
   },
   conversationTimestamp: {
     fontSize: 12,
@@ -710,8 +721,6 @@ const styles = StyleSheet.create({
   actionModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   actionModalContent: {
     backgroundColor: '#FFFFFF',

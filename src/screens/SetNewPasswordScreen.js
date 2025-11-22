@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, ScrollView, Alert, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
-import { validateEmail } from '../utils/formValidation';
 
-export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress }) => {
+export const SetNewPasswordScreen = ({ onPasswordReset, onBack }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -20,21 +18,15 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
   const validateForm = () => {
     const newErrors = {};
     
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    
-    if (!password.trim()) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    if (!newPassword.trim()) {
+      newErrors.newPassword = 'Password is required';
+    } else if (newPassword.length < 6) {
+      newErrors.newPassword = 'Password must be at least 6 characters';
     }
     
     if (!confirmPassword.trim()) {
       newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
+    } else if (newPassword !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
@@ -42,7 +34,7 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignup = async () => {
+  const handleResetPassword = async () => {
     if (!validateForm()) return;
     
     setIsLoading(true);
@@ -50,25 +42,13 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (onSignup) {
-        onSignup({ email, password });
+      if (onPasswordReset) {
+        onPasswordReset({ password: newPassword });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create account. Please try again.');
+      Alert.alert('Error', 'Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignup = () => {
-    if (onComingSoonPress) {
-      onComingSoonPress('Google Signup', "We're working on making Google signup available. You'll be able to create an account with your Google account soon!");
-    }
-  };
-
-  const handleAppleSignup = () => {
-    if (onComingSoonPress) {
-      onComingSoonPress('Apple Signup', "We're working on making Apple signup available. You'll be able to create an account with your Apple account soon!");
     }
   };
 
@@ -100,7 +80,7 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
         {/* Image */}
         <View style={styles.imageContainer}>
           <Image
-            source={require('../../assets/images/sign.png')}
+            source={require('../../assets/images/pass.png')}
             style={styles.image}
             resizeMode="contain"
           />
@@ -108,47 +88,25 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
 
         {/* Title */}
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join us and start exploring</Text>
+          <Text style={styles.title}>Set New Password</Text>
+          <Text style={styles.subtitle}>Create a strong password for your account</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Email Input */}
+          {/* New Password Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-              <Ionicons name="mail-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor="#9B9B9B"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (errors.email) setErrors({ ...errors, email: null });
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={[styles.inputContainer, errors.password && styles.inputError]}>
+            <Text style={styles.label}>New Password</Text>
+            <View style={[styles.inputContainer, errors.newPassword && styles.inputError]}>
               <Ionicons name="lock-closed-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Create a password"
+                placeholder="Enter new password"
                 placeholderTextColor="#9B9B9B"
-                value={password}
+                value={newPassword}
                 onChangeText={(text) => {
-                  setPassword(text);
-                  if (errors.password) setErrors({ ...errors, password: null });
+                  setNewPassword(text);
+                  if (errors.newPassword) setErrors({ ...errors, newPassword: null });
                 }}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
@@ -166,7 +124,7 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
                 />
               </TouchableOpacity>
             </View>
-            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+            {errors.newPassword && <Text style={styles.errorText}>{errors.newPassword}</Text>}
           </View>
 
           {/* Confirm Password Input */}
@@ -176,7 +134,7 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
               <Ionicons name="lock-closed-outline" size={20} color="#6D6D6D" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Confirm your password"
+                placeholder="Confirm new password"
                 placeholderTextColor="#9B9B9B"
                 value={confirmPassword}
                 onChangeText={(text) => {
@@ -202,51 +160,13 @@ export const SignupScreen = ({ onSignup, onLoginPress, onBack, onComingSoonPress
             {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
           </View>
 
-          {/* Sign Up Button */}
+          {/* Reset Password Button */}
           <Button
-            title={isLoading ? "Creating Account..." : "Create Account"}
-            onPress={handleSignup}
+            title={isLoading ? "Resetting Password..." : "Reset Password"}
+            onPress={handleResetPassword}
             variant="primary"
             disabled={isLoading}
           />
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Social Signup Buttons */}
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={handleGoogleSignup}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-google" size={20} color="#0A1D37" />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.socialButton}
-            onPress={handleAppleSignup}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="logo-apple" size={20} color="#0A1D37" />
-            <Text style={styles.socialButtonText}>Continue with Apple</Text>
-          </TouchableOpacity>
-
-          {/* Login Link */}
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity
-              onPress={onLoginPress}
-              activeOpacity={0.7}
-              disabled={isLoading}
-            >
-              <Text style={styles.loginLink}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -286,12 +206,12 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 60,
     marginBottom: 32,
   },
   image: {
-    width: 280,
-    height: 280,
+    width: 240,
+    height: 240,
   },
   titleContainer: {
     alignItems: 'center',
@@ -301,14 +221,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontFamily: FONTS.bold,
     color: '#0A1D37',
-    marginBottom: 8,
+    marginBottom: 12,
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     textAlign: 'center',
+    lineHeight: 24,
   },
   form: {
     width: '100%',
@@ -356,56 +278,6 @@ const styles = StyleSheet.create({
     color: '#E74C3C',
     marginTop: 6,
     marginLeft: 4,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E8E8E8',
-  },
-  dividerText: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: '#6D6D6D',
-    marginHorizontal: 16,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F7F7F7',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  socialButtonText: {
-    fontSize: 15,
-    fontFamily: FONTS.semiBold,
-    color: '#0A1D37',
-    marginLeft: 12,
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  loginText: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: '#6D6D6D',
-  },
-  loginLink: {
-    fontSize: 14,
-    fontFamily: FONTS.semiBold,
-    color: '#0A1D37',
   },
 });
 

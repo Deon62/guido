@@ -4,9 +4,9 @@
 
 // Validate email format
 export const validateEmail = (email) => {
-  if (!email) return null; // Optional field
+  if (!email) return false;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email) ? null : 'Please enter a valid email address';
+  return emailRegex.test(email.trim());
 };
 
 // Validate required field

@@ -37,6 +37,8 @@ import { FollowersFollowingScreen } from './src/screens/FollowersFollowingScreen
 import { AIChatScreen } from './src/screens/AIChatScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { SignupScreen } from './src/screens/SignupScreen';
+import { ForgotPasswordScreen } from './src/screens/ForgotPasswordScreen';
+import { SetNewPasswordScreen } from './src/screens/SetNewPasswordScreen';
 
 function AppContent() {
   const [fontsLoaded] = useFonts({
@@ -83,6 +85,9 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showSetNewPassword, setShowSetNewPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -97,7 +102,13 @@ function AppContent() {
   };
 
   const handleBack = () => {
-    if (showSignup) {
+    if (showSetNewPassword) {
+      setShowSetNewPassword(false);
+      setShowForgotPassword(true);
+    } else if (showForgotPassword) {
+      setShowForgotPassword(false);
+      setShowLogin(true);
+    } else if (showSignup) {
       setShowSignup(false);
     } else if (showLogin) {
       setShowLogin(false);
@@ -236,6 +247,25 @@ function AppContent() {
   const handleSignupPress = () => {
     setShowLogin(false);
     setShowSignup(true);
+  };
+
+  const handleForgotPasswordPress = (email) => {
+    setForgotPasswordEmail(email || '');
+    setShowLogin(false);
+    setShowForgotPassword(true);
+  };
+
+  const handleSetNewPasswordPress = () => {
+    setShowForgotPassword(false);
+    setShowSetNewPassword(true);
+  };
+
+  const handlePasswordReset = (data) => {
+    console.log('Password reset:', data);
+    setShowSetNewPassword(false);
+    setShowLogin(true);
+    // Show success message
+    Alert.alert('Success', 'Your password has been reset successfully!');
   };
 
   const handlePostDetailPress = (post, community, comments) => {
@@ -581,6 +611,31 @@ function AppContent() {
     );
   }
 
+  // Show set new password screen
+  if (showSetNewPassword) {
+    return (
+      <PageTransition isVisible={showSetNewPassword}>
+        <SetNewPasswordScreen
+          onPasswordReset={handlePasswordReset}
+          onBack={handleBack}
+        />
+      </PageTransition>
+    );
+  }
+
+  // Show forgot password screen
+  if (showForgotPassword) {
+    return (
+      <PageTransition isVisible={showForgotPassword}>
+        <ForgotPasswordScreen
+          email={forgotPasswordEmail}
+          onSetNewPassword={handleSetNewPasswordPress}
+          onBack={handleBack}
+        />
+      </PageTransition>
+    );
+  }
+
   // Show signup screen
   if (showSignup) {
     return (
@@ -589,6 +644,7 @@ function AppContent() {
           onSignup={handleSignup}
           onLoginPress={handleLoginPress}
           onBack={handleBack}
+          onComingSoonPress={handleComingSoonPress}
         />
       </PageTransition>
     );
@@ -602,6 +658,8 @@ function AppContent() {
           onLogin={handleLogin}
           onSignupPress={handleSignupPress}
           onBack={handleBack}
+          onForgotPasswordPress={() => handleForgotPasswordPress()}
+          onComingSoonPress={handleComingSoonPress}
         />
       </PageTransition>
     );

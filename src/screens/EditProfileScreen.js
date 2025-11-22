@@ -48,7 +48,7 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     const errors = {
       nickname: validateMaxLength(formData.nickname, 50, 'Nickname'),
       username: formData.username ? validateUsername(formData.username) : null,
-      email: formData.email ? validateEmail(formData.email) : null,
+      email: formData.email ? (validateEmail(formData.email) ? null : 'Please enter a valid email address') : null,
       city: validateMaxLength(formData.city, 100, 'City'),
     };
     
@@ -95,7 +95,7 @@ export const EditProfileScreen = ({ user, onBack, onSave, onProfilePicturePress,
     } else if (field === 'username') {
       error = value ? validateUsername(value) : null;
     } else if (field === 'email') {
-      error = value ? validateEmail(value) : null;
+      error = value ? (validateEmail(value) ? null : 'Please enter a valid email address') : null;
     } else if (field === 'city') {
       error = validateMaxLength(value, 100, 'City');
     }
