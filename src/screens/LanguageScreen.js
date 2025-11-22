@@ -3,40 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusB
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
+import { LANGUAGES } from '../constants/languages';
+import { triggerHaptic } from '../utils/haptics';
 
 export const LanguageScreen = ({ onBack }) => {
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  const [selectedLanguage, setSelectedLanguage] = useState('english');
-
-  const languages = [
-    {
-      id: 'english',
-      label: 'English',
-      nativeLabel: 'English',
-    },
-    {
-      id: 'german',
-      label: 'German',
-      nativeLabel: 'Deutsch',
-    },
-    {
-      id: 'french',
-      label: 'French',
-      nativeLabel: 'Français',
-    },
-    {
-      id: 'spanish',
-      label: 'Spanish',
-      nativeLabel: 'Español',
-    },
-    {
-      id: 'swahili',
-      label: 'Swahili',
-      nativeLabel: 'Kiswahili',
-    },
-  ];
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
   return (
     <View style={styles.container}>
@@ -61,21 +35,29 @@ export const LanguageScreen = ({ onBack }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.optionsSection}>
-          {languages.map((language) => {
-            const isSelected = selectedLanguage === language.id;
+          {LANGUAGES.map((language) => {
+            const isSelected = selectedLanguage === language.code;
             return (
               <TouchableOpacity
-                key={language.id}
+                key={language.code}
                 style={styles.languageItem}
-                onPress={() => setSelectedLanguage(language.id)}
+                onPress={() => {
+                  triggerHaptic('light');
+                  setSelectedLanguage(language.code);
+                }}
                 activeOpacity={0.7}
               >
                 <View style={styles.languageLeft}>
-                  <Text style={styles.languageLabel}>{language.label}</Text>
-                  <Text style={styles.languageNative}>{language.nativeLabel}</Text>
+                  <View style={styles.languageHeader}>
+                    <Text style={styles.flag}>{language.flag}</Text>
+                    <View style={styles.languageTextContainer}>
+                      <Text style={styles.languageLabel}>{language.name}</Text>
+                      <Text style={styles.languageNative}>{language.nativeName}</Text>
+                    </View>
+                  </View>
                 </View>
                 {isSelected && (
-                  <Ionicons name="checkmark" size={24} color="#0A1D37" />
+                  <Ionicons name="checkmark-circle" size={24} color="#0A1D37" />
                 )}
               </TouchableOpacity>
             );
@@ -132,10 +114,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   languageLeft: {
+    flex: 1,
+  },
+  languageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flag: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  languageTextContainer: {
     flex: 1,
   },
   languageLabel: {
