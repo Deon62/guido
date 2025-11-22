@@ -602,3 +602,540 @@ export const uploadProfilePhoto = async (token, photoFile) => {
     throw new Error('Network error. Please check your connection and try again.');
   }
 };
+
+/**
+ * Create a text feed post
+ * @param {string} token - Access token
+ * @param {Object} postData - Post data
+ * @param {string|number} postData.category_id - Category ID (required)
+ * @param {string} postData.description - Post description (required)
+ * @param {string} postData.location - Optional location
+ * @returns {Promise<Object>} Response data with created post
+ */
+export const createTextFeedPost = async (token, postData) => {
+  const url = getApiUrl('feed/post/text');
+
+  const requestBody = {
+    category_id: postData.category_id,
+    description: postData.description,
+  };
+
+  // Add location only if provided
+  if (postData.location && postData.location.trim()) {
+    requestBody.location = postData.location.trim();
+  }
+
+  console.log('Create text feed post request:', { url, body: requestBody });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+      15000
+    );
+
+    console.log('Create text feed post response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Create text feed post response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = { message: text || 'Post created successfully' };
+      console.log('Create text feed post response text:', text);
+    }
+
+    if (!response.ok) {
+      console.error('Create text feed post API error response:', { status: response.status, data });
+
+      if (response.status === 422) {
+        // Handle validation errors
+        let errorMessage = 'Validation failed';
+        let errorDetails = {};
+        
+        if (data.detail) {
+          if (Array.isArray(data.detail)) {
+            errorMessage = data.detail.map(err => {
+              if (typeof err === 'string') return err;
+              if (err.msg) return err.msg;
+              if (err.message) return err.message;
+              if (err.loc && err.msg) return `${err.loc.join('.')}: ${err.msg}`;
+              return JSON.stringify(err);
+            }).join(', ');
+            errorDetails = data.detail;
+          } else if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else if (typeof data.detail === 'object') {
+            errorDetails = data.detail;
+            errorMessage = data.message || data.detail.message || 'Validation failed';
+          }
+        } else if (data.message) {
+          errorMessage = data.message;
+        }
+        
+        const validationError = new Error(errorMessage);
+        validationError.status = 422;
+        validationError.errors = data.errors || errorDetails || {};
+        validationError.isValidationError = true;
+        throw validationError;
+      }
+
+      const errorMessage = data.message || data.error || data.detail || `Failed to create post (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Create text feed post API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Create an image feed post
+ * @param {string} token - Access token
+ * @param {Object} postData - Post data
+ * @param {Array<Object>} postData.files - Array of image file objects (1-5 images)
+ * @param {string|number} postData.category_id - Optional category ID
+ * @param {string} postData.description - Optional post description
+ * @param {string} postData.location - Optional location
+ * @returns {Promise<Object>} Response data with created post
+ */
+export const createImageFeedPost = async (token, postData) => {
+  const url = getApiUrl('feed/post/image');
+
+  // Create FormData for file upload
+  const formData = new FormData();
+
+  // Add image files
+  if (postData.files && postData.files.length > 0) {
+    for (let i = 0; i < postData.files.length; i++) {
+      const file = postData.files[i];
+      const fileName = file.name || `image_${i}_${Date.now()}.jpg`;
+      const fileType = file.type || 'image/jpeg';
+      
+      // For web, convert URI to Blob/File
+      if (typeof window !== 'undefined' && file.uri) {
+        try {
+          let blob;
+          
+          // Handle different URI types
+          if (file.uri.startsWith('data:')) {
+            const response = await fetch(file.uri);
+            blob = await response.blob();
+          } else if (file.uri.startsWith('blob:')) {
+            const response = await fetch(file.uri);
+            blob = await response.blob();
+          } else if (file.uri.startsWith('file://') || file.uri.startsWith('http://') || file.uri.startsWith('https://')) {
+            const response = await fetch(file.uri);
+            blob = await response.blob();
+          } else {
+            const response = await fetch(file.uri);
+            blob = await response.blob();
+          }
+          
+          // Create a File object from the blob
+          const fileObj = new File([blob], fileName, { type: fileType });
+          formData.append('files', fileObj, fileName);
+        } catch (error) {
+          console.error('Error converting image to blob:', error);
+          // Fallback: use the file object directly
+          formData.append('files', {
+            uri: file.uri,
+            type: fileType,
+            name: fileName,
+          });
+        }
+      } else {
+        // For React Native, use the file object directly
+        formData.append('files', {
+          uri: file.uri,
+          type: fileType,
+          name: fileName,
+        });
+      }
+    }
+  }
+
+  // Add optional fields
+  if (postData.category_id) {
+    formData.append('category_id', postData.category_id);
+  }
+  if (postData.description && postData.description.trim()) {
+    formData.append('description', postData.description.trim());
+  }
+  if (postData.location && postData.location.trim()) {
+    formData.append('location', postData.location.trim());
+  }
+
+  console.log('Create image feed post request:', { 
+    url, 
+    fileCount: postData.files?.length || 0,
+    hasCategory: !!postData.category_id,
+    hasDescription: !!postData.description,
+    hasLocation: !!postData.location
+  });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData - browser will set it with boundary
+        },
+        body: formData,
+      },
+      30000 // 30 second timeout for file uploads
+    );
+
+    console.log('Create image feed post response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Create image feed post response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = { message: text || 'Post created successfully' };
+      console.log('Create image feed post response text:', text);
+    }
+
+    if (!response.ok) {
+      console.error('Create image feed post API error response:', { status: response.status, data });
+
+      if (response.status === 422) {
+        // Handle validation errors
+        let errorMessage = 'Validation failed';
+        let errorDetails = {};
+        
+        if (data.detail) {
+          if (Array.isArray(data.detail)) {
+            errorMessage = data.detail.map(err => {
+              if (typeof err === 'string') return err;
+              if (err.msg) return err.msg;
+              if (err.message) return err.message;
+              if (err.loc && err.msg) return `${err.loc.join('.')}: ${err.msg}`;
+              return JSON.stringify(err);
+            }).join(', ');
+            errorDetails = data.detail;
+          } else if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else if (typeof data.detail === 'object') {
+            errorDetails = data.detail;
+            errorMessage = data.message || data.detail.message || 'Validation failed';
+          }
+        } else if (data.message) {
+          errorMessage = data.message;
+        }
+        
+        const validationError = new Error(errorMessage);
+        validationError.status = 422;
+        validationError.errors = data.errors || errorDetails || {};
+        validationError.isValidationError = true;
+        throw validationError;
+      }
+
+      const errorMessage = data.message || data.error || data.detail || `Failed to create post (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Create image feed post API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get feed posts
+ * @param {string} token - Access token
+ * @param {number} skip - Number of posts to skip (for pagination)
+ * @param {number} limit - Maximum number of posts to return
+ * @returns {Promise<Array>} Array of feed posts
+ */
+export const getFeedPosts = async (token, skip = 0, limit = 20) => {
+  const url = `${getApiUrl('feed/posts')}?skip=${skip}&limit=${limit}`;
+
+  console.log('Get feed posts request:', { url, skip, limit });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get feed posts response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : [];
+        console.log('Get feed posts response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get feed posts response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get feed posts (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of posts (API returns array directly)
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Get feed posts API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Add a post to wishlist
+ * @param {string} token - Access token
+ * @param {number|string} postId - Post ID to add to wishlist
+ * @returns {Promise<Object>} Response data
+ */
+export const addToWishlist = async (token, postId) => {
+  const url = getApiUrl('wishlist/add');
+
+  const requestBody = {
+    post_id: typeof postId === 'string' ? parseInt(postId, 10) : postId,
+  };
+
+  console.log('Add to wishlist request:', { url, body: requestBody });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+      15000
+    );
+
+    console.log('Add to wishlist response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Add to wishlist response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = { message: text || 'Post added to wishlist' };
+      console.log('Add to wishlist response text:', text);
+    }
+
+    if (!response.ok) {
+      console.error('Add to wishlist API error response:', { status: response.status, data });
+
+      if (response.status === 422) {
+        const validationError = new Error(data.message || data.detail || 'Validation failed');
+        validationError.status = 422;
+        validationError.errors = data.errors || (data.detail && typeof data.detail === 'object' ? data.detail : {}) || {};
+        validationError.isValidationError = true;
+        console.error('Validation errors:', validationError.errors);
+        throw validationError;
+      }
+
+      const errorMessage = data.message || data.error || data.detail || `Failed to add to wishlist (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Add to wishlist API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get user's wishlist posts
+ * @param {string} token - Access token
+ * @returns {Promise<Array>} Array of wishlist posts
+ */
+export const getMyWishlist = async (token) => {
+  const url = getApiUrl('wishlist/my');
+
+  console.log('Get wishlist request:', { url });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get wishlist response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : [];
+        console.log('Get wishlist response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get wishlist response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get wishlist (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of posts (API might return array directly or wrapped in an object)
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.posts && Array.isArray(data.posts)) {
+      return data.posts;
+    } else if (data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+    return [];
+  } catch (error) {
+    console.error('Get wishlist API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};

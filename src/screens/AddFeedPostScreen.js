@@ -9,6 +9,8 @@ import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
 import { compressImage } from '../utils/imageCompression';
 import { validatePlaceName, validateLocation, validateImageFile, validateMaxLength } from '../utils/formValidation';
+import { createTextFeedPost, createImageFeedPost } from '../services/authService';
+import { getToken } from '../utils/storage';
 
 export const AddFeedPostScreen = ({ onBack, onSave }) => {
   // Get safe area insets
@@ -46,10 +48,10 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     const hasMedia = formData.images.length > 0 || formData.videos.length > 0;
     const errors = {
       placeName: validatePlaceName(formData.placeName),
-      location: validateLocation(formData.location),
-      mainCategory: !formData.mainCategory ? 'Main category is required' : null,
+      location: formData.location ? validateLocation(formData.location) : null, // Location is optional
+      mainCategory: null, // Category is optional for image/video posts
       media: !hasMedia ? 'At least one image or video is required' : null,
-      caption: validateMaxLength(formData.caption, 500, 'Caption'),
+      caption: formData.caption ? validateMaxLength(formData.caption, 500, 'Caption') : null, // Caption is optional
     };
     
     setFieldErrors(errors);
@@ -65,22 +67,97 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate random error (10% chance for demo)
-      if (Math.random() < 0.1) {
-        throw new Error('Failed to post');
-      }
+      // If no media, create text post via API
+      if (!hasMedia) {
+        const token = getToken();
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
 
-      if (onSave) {
-        onSave(formData);
+        // For text-only posts, use the text post API
+        const postData = {
+          category_id: formData.mainCategory.trim(), // Send category name, backend may convert to ID
+          description: formData.caption.trim(),
+        };
+
+        // Add location only if provided
+        if (formData.location && formData.location.trim()) {
+          postData.location = formData.location.trim();
+        }
+
+        const response = await createTextFeedPost(token, postData);
+        console.log('Text feed post created:', response);
+        
+        if (onSave) {
+          onSave({ ...formData, ...response });
+        }
+        triggerHaptic('success');
+      } else if (formData.images.length > 0) {
+        // For posts with images, use the image post API
+        const token = getToken();
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
+
+        // Prepare image files for upload
+        const imageFiles = formData.images.map((image, index) => {
+          // Image from compressImage has { uri, width, height }
+          // We need to prepare it for FormData
+          return {
+            uri: image.uri,
+            type: 'image/jpeg',
+            name: `image_${index}_${Date.now()}.jpg`,
+          };
+        });
+
+        const postData = {
+          files: imageFiles,
+        };
+
+        // Add optional fields
+        if (formData.mainCategory && formData.mainCategory.trim()) {
+          postData.category_id = formData.mainCategory.trim();
+        }
+        if (formData.caption && formData.caption.trim()) {
+          postData.description = formData.caption.trim();
+        }
+        if (formData.location && formData.location.trim()) {
+          postData.location = formData.location.trim();
+        }
+
+        const response = await createImageFeedPost(token, postData);
+        console.log('Image feed post created:', response);
+        
+        if (onSave) {
+          onSave({ ...formData, ...response });
+        }
+        triggerHaptic('success');
+      } else if (formData.videos.length > 0) {
+        // For posts with videos, use video post API (TODO: implement later)
+        // Simulate API call for now
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        if (onSave) {
+          onSave(formData);
+        }
+        triggerHaptic('success');
       }
-      triggerHaptic('success');
     } catch (err) {
-      setError('Failed to post. Please try again.');
+      console.error('Error creating post:', err);
+      let errorMessage = 'Failed to create post. Please try again.';
+      
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.errors && Array.isArray(err.errors)) {
+        errorMessage = err.errors.map(e => {
+          if (typeof e === 'string') return e;
+          if (e.msg) return e.msg;
+          return JSON.stringify(e);
+        }).join(', ');
+      }
+      
+      setError(errorMessage);
       triggerHaptic('error');
-      console.error('Error posting:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -158,10 +235,16 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
           // Compress the image
           const compressedImage = await compressImage(originalUri, 1200, 1200, 0.8);
           
-          setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, compressedImage].slice(0, 5),
-          }));
+          console.log('Compressed image:', compressedImage);
+          
+          setFormData(prev => {
+            const newImages = [...prev.images, compressedImage].slice(0, 5);
+            console.log('Updated images array:', newImages);
+            return {
+              ...prev,
+              images: newImages,
+            };
+          });
           
           // Clear media errors
           setFieldErrors(prev => ({
@@ -325,7 +408,11 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                   {/* Image Previews */}
                   {formData.images.map((image, index) => (
                     <View key={`img-${index}`} style={styles.mediaPreviewWrapper}>
-                      <Image source={image} style={styles.mediaPreview} resizeMode="cover" />
+                      <Image 
+                        source={typeof image === 'object' && image.uri ? { uri: image.uri } : image} 
+                        style={styles.mediaPreview} 
+                        resizeMode="cover" 
+                      />
                       <View style={styles.mediaTypeBadge}>
                         <Ionicons name="image" size={12} color="#FFFFFF" />
                       </View>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, Image, TouchableOpacity, Dimensions, Platform, StatusBar as RNStatusBar, Share, Alert, TextInput, Animated, RefreshControl, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -10,7 +10,10 @@ import { PaginationIndicator } from '../components/PaginationIndicator';
 import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
 import { usePagination } from '../utils/usePagination';
-import { getUser } from '../utils/storage';
+import { getUser, getToken } from '../utils/storage';
+import { getFeedPosts, addToWishlist, getMyWishlist } from '../services/authService';
+import { API_BASE_URL } from '../config/api';
+import { triggerHaptic } from '../utils/haptics';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const HEADER_HEIGHT = 80; // Approximate header height
@@ -71,14 +74,8 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // TODO: Replace with API data - fetch posts from API
-  const generateMockPosts = () => {
-    // Return empty array - data should come from API
-    return [];
-  };
-
-  // TODO: Replace with API data
-  const allFeedPosts = useMemo(() => generateMockPosts(), []);
+  const [allFeedPosts, setAllFeedPosts] = useState([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
 
   // Load user data for profile picture
   useEffect(() => {
@@ -87,6 +84,129 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
       setUserData(user);
     };
     loadUserData();
+  }, []);
+
+  // Format timestamp from API
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (error) {
+      return 'Just now';
+    }
+  };
+
+  // Fetch feed posts from API
+  const fetchFeedPosts = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setIsLoadingPosts(false);
+      setAllFeedPosts([]);
+      return;
+    }
+
+    setIsLoadingPosts(true);
+    setError(null);
+
+    try {
+      const posts = await getFeedPosts(token, 0, 20);
+      
+      // Transform API posts to match UI format
+      const transformedPosts = posts.map(post => {
+        // Convert media_paths to images array with full URLs
+        const images = (post.media_paths || []).map(mediaPath => {
+          const fullUrl = mediaPath.startsWith('http') 
+            ? mediaPath 
+            : `${API_BASE_URL}/${mediaPath}`;
+          return { uri: fullUrl };
+        });
+
+        // Convert author profile_photo to avatar format
+        let authorAvatar = null;
+        if (post.author?.profile_photo) {
+          const photoUrl = post.author.profile_photo.startsWith('http')
+            ? post.author.profile_photo
+            : `${API_BASE_URL}/${post.author.profile_photo}`;
+          authorAvatar = { uri: photoUrl };
+        }
+
+        return {
+          id: post.id.toString(),
+          user: {
+            name: post.author?.nickname || post.author?.username || 'Unknown',
+            username: post.author?.username || '',
+            avatar: authorAvatar,
+            isPremium: false, // TODO: Get from API if available
+            isCEO: false, // TODO: Get from API if available
+          },
+          place: {
+            name: post.location || 'Unknown Location',
+            location: post.location || '', // Add location for search filtering
+            category: post.category || 'General',
+          },
+          caption: post.description || '',
+          images: images,
+          videos: post.post_type === 'video' ? images : [], // TODO: Handle videos properly
+          likes: post.likes_count || 0,
+          comments: post.comments_count || 0,
+          timestamp: formatTimestamp(post.created_at),
+        };
+      });
+
+      setAllFeedPosts(transformedPosts);
+    } catch (err) {
+      console.error('Error fetching feed posts:', err);
+      setError(err.message || 'Failed to load posts. Please try again.');
+      setAllFeedPosts([]);
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  }, []);
+
+  // Load posts on mount
+  useEffect(() => {
+    fetchFeedPosts();
+  }, [fetchFeedPosts]);
+
+  // Load saved posts (wishlist) on mount
+  useEffect(() => {
+    const loadWishlist = async () => {
+      const token = getToken();
+      if (!token) return;
+
+      try {
+        const wishlistPosts = await getMyWishlist(token);
+        console.log('Wishlist posts loaded:', wishlistPosts);
+        // Extract post IDs from wishlist - API returns items with post_id or post.id
+        const savedPostIds = new Set();
+        wishlistPosts.forEach(item => {
+          // Handle the API response structure: item.post_id or item.post.id
+          const postId = item.post_id || item.post?.id || item.id;
+          if (postId) {
+            savedPostIds.add(postId.toString());
+            console.log('Added post ID to saved posts:', postId);
+          }
+        });
+        console.log('Saved post IDs:', Array.from(savedPostIds));
+        setSavedPosts(savedPostIds);
+      } catch (error) {
+        console.error('Error loading wishlist:', error);
+        // Don't show error to user, just log it
+      }
+    };
+
+    loadWishlist();
   }, []);
 
   // Sync refs with state
@@ -150,9 +270,9 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     return allFeedPosts.filter((post) => (
       post.user.name.toLowerCase().includes(query) ||
       post.place.name.toLowerCase().includes(query) ||
-      post.place.location.toLowerCase().includes(query) ||
+      (post.place.location && post.place.location.toLowerCase().includes(query)) ||
       post.caption.toLowerCase().includes(query) ||
-      post.place.category.toLowerCase().includes(query)
+      (post.place.category && post.place.category.toLowerCase().includes(query))
     ));
   }, [allFeedPosts, debouncedSearchQuery]);
 
@@ -220,24 +340,19 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     };
   }, [paginatedPosts.length]); // Only re-run when posts change
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setError(null);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // Simulate random error (10% chance for demo)
-      if (Math.random() < 0.1) {
-        throw new Error('Failed to load feed posts');
-      }
-      // In a real app, you would fetch new feed posts here
+      await fetchFeedPosts();
+      reset(); // Reset pagination and refetch first page
     } catch (err) {
       setError('Failed to refresh feed. Please try again.');
       console.error('Error refreshing feed:', err);
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [fetchFeedPosts, reset]);
 
   const handleLike = (postId) => {
     setLikedPosts(prev => {
@@ -251,16 +366,56 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     });
   };
 
-  const handleSave = (postId) => {
+  const handleSave = async (postId) => {
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to save posts to your wishlist.');
+      return;
+    }
+
+    const isCurrentlySaved = savedPosts.has(postId);
+    
+    // Optimistic update - update UI immediately
     setSavedPosts(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(postId)) {
+      if (isCurrentlySaved) {
         newSet.delete(postId);
       } else {
         newSet.add(postId);
       }
       return newSet;
     });
+
+    triggerHaptic('light');
+
+    try {
+      // Only add to wishlist if not already saved (we'll handle removal later if API supports it)
+      if (!isCurrentlySaved) {
+        await addToWishlist(token, postId);
+        triggerHaptic('success');
+      } else {
+        // TODO: If API supports removing from wishlist, call that endpoint here
+        // For now, we'll just show a message
+        console.log('Post removed from wishlist (local only - API removal not implemented)');
+        triggerHaptic('light');
+      }
+    } catch (error) {
+      console.error('Error saving post to wishlist:', error);
+      
+      // Revert optimistic update on error
+      setSavedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isCurrentlySaved) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
+        }
+        return newSet;
+      });
+
+      triggerHaptic('error');
+      Alert.alert('Error', error.message || 'Failed to save post to wishlist. Please try again.');
+    }
   };
 
   const handleFollow = (userId) => {
@@ -434,7 +589,12 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
       </View>
 
       {/* Feed FlatList with infinite scroll */}
-      {error ? (
+      {isLoadingPosts ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#0A1D37" />
+          <Text style={styles.emptyText}>Loading posts...</Text>
+        </View>
+      ) : error ? (
         <View style={styles.errorContainer}>
           <ErrorCard
             message={error}
@@ -479,7 +639,13 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                 }}
                 activeOpacity={0.7}
               >
-                <Image source={post.user.avatar} style={styles.avatar} />
+                {post.user.avatar ? (
+                  <Image source={post.user.avatar} style={styles.avatar} />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Ionicons name="person" size={20} color="#C0C0C0" />
+                  </View>
+                )}
                 <View style={styles.userDetails}>
                   <View style={styles.userNameContainer}>
                     <Text style={styles.userName}>{post.user.name}</Text>
@@ -855,6 +1021,17 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 12,
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   userDetails: {
     flex: 1,

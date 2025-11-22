@@ -1,4 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
+import { Platform } from 'react-native';
 
 /**
  * Compress and resize image before upload
@@ -10,6 +11,12 @@ import * as ImageManipulator from 'expo-image-manipulator';
  */
 export const compressImage = async (imageUri, maxWidth = 1200, maxHeight = 1200, quality = 0.8) => {
   try {
+    // On web, expo-image-manipulator might not work, so return original URI
+    if (Platform.OS === 'web') {
+      console.log('Web platform: returning original image URI (compression may not be available)');
+      return { uri: imageUri };
+    }
+
     // Get image dimensions
     const manipResult = await ImageManipulator.manipulateAsync(
       imageUri,
