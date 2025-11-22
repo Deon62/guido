@@ -301,11 +301,23 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
 
   const handlePostPress = (post) => {
     if (onPostPress && selectedCommunity) {
-      const community = communities.find(c => c.id === selectedCommunity);
+      // Use allCommunities instead of communities to ensure we find it
+      const community = allCommunities.find(c => c.id === selectedCommunity);
       if (community) {
         const postKey = `${selectedCommunity}-${post.id}`;
         const comments = getPostComments(postKey);
         onPostPress(post, community, comments);
+      } else {
+        // If community not found, create a fallback community object
+        const fallbackCommunity = {
+          id: selectedCommunity,
+          name: `Community ${selectedCommunity}`,
+          description: '',
+          members: 0,
+        };
+        const postKey = `${selectedCommunity}-${post.id}`;
+        const comments = getPostComments(postKey);
+        onPostPress(post, fallbackCommunity, comments);
       }
     }
   };

@@ -27,6 +27,14 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
     isUpvoted: safePost.isUpvoted || false,
   };
 
+  // Ensure community has required structure with defaults
+  const safeCommunity = community || {
+    id: 'unknown',
+    name: 'Community',
+    description: '',
+    members: 0,
+  };
+
   // Handle keyboard visibility
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener('keyboardDidShow', () => {
@@ -114,6 +122,33 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
         <View style={styles.errorContainerFull}>
           <ErrorCard
             message="The post you're looking for couldn't be found. It may have been deleted or doesn't exist."
+            onRetry={onBack}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // If community is missing, show error state
+  if (!community) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={[styles.header, { paddingTop: statusBarHeight + 12 }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color="#0A1D37" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Community Not Found</Text>
+          </View>
+        </View>
+        <View style={styles.errorContainerFull}>
+          <ErrorCard
+            message="The community for this post couldn't be found. It may have been deleted or doesn't exist."
             onRetry={onBack}
           />
         </View>
