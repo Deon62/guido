@@ -254,22 +254,26 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
         return;
       }
 
-      // Launch video picker
+      // Launch video picker (no editing - users must trim videos in their gallery app first)
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['videos'],
-        allowsEditing: false,
+        allowsEditing: false, // Disabled to avoid Android compatibility issues
         videoQuality: 0.7,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const videoAsset = result.assets[0];
         
+        // Get duration (in milliseconds)
+        const durationMs = videoAsset.duration || 0;
+        const durationSeconds = durationMs / 1000;
+        
         // Check video duration (15 seconds max)
-        if (videoAsset.duration && videoAsset.duration > 15000) {
+        if (durationSeconds > 15) {
           Alert.alert(
             'Video Too Long',
-            'Videos must be 15 seconds or shorter. Please select a shorter video.',
-            [{ text: 'OK' }]
+            `This video is ${Math.round(durationSeconds)} seconds long. Videos must be 15 seconds or shorter.\n\nPlease trim your video to 15 seconds or less in your gallery app, then try again.`,
+            [{ text: 'OK', onPress: () => triggerHaptic('light') }]
           );
           triggerHaptic('error');
           return;
@@ -279,8 +283,10 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
         
         const videoData = {
           uri: videoAsset.uri,
-          duration: videoAsset.duration,
+          duration: durationMs,
           type: videoAsset.type || 'video',
+          width: videoAsset.width,
+          height: videoAsset.height,
         };
         
         setFormData(prev => ({
@@ -449,6 +455,7 @@ export const AddFeedPostScreen = ({ onBack, onSave }) => {
                       Add Video
                     </Text>
                     <Text style={styles.videoLimitText}>Max 15 seconds</Text>
+                    <Text style={styles.videoTrimHint}>Trim in gallery first</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -858,6 +865,14 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
     letterSpacing: 0.2,
+  },
+  videoTrimHint: {
+    fontSize: 9,
+    fontFamily: FONTS.regular,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+    letterSpacing: 0.2,
+    fontStyle: 'italic',
   },
   inputGroup: {
     marginBottom: 20,
