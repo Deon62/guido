@@ -181,8 +181,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
   },
   backButton: {
     padding: 4,
@@ -208,8 +206,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
     marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
   },
   postHeader: {
     marginBottom: 12,
@@ -283,7 +279,7 @@ const styles = StyleSheet.create({
   commentsListContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 120,
+    paddingBottom: 150,
   },
   emptyComments: {
     alignItems: 'center',
