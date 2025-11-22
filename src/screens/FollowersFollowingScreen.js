@@ -127,7 +127,7 @@ export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) =
           </View>
         ) : (
           currentList.map((user) => (
-            <View key={user.id} style={styles.userCard}>
+            <View key={user.id} style={styles.userItem}>
               <View style={styles.userInfo}>
                 <View style={styles.avatarContainer}>
                   <Text style={styles.avatarText}>{user.avatar}</Text>
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: 8,
+    paddingTop: 8,
   },
   emptyState: {
     flex: 1,
@@ -254,24 +254,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  userCard: {
+  userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
-    shadowColor: '#0A1D37',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingVertical: 16,
   },
   userInfo: {
     flexDirection: 'row',
