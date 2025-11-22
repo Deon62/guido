@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Modal, Keyboard } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -10,6 +10,12 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
   const [joinedCommunities, setJoinedCommunities] = useState(new Set(['hotels', 'museums']));
   const [newPostText, setNewPostText] = useState('');
   const [showNewPostInput, setShowNewPostInput] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [postComments, setPostComments] = useState({});
+  const [commentText, setCommentText] = useState('');
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const scrollViewRef = useRef(null);
   
   // Get safe area insets
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
@@ -175,6 +181,55 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
     return allPosts[communityId] || [];
   };
 
+  // Get comments for a post
+  const getPostComments = (postId) => {
+    const allComments = {
+      'hotels-1': [
+        { id: '1', user: { name: 'John Doe', avatar: '👤' }, text: 'I stayed at Hotel Central last month. Great location and affordable!', timestamp: '1 hour ago' },
+        { id: '2', user: { name: 'Jane Smith', avatar: '👤' }, text: 'Check out Hotel des Arts, it\'s in the heart of the city.', timestamp: '2 hours ago' },
+        { id: '3', user: { name: 'Bob Wilson', avatar: '👤' }, text: 'I recommend booking through the hotel website directly for better rates.', timestamp: '3 hours ago' },
+      ],
+      'hotels-2': [
+        { id: '1', user: { name: 'Alice Brown', avatar: '👤' }, text: 'Great tip! I always check cancellation policies too.', timestamp: '1 hour ago' },
+        { id: '2', user: { name: 'Charlie Davis', avatar: '👤' }, text: 'Also sign up for hotel loyalty programs for extra discounts.', timestamp: '4 hours ago' },
+      ],
+      'museums-1': [
+        { id: '1', user: { name: 'Sarah Lee', avatar: '👤' }, text: 'Definitely see the Mona Lisa, Venus de Milo, and the Winged Victory of Samothrace!', timestamp: '30 mins ago' },
+        { id: '2', user: { name: 'Mike Johnson', avatar: '👤' }, text: 'The Egyptian antiquities section is amazing too. Don\'t miss it!', timestamp: '1 hour ago' },
+        { id: '3', user: { name: 'Emma White', avatar: '👤' }, text: 'Get there early to avoid the crowds at the Mona Lisa.', timestamp: '2 hours ago' },
+      ],
+      'landmarks-1': [
+        { id: '1', user: { name: 'David Green', avatar: '👤' }, text: 'Early morning (before 9 AM) is best. Much less crowded!', timestamp: '45 mins ago' },
+        { id: '2', user: { name: 'Lisa Chen', avatar: '👤' }, text: 'Sunset is also beautiful but can be busy. Book tickets in advance.', timestamp: '1 hour ago' },
+      ],
+    };
+    return allComments[postId] || [];
+  };
+
+  // Handle keyboard visibility
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
+    });
+    const keyboardWillHide = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
+
+  // Load comments when post is selected
+  useEffect(() => {
+    if (selectedPost) {
+      const postKey = `${selectedCommunity}-${selectedPost.id}`;
+      const comments = getPostComments(postKey);
+      setPostComments(prev => ({ ...prev, [postKey]: comments }));
+    }
+  }, [selectedPost, selectedCommunity]);
+
   const handleJoinCommunity = (communityId) => {
     setJoinedCommunities(prev => {
       const newSet = new Set(prev);
@@ -185,6 +240,36 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
       }
       return newSet;
     });
+  };
+
+  const handlePostPress = (post) => {
+    setSelectedPost(post);
+  };
+
+  const handleClosePost = () => {
+    setSelectedPost(null);
+    setCommentText('');
+  };
+
+  const handleSendComment = () => {
+    if (commentText.trim() && selectedPost) {
+      const postKey = `${selectedCommunity}-${selectedPost.id}`;
+      const newComment = {
+        id: Date.now().toString(),
+        user: { name: 'You', avatar: '👤' },
+        text: commentText.trim(),
+        timestamp: 'Just now',
+      };
+      setPostComments(prev => ({
+        ...prev,
+        [postKey]: [...(prev[postKey] || []), newComment],
+      }));
+      setCommentText('');
+      // Scroll to bottom after adding comment
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   };
 
   const handleUpvote = (postId) => {
@@ -310,7 +395,12 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
             {/* Posts List */}
             <View style={styles.postsList}>
               {posts.map((post) => (
-                <View key={post.id} style={styles.postCard}>
+                <TouchableOpacity
+                  key={post.id}
+                  style={styles.postCard}
+                  onPress={() => handlePostPress(post)}
+                  activeOpacity={0.85}
+                >
                   <View style={styles.postHeader}>
                     <View style={styles.postUserInfo}>
                       <View style={styles.postAvatar}>
@@ -329,7 +419,10 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
                   <View style={styles.postActions}>
                     <TouchableOpacity
                       style={styles.actionButton}
-                      onPress={() => handleUpvote(post.id)}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleUpvote(post.id);
+                      }}
                       activeOpacity={0.7}
                     >
                       <Ionicons
@@ -342,25 +435,61 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
                       </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handlePostPress(post);
+                      }}
+                      activeOpacity={0.7}
+                    >
                       <Ionicons name="chatbubble-outline" size={18} color="#6D6D6D" />
                       <Text style={styles.actionText}>{formatNumber(post.comments)}</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={(e) => e.stopPropagation()}
+                      activeOpacity={0.7}
+                    >
                       <Ionicons name="share-outline" size={18} color="#6D6D6D" />
                     </TouchableOpacity>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
 
         <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
+
+        {/* Post Detail Modal */}
+        {selectedPost && (
+          <PostDetailModal
+            post={selectedPost}
+            community={community}
+            comments={postComments[`${selectedCommunity}-${selectedPost.id}`] || []}
+            commentText={commentText}
+            onCommentTextChange={setCommentText}
+            onSendComment={handleSendComment}
+            onClose={handleClosePost}
+            scrollViewRef={scrollViewRef}
+            isKeyboardVisible={isKeyboardVisible}
+          />
+        )}
       </View>
     );
   }
+
+  // Filter communities based on search query
+  const filteredCommunities = communities.filter((community) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      community.name.toLowerCase().includes(query) ||
+      community.description.toLowerCase().includes(query)
+    );
+  });
 
   // Show communities list
   return (
@@ -375,13 +504,41 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
         </View>
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#6D6D6D" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search communities..."
+          placeholderTextColor="#9B9B9B"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            style={styles.searchClearButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-circle" size={20} color="#6D6D6D" />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.communitiesList}>
-          {communities.map((community) => {
+          {filteredCommunities.length === 0 ? (
+            <View style={styles.emptySearchResults}>
+              <Ionicons name="search-outline" size={48} color="#C0C0C0" />
+              <Text style={styles.emptySearchText}>No communities found</Text>
+              <Text style={styles.emptySearchSubtext}>Try a different search term</Text>
+            </View>
+          ) : (
+            filteredCommunities.map((community) => {
             const isJoined = joinedCommunities.has(community.id);
             return (
               <TouchableOpacity
@@ -413,7 +570,8 @@ export const CommunitiesScreen = ({ activeTab, onTabChange }) => {
                 </View>
               </TouchableOpacity>
             );
-          })}
+          })
+        )}
         </View>
       </ScrollView>
 
@@ -456,6 +614,50 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#6D6D6D',
     letterSpacing: 0.2,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#1A1A1A',
+    padding: 0,
+  },
+  searchClearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  emptySearchResults: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptySearchText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#6D6D6D',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  emptySearchSubtext: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
   },
   joinButton: {
     paddingHorizontal: 16,
@@ -699,5 +901,351 @@ const styles = StyleSheet.create({
     color: '#0A1D37',
     fontFamily: FONTS.semiBold,
   },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+  },
+  modalContentKeyboard: {
+    maxHeight: '95%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7F7F7',
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalBackButton: {
+    padding: 4,
+    marginRight: 12,
+  },
+  modalHeaderTitle: {
+    fontSize: 16,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    marginBottom: 2,
+  },
+  modalHeaderSubtitle: {
+    fontSize: 12,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+  },
+  modalPostContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7F7F7',
+  },
+  modalPostHeader: {
+    marginBottom: 12,
+  },
+  modalPostUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  modalPostAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  modalPostAvatarText: {
+    fontSize: 16,
+  },
+  modalPostUserName: {
+    fontSize: 13,
+    fontFamily: FONTS.semiBold,
+    color: '#0A1D37',
+    marginBottom: 2,
+  },
+  modalPostTimestamp: {
+    fontSize: 11,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+  },
+  modalPostTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  modalPostContentText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#3A3A3A',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  modalPostActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F7F7F7',
+  },
+  modalActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  modalActionText: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+  },
+  modalActionTextActive: {
+    color: '#0A1D37',
+    fontFamily: FONTS.semiBold,
+  },
+  modalCommentsList: {
+    flex: 1,
+  },
+  modalCommentsListContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  modalEmptyComments: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  modalEmptyCommentsText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#6D6D6D',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  modalEmptyCommentsSubtext: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+  },
+  modalCommentItem: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  modalCommentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  modalCommentAvatarText: {
+    fontSize: 16,
+  },
+  modalCommentContent: {
+    flex: 1,
+  },
+  modalCommentBubble: {
+    backgroundColor: '#F7F7F7',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 4,
+  },
+  modalCommentUserName: {
+    fontSize: 13,
+    fontFamily: FONTS.semiBold,
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  modalCommentText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#3A3A3A',
+    lineHeight: 20,
+  },
+  modalCommentTimestamp: {
+    fontSize: 11,
+    fontFamily: FONTS.regular,
+    color: '#9B9B9B',
+    marginLeft: 12,
+  },
+  modalInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E8E8',
+  },
+  modalInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#1A1A1A',
+    maxHeight: 100,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F7F7F7',
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  modalSendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#0A1D37',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSendButtonDisabled: {
+    backgroundColor: '#E8E8E8',
+  },
 });
+
+// Post Detail Modal Component
+const PostDetailModal = ({
+  post,
+  community,
+  comments,
+  commentText,
+  onCommentTextChange,
+  onSendComment,
+  onClose,
+  scrollViewRef,
+  isKeyboardVisible,
+}) => {
+  return (
+    <Modal
+      visible={true}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <View style={[styles.modalContent, isKeyboardVisible && styles.modalContentKeyboard]}>
+          {/* Header */}
+          <View style={[styles.modalHeader, { paddingTop: Platform.OS === 'ios' ? 44 : 16 }]}>
+            <View style={styles.modalHeaderLeft}>
+              <TouchableOpacity
+                style={styles.modalBackButton}
+                onPress={onClose}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="arrow-back" size={24} color="#0A1D37" />
+              </TouchableOpacity>
+              <View>
+                <Text style={styles.modalHeaderTitle}>Comments</Text>
+                <Text style={styles.modalHeaderSubtitle}>{comments.length} {comments.length === 1 ? 'comment' : 'comments'}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Post Content */}
+          <View style={styles.modalPostContent}>
+            <View style={styles.modalPostHeader}>
+              <View style={styles.modalPostUserInfo}>
+                <View style={styles.modalPostAvatar}>
+                  <Text style={styles.modalPostAvatarText}>{post.user.avatar}</Text>
+                </View>
+                <View>
+                  <Text style={styles.modalPostUserName}>{post.user.name}</Text>
+                  <Text style={styles.modalPostTimestamp}>{post.timestamp}</Text>
+                </View>
+              </View>
+            </View>
+            <Text style={styles.modalPostTitle}>{post.title}</Text>
+            <Text style={styles.modalPostContentText}>{post.content}</Text>
+            <View style={styles.modalPostActions}>
+              <View style={styles.modalActionButton}>
+                <Ionicons
+                  name={post.isUpvoted ? 'arrow-up' : 'arrow-up-outline'}
+                  size={18}
+                  color={post.isUpvoted ? '#0A1D37' : '#6D6D6D'}
+                />
+                <Text style={[styles.modalActionText, post.isUpvoted && styles.modalActionTextActive]}>
+                  {post.upvotes}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Comments List */}
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.modalCommentsList}
+            contentContainerStyle={styles.modalCommentsListContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {comments.length === 0 ? (
+              <View style={styles.modalEmptyComments}>
+                <Ionicons name="chatbubble-outline" size={48} color="#C0C0C0" />
+                <Text style={styles.modalEmptyCommentsText}>No comments yet</Text>
+                <Text style={styles.modalEmptyCommentsSubtext}>Be the first to comment!</Text>
+              </View>
+            ) : (
+              comments.map((comment) => (
+                <View key={comment.id} style={styles.modalCommentItem}>
+                  <View style={styles.modalCommentAvatar}>
+                    <Text style={styles.modalCommentAvatarText}>{comment.user.avatar}</Text>
+                  </View>
+                  <View style={styles.modalCommentContent}>
+                    <View style={styles.modalCommentBubble}>
+                      <Text style={styles.modalCommentUserName}>{comment.user.name}</Text>
+                      <Text style={styles.modalCommentText}>{comment.text}</Text>
+                    </View>
+                    <Text style={styles.modalCommentTimestamp}>{comment.timestamp}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          {/* Input Area */}
+          <View style={styles.modalInputContainer}>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Add a comment..."
+              placeholderTextColor="#9B9B9B"
+              value={commentText}
+              onChangeText={onCommentTextChange}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity
+              style={[styles.modalSendButton, commentText.trim() === '' && styles.modalSendButtonDisabled]}
+              onPress={onSendComment}
+              activeOpacity={0.7}
+              disabled={commentText.trim() === ''}
+            >
+              <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
 
