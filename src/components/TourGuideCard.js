@@ -9,11 +9,13 @@ export const TourGuideCard = ({ guide, onPress }) => {
       onPress={onPress}
       activeOpacity={0.85}
     >
-      <Image
-        source={guide.avatar}
-        style={styles.avatar}
-        resizeMode="cover"
-      />
+      <View style={styles.avatarContainer}>
+        <Image
+          source={guide.avatar}
+          style={styles.avatar}
+          resizeMode="cover"
+        />
+      </View>
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.nameRow}>
@@ -68,11 +70,13 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  avatarContainer: {
+    marginRight: 12,
+  },
   avatar: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    marginRight: 12,
   },
   content: {
     flex: 1,
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
   specialty: {
     fontSize: 13,
     color: '#3A3A3A',
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: 0.2,
   },
   details: {
