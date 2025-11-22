@@ -17,6 +17,7 @@ import { CommunitiesScreen } from './src/screens/CommunitiesScreen';
 import { PostDetailScreen } from './src/screens/PostDetailScreen';
 import { MyPostsScreen } from './src/screens/MyPostsScreen';
 import { MyCommunitiesScreen } from './src/screens/MyCommunitiesScreen';
+import { MyFeedPostsScreen } from './src/screens/MyFeedPostsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
@@ -67,6 +68,7 @@ export default function App() {
   const [selectedPostData, setSelectedPostData] = useState(null);
   const [showMyPosts, setShowMyPosts] = useState(false);
   const [showMyCommunities, setShowMyCommunities] = useState(false);
+  const [showMyFeedPosts, setShowMyFeedPosts] = useState(false);
   const [userData, setUserData] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -81,7 +83,9 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (showMyCommunities) {
+    if (showMyFeedPosts) {
+      setShowMyFeedPosts(false);
+    } else if (showMyCommunities) {
       setShowMyCommunities(false);
     } else if (showMyPosts) {
       setShowMyPosts(false);
@@ -209,6 +213,10 @@ export default function App() {
     setActiveTab('communities');
     // Note: In a real app, you'd want to pass the community ID to CommunitiesScreen
     // to auto-select it. For now, just navigate to communities tab.
+  };
+
+  const handleMyFeedPostsPress = () => {
+    setShowMyFeedPosts(true);
   };
 
   const handleAddFeedPostSave = (postData) => {
@@ -514,6 +522,26 @@ export default function App() {
     );
   }
 
+  // Show my feed posts screen (check before activeTab checks)
+  if (showMyFeedPosts) {
+    return (
+      <MyFeedPostsScreen
+        onBack={handleBack}
+        onPostPress={handlePostDetailPress}
+      />
+    );
+  }
+
+  // Show my communities screen
+  if (showMyCommunities) {
+    return (
+      <MyCommunitiesScreen
+        onBack={handleBack}
+        onCommunityPress={handleMyCommunitiesCommunityPress}
+      />
+    );
+  }
+
   // Show trips screen when trips tab is active
   if (currentScreen === 'home' && activeTab === 'trips') {
     return (
@@ -534,21 +562,11 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onAddPostPress={handleAddFeedPostPress}
+        onMyFeedPostsPress={handleMyFeedPostsPress}
       />
     );
   }
 
-  // Show my communities screen
-  if (showMyCommunities) {
-    return (
-      <MyCommunitiesScreen
-        onBack={handleBack}
-        onCommunityPress={handleMyCommunitiesCommunityPress}
-      />
-    );
-  }
-
-  // Show my posts screen
   if (showMyPosts) {
     return (
       <MyPostsScreen

@@ -11,7 +11,7 @@ const HEADER_HEIGHT = 80; // Approximate header height
 const BOTTOM_NAV_HEIGHT = 80; // Approximate bottom nav height
 const CARD_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT - BOTTOM_NAV_HEIGHT; // Full visible height
 
-export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) => {
+export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, onMyFeedPostsPress }) => {
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [savedPosts, setSavedPosts] = useState(new Set());
   const [selectedPostForComments, setSelectedPostForComments] = useState(null);
@@ -364,6 +364,17 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress }) 
             <Ionicons name={showSearchBar ? "close" : "search"} size={24} color="#0A1D37" />
           </TouchableOpacity>
           <TouchableOpacity
+            style={styles.myPostsButton}
+            onPress={() => {
+              if (onMyFeedPostsPress) {
+                onMyFeedPostsPress();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="images" size={24} color="#0A1D37" />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.profileButton}
             onPress={() => onTabChange && onTabChange('profile')}
             activeOpacity={0.7}
@@ -597,6 +608,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   searchButton: {
+    padding: 4,
+  },
+  myPostsButton: {
     padding: 4,
   },
   profileButton: {
