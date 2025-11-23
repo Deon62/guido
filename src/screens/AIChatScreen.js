@@ -1,21 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Keyboard, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, Modal, KeyboardAvoidingView, Keyboard, Animated, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
+import { createConversation, sendMessageStream } from '../services/authService';
+import { getToken } from '../utils/storage';
 
 export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      type: 'ai',
-      text: "Hey there, wanderer! 🌍✨ I'm Deony, your travel companion, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears! What's on your travel mind today?",
-      timestamp: new Date().toISOString(),
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showConversationsPanel, setShowConversationsPanel] = useState(false);
@@ -24,11 +19,12 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   const scrollViewRef = useRef(null);
   const panelSlideAnim = useRef(new Animated.Value(1)).current;
   const menuButtonRefs = useRef({});
-  const [conversations] = useState([
-    { id: '1', title: 'Planning a trip to Paris', lastMessage: 'What are the best places to visit?', timestamp: '2 hours ago' },
-    { id: '2', title: 'Budget travel tips', lastMessage: 'How can I travel on a budget?', timestamp: '1 day ago' },
-    { id: '3', title: 'Hidden gems in Tokyo', lastMessage: 'Tell me about off-the-beaten-path spots', timestamp: '3 days ago' },
-  ]);
+  const [conversations, setConversations] = useState([]);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [showCreateConversationModal, setShowCreateConversationModal] = useState(false);
+  const [conversationTitle, setConversationTitle] = useState('');
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState(null);
 
   // Typing animation
   const dot1Anim = useRef(new Animated.Value(0.4)).current;
@@ -96,7 +92,13 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   }, [showConversationsPanel]);
 
   const handleSend = async () => {
-    if (!inputText.trim() || isTyping) return;
+    if (!inputText.trim() || isTyping || !currentConversationId) return;
+
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to send messages.');
+      return;
+    }
 
     const userMessage = {
       id: Date.now().toString(),
@@ -106,36 +108,106 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageText = inputText.trim();
     setInputText('');
     setIsTyping(true);
     triggerHaptic('light');
     Keyboard.dismiss();
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        text: "That's a fantastic question! Let me help you with that. I'm here to make your travel dreams come true! 🎉",
-        timestamp: new Date().toISOString(),
-      };
-      setMessages(prev => [...prev, aiResponse]);
+    // Create AI message placeholder for streaming
+    const aiMessageId = (Date.now() + 1).toString();
+    const aiMessage = {
+      id: aiMessageId,
+      type: 'ai',
+      text: '',
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, aiMessage]);
+    setStreamingMessageId(aiMessageId);
+
+    try {
+      await sendMessageStream(token, currentConversationId, messageText, (accumulatedText, chunk) => {
+        // Update the streaming message in real-time
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMessageId 
+            ? { ...msg, text: accumulatedText }
+            : msg
+        ));
+        
+        // Scroll to bottom as text streams
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 50);
+      });
+
       setIsTyping(false);
+      setStreamingMessageId(null);
       triggerHaptic('success');
-    }, 1500);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Remove the failed AI message
+      setMessages(prev => prev.filter(msg => msg.id !== aiMessageId));
+      setIsTyping(false);
+      setStreamingMessageId(null);
+      triggerHaptic('error');
+      Alert.alert('Error', error.message || 'Failed to send message. Please try again.');
+    }
   };
 
   const handleNewConversation = () => {
-    setMessages([
-      {
-        id: '1',
-        type: 'ai',
-        text: "Hey there, wanderer! 🌍✨ I'm Deony, your travel companion, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears! What's on your travel mind today?",
-        timestamp: new Date().toISOString(),
-      },
-    ]);
     setShowConversationsPanel(false);
+    setShowCreateConversationModal(true);
     triggerHaptic('light');
+  };
+
+  const handleCreateConversation = async () => {
+    if (!conversationTitle.trim() || isCreatingConversation) return;
+
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to create a conversation.');
+      return;
+    }
+
+    setIsCreatingConversation(true);
+    triggerHaptic('light');
+
+    try {
+      const response = await createConversation(token, conversationTitle.trim());
+      const conversationId = response.id || response.conversation_id;
+      
+      // Add to conversations list
+      const newConversation = {
+        id: conversationId.toString(),
+        title: conversationTitle.trim(),
+        lastMessage: '',
+        timestamp: 'Just now',
+      };
+      setConversations(prev => [newConversation, ...prev]);
+      
+      // Set as current conversation
+      setCurrentConversationId(conversationId);
+      
+      // Initialize with welcome message
+      setMessages([
+        {
+          id: '1',
+          type: 'ai',
+          text: "Hey there, wanderer! 🌍✨ I'm Deony, your travel companion, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears! What's on your travel mind today?",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      
+      setConversationTitle('');
+      setShowCreateConversationModal(false);
+      setIsCreatingConversation(false);
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      setIsCreatingConversation(false);
+      triggerHaptic('error');
+      Alert.alert('Error', error.message || 'Failed to create conversation. Please try again.');
+    }
   };
 
   const handleConversationMenuPress = (conversationId, event) => {
@@ -258,7 +330,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
             </View>
           ))}
           
-          {isTyping && (
+          {isTyping && !streamingMessageId && (
             <View style={[styles.messageWrapper, styles.aiMessageWrapper]}>
               <View style={styles.aiAvatar}>
                 <Ionicons name="sparkles" size={20} color="#FFFFFF" />
@@ -272,36 +344,57 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
               </View>
             </View>
           )}
+          
+          {messages.length === 0 && !currentConversationId && (
+            <View style={styles.emptyState}>
+              <Ionicons name="chatbubbles-outline" size={64} color="#C0C0C0" />
+              <Text style={styles.emptyStateText}>Create a conversation to get started</Text>
+              <Text style={styles.emptyStateSubtext}>Tap the button below to begin chatting with Deony</Text>
+            </View>
+          )}
         </ScrollView>
 
         {/* Input Area */}
-        <View style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask me anything about travel..."
-              placeholderTextColor="rgba(155, 155, 155, 0.8)"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={500}
-              returnKeyType="send"
-              onSubmitEditing={handleSend}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, (!inputText.trim() || isTyping) && styles.sendButtonDisabled]}
-              onPress={handleSend}
-              activeOpacity={0.7}
-              disabled={!inputText.trim() || isTyping}
-            >
-              <Ionicons
-                name="send"
-                size={20}
-                color={(!inputText.trim() || isTyping) ? 'rgba(192, 192, 192, 0.6)' : '#FFFFFF'}
+        {currentConversationId ? (
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Ask me anything about travel..."
+                placeholderTextColor="rgba(155, 155, 155, 0.8)"
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={500}
+                returnKeyType="send"
+                onSubmitEditing={handleSend}
               />
+              <TouchableOpacity
+                style={[styles.sendButton, (!inputText.trim() || isTyping) && styles.sendButtonDisabled]}
+                onPress={handleSend}
+                activeOpacity={0.7}
+                disabled={!inputText.trim() || isTyping}
+              >
+                <Ionicons
+                  name="send"
+                  size={20}
+                  color={(!inputText.trim() || isTyping) ? 'rgba(192, 192, 192, 0.6)' : '#FFFFFF'}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.inputContainer}>
+            <TouchableOpacity
+              style={styles.createConversationButton}
+              onPress={handleNewConversation}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add-circle" size={24} color="#FFFFFF" />
+              <Text style={styles.createConversationButtonText}>Create New Conversation</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        )}
       </KeyboardAvoidingView>
 
       {/* Conversations Panel */}
@@ -366,8 +459,18 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
                   style={styles.conversationItem}
                   onPress={() => {
                     // Load conversation
+                    setCurrentConversationId(conversation.id);
                     setShowConversationsPanel(false);
                     setSelectedConversationMenu(null);
+                    // TODO: Load conversation messages from API
+                    setMessages([
+                      {
+                        id: '1',
+                        type: 'ai',
+                        text: "Hey there, wanderer! 🌍✨ I'm Deony, your travel companion, and I'm absolutely thrilled you're here! Whether you're dreaming of your next adventure, need tips for that hidden gem, or just want to chat about the world's wonders, I'm all ears! What's on your travel mind today?",
+                        timestamp: new Date().toISOString(),
+                      },
+                    ]);
                     triggerHaptic('light');
                   }}
                   activeOpacity={0.7}
@@ -458,6 +561,59 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* Create Conversation Modal */}
+      <Modal
+        visible={showCreateConversationModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowCreateConversationModal(false);
+          setConversationTitle('');
+        }}
+      >
+        <View style={styles.createModalOverlay}>
+          <View style={styles.createModalContent}>
+            <Text style={styles.createModalTitle}>Create New Conversation</Text>
+            <Text style={styles.createModalSubtitle}>Give your conversation a name to get started</Text>
+            
+            <TextInput
+              style={styles.createModalInput}
+              placeholder="e.g., Planning a trip to Paris"
+              placeholderTextColor="rgba(155, 155, 155, 0.8)"
+              value={conversationTitle}
+              onChangeText={setConversationTitle}
+              maxLength={100}
+              autoFocus
+            />
+
+            <View style={styles.createModalActions}>
+              <TouchableOpacity
+                style={styles.createModalCancelButton}
+                onPress={() => {
+                  setShowCreateConversationModal(false);
+                  setConversationTitle('');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.createModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.createModalCreateButton, (!conversationTitle.trim() || isCreatingConversation) && styles.createModalCreateButtonDisabled]}
+                onPress={handleCreateConversation}
+                activeOpacity={0.7}
+                disabled={!conversationTitle.trim() || isCreatingConversation}
+              >
+                {isCreatingConversation ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.createModalCreateText}>Create</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -756,6 +912,128 @@ const styles = StyleSheet.create({
   },
   actionModalItemTextDanger: {
     color: '#E74C3C',
+  },
+  createConversationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A1D37',
+    borderRadius: 28,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    gap: 12,
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  createConversationButtonText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  createModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  createModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  createModalTitle: {
+    fontSize: 22,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
+  createModalSubtitle: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginBottom: 20,
+    letterSpacing: 0.2,
+  },
+  createModalInput: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: '#1A1A1A',
+    backgroundColor: '#F7F7F7',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  createModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  createModalCancelButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  createModalCancelText: {
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+  },
+  createModalCreateButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#0A1D37',
+    borderRadius: 20,
+  },
+  createModalCreateButtonDisabled: {
+    backgroundColor: '#E8E8E8',
+  },
+  createModalCreateText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 32,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: FONTS.semiBold,
+    color: '#0A1D37',
+    marginTop: 24,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

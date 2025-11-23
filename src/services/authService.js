@@ -2170,3 +2170,200 @@ export const getFollowStatus = async (token, userId) => {
     throw new Error('Network error. Please check your connection and try again.');
   }
 };
+
+// AI Chat APIs
+export const createConversation = async (token, title) => {
+  const url = getApiUrl('chat/conversations');
+
+  console.log('Create conversation request:', { url, title });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title }),
+      },
+      15000
+    );
+
+    console.log('Create conversation response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Create conversation response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Create conversation response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to create conversation (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Create conversation API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+export const sendMessageStream = async (token, conversationId, content, onChunk) => {
+  const url = getApiUrl(`chat/conversations/${conversationId}/message/stream`);
+
+  console.log('Send message stream request:', { url, conversationId, content });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
+      },
+      60000 // Longer timeout for streaming
+    );
+
+    console.log('Send message stream response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || errorData.detail || `Failed to send message (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Handle streaming response
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullResponse = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        break;
+      }
+
+      // Decode the chunk
+      buffer += decoder.decode(value, { stream: true });
+      
+      // Process complete lines (SSE format: data: {...}\n\n)
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const textContent = line.slice(6); // Remove 'data: ' prefix
+          
+          // Check if it's [DONE] marker
+          if (textContent.trim() === '[DONE]') {
+            // Stream is complete
+            break;
+          }
+          
+          // Try to parse as JSON first (for structured responses)
+          if (textContent.trim().startsWith('{') || textContent.trim().startsWith('[')) {
+            try {
+              const chunk = JSON.parse(textContent);
+              
+              // Handle different JSON response formats
+              if (chunk.content || chunk.text || chunk.message) {
+                const chunkText = chunk.content || chunk.text || chunk.message;
+                fullResponse += chunkText;
+                
+                // Call the onChunk callback with the accumulated response so far
+                if (onChunk) {
+                  onChunk(fullResponse, chunk);
+                }
+              } else if (chunk.delta) {
+                // Handle delta format
+                fullResponse += chunk.delta;
+                if (onChunk) {
+                  onChunk(fullResponse, chunk);
+                }
+              }
+            } catch (parseError) {
+              // If JSON parsing fails, treat as plain text
+              if (textContent.trim()) {
+                fullResponse += textContent;
+                if (onChunk) {
+                  onChunk(fullResponse, { text: textContent });
+                }
+              }
+            }
+          } else {
+            // Plain text chunk (most common case)
+            if (textContent.trim() || textContent.length > 0) {
+              fullResponse += textContent;
+              if (onChunk) {
+                onChunk(fullResponse, { text: textContent });
+              }
+            }
+          }
+        } else if (line.trim() && !line.startsWith(':')) {
+          // Handle plain text chunks (non-SSE format)
+          fullResponse += line;
+          if (onChunk) {
+            onChunk(fullResponse, { text: line });
+          }
+        }
+      }
+    }
+
+    // Process any remaining buffer
+    if (buffer.trim()) {
+      fullResponse += buffer;
+      if (onChunk) {
+        onChunk(fullResponse, { text: buffer });
+      }
+    }
+
+    return { content: fullResponse };
+  } catch (error) {
+    console.error('Send message stream API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
