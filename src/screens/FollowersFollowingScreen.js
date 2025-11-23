@@ -1,31 +1,147 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
+import { toggleFollowUser, getFollowers, getFollowing } from '../services/authService';
+import { getToken } from '../utils/storage';
+import { API_BASE_URL } from '../config/api';
 
-export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) => {
+export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers', userId }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   const [activeTab, setActiveTab] = useState(initialTab);
-
-  // TODO: Replace with API data
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTogglingFollow, setIsTogglingFollow] = useState(new Set());
 
-  const handleFollow = (userId) => {
+  // Fetch followers and following when component mounts or userId changes
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = getToken();
+      if (!token) {
+        console.log('No token available for fetching followers/following');
+        setIsLoading(false);
+        return;
+      }
+
+      if (userId === null || userId === undefined) {
+        console.log('No userId provided for fetching followers/following');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Fetching followers/following for userId:', userId);
+      setIsLoading(true);
+      try {
+        const [followersData, followingData] = await Promise.all([
+          getFollowers(token, userId),
+          getFollowing(token, userId),
+        ]);
+
+        console.log('Followers data:', followersData);
+        console.log('Following data:', followingData);
+
+        // Transform followers data
+        const transformedFollowers = Array.isArray(followersData) 
+          ? followersData.map(user => ({
+              id: user.user_id || user.id,
+              name: user.name || user.nickname || user.username || 'Unknown',
+              username: user.username || `@${user.user_id || user.id}`,
+              bio: user.bio || '',
+              avatar: user.profile_photo || user.profile_picture || user.avatar || '',
+              isFollowing: user.is_following || false,
+            }))
+          : [];
+
+        // Transform following data
+        const transformedFollowing = Array.isArray(followingData)
+          ? followingData.map(user => ({
+              id: user.user_id || user.id,
+              name: user.name || user.nickname || user.username || 'Unknown',
+              username: user.username || `@${user.user_id || user.id}`,
+              bio: user.bio || '',
+              avatar: user.profile_photo || user.profile_picture || user.avatar || '',
+            }))
+          : [];
+
+        console.log('Transformed followers:', transformedFollowers);
+        console.log('Transformed following:', transformedFollowing);
+
+        setFollowers(transformedFollowers);
+        setFollowing(transformedFollowing);
+      } catch (error) {
+        console.error('Error fetching followers/following:', error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.status,
+          userId: userId
+        });
+        Alert.alert('Error', error.message || 'Failed to load followers/following. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [userId]);
+
+  const handleFollow = async (userId) => {
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to follow users.');
+      return;
+    }
+
     triggerHaptic('light');
+    setIsTogglingFollow(prev => new Set([...prev, userId]));
+
+    // Optimistic update
+    const wasFollowing = followers.find(u => u.id === userId)?.isFollowing || false;
     setFollowers(prev => 
       prev.map(user => 
         user.id === userId 
-          ? { ...user, isFollowing: !user.isFollowing }
+          ? { ...user, isFollowing: !wasFollowing }
           : user
       )
     );
+
+    try {
+      await toggleFollowUser(token, userId);
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      // Revert optimistic update
+      setFollowers(prev => 
+        prev.map(user => 
+          user.id === userId 
+            ? { ...user, isFollowing: wasFollowing }
+            : user
+        )
+      );
+      triggerHaptic('error');
+      Alert.alert('Error', error.message || 'Failed to update follow status. Please try again.');
+    } finally {
+      setIsTogglingFollow(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }
   };
 
-  const handleUnfollow = (userId) => {
+  const handleUnfollow = async (userId) => {
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to unfollow users.');
+      return;
+    }
+
     triggerHaptic('light');
+    setIsTogglingFollow(prev => new Set([...prev, userId]));
+
+    // Optimistic update - remove from following list
     setFollowing(prev => prev.filter(user => user.id !== userId));
     // Also update followers list if this user is in it
     setFollowers(prev =>
@@ -35,6 +151,40 @@ export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) =
           : user
       )
     );
+
+    try {
+      await toggleFollowUser(token, userId);
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error toggling unfollow:', error);
+      // Revert optimistic update - re-add to following list
+      // We'd need to refetch to properly revert, but for now just show error
+      triggerHaptic('error');
+      Alert.alert('Error', error.message || 'Failed to unfollow. Please try again.');
+      // Refetch data to get correct state
+      const refetchToken = getToken();
+      if (refetchToken && userId) {
+        try {
+          const followingData = await getFollowing(refetchToken, userId);
+          const transformedFollowing = followingData.map(user => ({
+            id: user.user_id || user.id,
+            name: user.name || user.username || 'Unknown',
+            username: user.username || `@${user.user_id || user.id}`,
+            bio: user.bio || '',
+            avatar: user.profile_photo || user.profile_picture || user.avatar || '',
+          }));
+          setFollowing(transformedFollowing);
+        } catch (e) {
+          console.error('Error refetching following:', e);
+        }
+      }
+    } finally {
+      setIsTogglingFollow(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }
   };
 
   const currentList = useMemo(() => {
@@ -97,7 +247,12 @@ export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) =
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {currentList.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0A1D37" />
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        ) : currentList.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons 
               name={activeTab === 'followers' ? 'people-outline' : 'person-outline'} 
@@ -114,11 +269,23 @@ export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) =
             </Text>
           </View>
         ) : (
-          currentList.map((user) => (
+          currentList.map((user) => {
+            const isLoadingFollow = isTogglingFollow.has(user.id);
+            const avatarUri = user.avatar 
+              ? (user.avatar.startsWith('http') 
+                  ? user.avatar 
+                  : `${API_BASE_URL}/${user.avatar.startsWith('uploads/') ? user.avatar : `uploads/${user.avatar}`}`)
+              : null;
+
+            return (
             <View key={user.id} style={styles.userItem}>
               <View style={styles.userInfo}>
                 <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>{user.avatar}</Text>
+                  {avatarUri ? (
+                    <Image source={{ uri: avatarUri }} style={styles.avatarImage} resizeMode="cover" />
+                  ) : (
+                    <Ionicons name="person" size={24} color="#C0C0C0" />
+                  )}
                 </View>
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{user.name}</Text>
@@ -132,29 +299,41 @@ export const FollowersFollowingScreen = ({ onBack, initialTab = 'followers' }) =
                 <TouchableOpacity
                   style={[
                     styles.followButton,
-                    user.isFollowing && styles.followingButton
+                    user.isFollowing && styles.followingButton,
+                    isLoadingFollow && styles.followButtonDisabled
                   ]}
                   onPress={() => handleFollow(user.id)}
                   activeOpacity={0.7}
+                  disabled={isLoadingFollow}
                 >
-                  <Text style={[
-                    styles.followButtonText,
-                    user.isFollowing && styles.followingButtonText
-                  ]}>
-                    {user.isFollowing ? 'Following' : 'Follow'}
-                  </Text>
+                  {isLoadingFollow ? (
+                    <ActivityIndicator size="small" color={user.isFollowing ? "#0A1D37" : "#FFFFFF"} />
+                  ) : (
+                    <Text style={[
+                      styles.followButtonText,
+                      user.isFollowing && styles.followingButtonText
+                    ]}>
+                      {user.isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  style={styles.unfollowButton}
+                  style={[styles.unfollowButton, isLoadingFollow && styles.followButtonDisabled]}
                   onPress={() => handleUnfollow(user.id)}
                   activeOpacity={0.7}
+                  disabled={isLoadingFollow}
                 >
-                  <Text style={styles.unfollowButtonText}>Unfollow</Text>
+                  {isLoadingFollow ? (
+                    <ActivityIndicator size="small" color="#E74C3C" />
+                  ) : (
+                    <Text style={styles.unfollowButtonText}>Unfollow</Text>
+                  )}
                 </TouchableOpacity>
               )}
             </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -263,9 +442,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
   },
-  avatarText: {
-    fontSize: 24,
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+  },
+  followButtonDisabled: {
+    opacity: 0.6,
   },
   userDetails: {
     flex: 1,

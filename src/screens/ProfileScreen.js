@@ -192,7 +192,7 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               if (onFollowersPress) onFollowersPress();
             }}
           >
-            <Text style={styles.followStatNumber}>{user?.followersCount || 0}</Text>
+            <Text style={styles.followStatNumber}>{user?.followers_count || user?.followersCount || 0}</Text>
             <Text style={styles.followStatLabel}>Followers</Text>
           </TouchableOpacity>
           <View style={styles.followStatDivider} />
@@ -204,7 +204,7 @@ export const ProfileScreen = ({ activeTab = 'profile', onTabChange, onSettingsPr
               if (onFollowingPress) onFollowingPress();
             }}
           >
-            <Text style={styles.followStatNumber}>{user?.followingCount || 0}</Text>
+            <Text style={styles.followStatNumber}>{user?.following_count || user?.followingCount || 0}</Text>
             <Text style={styles.followStatLabel}>Following</Text>
           </TouchableOpacity>
         </View>

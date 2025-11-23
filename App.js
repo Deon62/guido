@@ -85,6 +85,43 @@ function AppContent() {
   const [showFollowersFollowing, setShowFollowersFollowing] = useState(false);
   const [followersFollowingTab, setFollowersFollowingTab] = useState('followers');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Load user data on app start
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { getToken, getUser, normalizeUserData } = require('./src/utils/storage');
+      const token = getToken();
+      
+      if (token) {
+        try {
+          const { getCurrentUser } = require('./src/services/authService');
+          const user = await getCurrentUser(token);
+          const normalizedUser = normalizeUserData(user);
+          setUserData(normalizedUser);
+          console.log('User data loaded on app start:', normalizedUser);
+        } catch (error) {
+          console.error('Error loading user data on app start:', error);
+          // Fallback to stored user
+          const storedUser = getUser();
+          if (storedUser) {
+            const normalizedStoredUser = normalizeUserData(storedUser);
+            setUserData(normalizedStoredUser);
+            console.log('Using stored user data:', normalizedStoredUser);
+          }
+        }
+      } else {
+        // No token, try to load from storage
+        const storedUser = getUser();
+        if (storedUser) {
+          const normalizedStoredUser = normalizeUserData(storedUser);
+          setUserData(normalizedStoredUser);
+          console.log('Using stored user data (no token):', normalizedStoredUser);
+        }
+      }
+    };
+
+    loadUserData();
+  }, []);
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -515,11 +552,34 @@ function AppContent() {
 
   // Show followers/following screen
   if (showFollowersFollowing) {
+    // Get userId from userData or fallback to storage
+    let userId = userData?.id !== undefined ? userData.id : (userData?.user_id !== undefined ? userData.user_id : null);
+    
+    // If userData is not loaded yet, try to get from storage
+    if (!userId) {
+      try {
+        const { getUser, normalizeUserData } = require('./src/utils/storage');
+        const storedUser = getUser();
+        if (storedUser) {
+          const normalizedStoredUser = normalizeUserData(storedUser);
+          userId = normalizedStoredUser?.id !== undefined ? normalizedStoredUser.id : (normalizedStoredUser?.user_id !== undefined ? normalizedStoredUser.user_id : null);
+          // Also update userData if it was null
+          if (!userData && normalizedStoredUser) {
+            setUserData(normalizedStoredUser);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting user from storage:', error);
+      }
+    }
+    
+    console.log('Opening FollowersFollowingScreen with userId:', userId, 'userData:', userData);
     return (
       <PageTransition>
         <FollowersFollowingScreen
           initialTab={followersFollowingTab}
           onBack={handleBack}
+          userId={userId}
         />
       </PageTransition>
     );

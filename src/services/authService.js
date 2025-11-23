@@ -1917,3 +1917,256 @@ export const getCommunityPosts = async (token, communityId, skip = 0, limit = 20
     throw new Error('Network error. Please check your connection and try again.');
   }
 };
+
+// Follow/Unfollow APIs
+export const toggleFollowUser = async (token, userId) => {
+  const url = getApiUrl(`follow/user/${userId}`);
+
+  console.log('Toggle follow user request:', { url, userId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Toggle follow user response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Toggle follow user response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Toggle follow user response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to toggle follow (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Toggle follow user API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+export const getFollowers = async (token, userId) => {
+  const url = getApiUrl(`follow/user/${userId}/followers`);
+
+  console.log('Get followers request:', { url, userId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get followers response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get followers response data:', data);
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get followers response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get followers (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of followers (API might return array directly or wrapped in an object)
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.followers && Array.isArray(data.followers)) {
+      return data.followers;
+    } else if (data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+    return [];
+  } catch (error) {
+    console.error('Get followers API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+export const getFollowing = async (token, userId) => {
+  const url = getApiUrl(`follow/user/${userId}/following`);
+
+  console.log('Get following request:', { url, userId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get following response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get following response data:', data);
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get following response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get following (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of following (API might return array directly or wrapped in an object)
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.following && Array.isArray(data.following)) {
+      return data.following;
+    } else if (data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+    return [];
+  } catch (error) {
+    console.error('Get following API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+export const getFollowStatus = async (token, userId) => {
+  const url = getApiUrl(`follow/user/${userId}/status`);
+
+  console.log('Get follow status request:', { url, userId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get follow status response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get follow status response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Get follow status response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get follow status (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get follow status API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};

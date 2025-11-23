@@ -155,6 +155,8 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
         return {
           id: post.id.toString(),
           user: {
+            id: post.author?.id || post.author?.user_id,
+            user_id: post.author?.user_id || post.author?.id,
             name: post.author?.nickname || post.author?.username || 'Unknown',
             username: post.author?.username || '',
             avatar: authorAvatar,
@@ -517,16 +519,49 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     }
   };
 
-  const handleFollow = (userId) => {
+  const handleFollow = async (userId) => {
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to follow users.');
+      return;
+    }
+
+    const isCurrentlyFollowing = followedUsers.has(userId);
+    
+    // Optimistic update
     setFollowedUsers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(userId)) {
+      if (isCurrentlyFollowing) {
         newSet.delete(userId);
       } else {
         newSet.add(userId);
       }
       return newSet;
     });
+
+    triggerHaptic('light');
+
+    try {
+      const { toggleFollowUser } = require('../services/authService');
+      await toggleFollowUser(token, userId);
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      
+      // Revert optimistic update
+      setFollowedUsers(prev => {
+        const newSet = new Set(prev);
+        if (isCurrentlyFollowing) {
+          newSet.add(userId);
+        } else {
+          newSet.delete(userId);
+        }
+        return newSet;
+      });
+
+      triggerHaptic('error');
+      Alert.alert('Error', error.message || 'Failed to update follow status. Please try again.');
+    }
   };
 
   const handleCommentsPress = (post) => {
@@ -780,21 +815,23 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                   </View>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleFollow(post.user.name)}
-                style={[
-                  styles.followButton,
-                  followedUsers.has(post.user.name) && styles.followButtonFollowing
-                ]}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.followButtonText,
-                  followedUsers.has(post.user.name) && styles.followButtonTextFollowing
-                ]}>
-                  {followedUsers.has(post.user.name) ? 'Following' : 'Follow'}
-                </Text>
-              </TouchableOpacity>
+              {(post.user.id || post.user.user_id) ? (
+                <TouchableOpacity
+                  onPress={() => handleFollow(post.user.id || post.user.user_id)}
+                  style={[
+                    styles.followButton,
+                    followedUsers.has(post.user.id || post.user.user_id) && styles.followButtonFollowing
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.followButtonText,
+                    followedUsers.has(post.user.id || post.user.user_id) && styles.followButtonTextFollowing
+                  ]}>
+                    {followedUsers.has(post.user.id || post.user.user_id) ? 'Following' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
 
             {/* Post Media Carousel (Images or Videos) */}
