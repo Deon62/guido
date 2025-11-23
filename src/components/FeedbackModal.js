@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
+import { submitFeedback, submitFeatureRequest } from '../services/authService';
+import { getToken } from '../utils/storage';
 
 export const FeedbackModal = ({ visible, type, onClose, onSubmit }) => {
   const [feedback, setFeedback] = useState('');
@@ -20,12 +22,22 @@ export const FeedbackModal = ({ visible, type, onClose, onSubmit }) => {
       return;
     }
 
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to submit feedback.');
+      return;
+    }
+
     triggerHaptic('medium');
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the appropriate API based on type
+      if (type === 'feedback') {
+        await submitFeedback(token, feedback.trim());
+      } else {
+        await submitFeatureRequest(token, feedback.trim());
+      }
       
       if (onSubmit) {
         onSubmit({ type, feedback: feedback.trim() });
@@ -41,7 +53,10 @@ export const FeedbackModal = ({ visible, type, onClose, onSubmit }) => {
     } catch (error) {
       triggerHaptic('error');
       console.error('Error submitting feedback:', error);
-    } finally {
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to submit. Please try again later.'
+      );
       setIsSubmitting(false);
     }
   };

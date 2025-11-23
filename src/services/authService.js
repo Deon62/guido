@@ -2426,3 +2426,124 @@ export const getConversations = async (token) => {
     throw new Error('Network error. Please check your connection and try again.');
   }
 };
+
+// Feedback APIs
+export const submitFeedback = async (token, description) => {
+  const url = getApiUrl('feedback/submit');
+
+  console.log('Submit feedback request:', { url, description });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ description }),
+      },
+      15000
+    );
+
+    console.log('Submit feedback response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Submit feedback response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Submit feedback response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to submit feedback (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Submit feedback API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+export const submitFeatureRequest = async (token, description) => {
+  const url = getApiUrl('feedback/feature-request');
+
+  console.log('Submit feature request request:', { url, description });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ description }),
+      },
+      15000
+    );
+
+    console.log('Submit feature request response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Submit feature request response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Submit feature request response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to submit feature request (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Submit feature request API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
