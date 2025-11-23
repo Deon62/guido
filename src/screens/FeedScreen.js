@@ -11,7 +11,7 @@ import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
 import { usePagination } from '../utils/usePagination';
 import { getUser, getToken } from '../utils/storage';
-import { getFeedPosts, addToWishlist, getMyWishlist } from '../services/authService';
+import { getFeedPosts, addToWishlist, getMyWishlist, toggleLikePost, getPostLikesCount, getPostLikeStatus } from '../services/authService';
 import { API_BASE_URL } from '../config/api';
 import { triggerHaptic } from '../utils/haptics';
 
@@ -122,8 +122,8 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     try {
       const posts = await getFeedPosts(token, 0, 20);
       
-      // Transform API posts to match UI format
-      const transformedPosts = posts.map(post => {
+      // Transform API posts to match UI format and fetch like status
+      const transformedPosts = await Promise.all(posts.map(async (post) => {
         // Convert media_paths to images array with full URLs
         const images = (post.media_paths || []).map(mediaPath => {
           const fullUrl = mediaPath.startsWith('http') 
@@ -141,6 +141,17 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
           authorAvatar = { uri: photoUrl };
         }
 
+        // Fetch like status and count for this post
+        let isLiked = false;
+        let likesCount = post.likes_count || 0;
+        try {
+          isLiked = await getPostLikeStatus(token, post.id);
+          likesCount = await getPostLikesCount(token, post.id);
+        } catch (err) {
+          console.error(`Error fetching like status for post ${post.id}:`, err);
+          // Use default values if API fails
+        }
+
         return {
           id: post.id.toString(),
           user: {
@@ -153,16 +164,26 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
           place: {
             name: post.location || 'Unknown Location',
             location: post.location || '', // Add location for search filtering
-            category: post.category || 'General',
+            category: (post.category && typeof post.category === 'string') ? post.category : 'General',
           },
           caption: post.description || '',
           images: images,
           videos: post.post_type === 'video' ? images : [], // TODO: Handle videos properly
-          likes: post.likes_count || 0,
+          likes: likesCount,
           comments: post.comments_count || 0,
           timestamp: formatTimestamp(post.created_at),
+          isLiked: isLiked, // Store like status
         };
+      }));
+
+      // Set liked posts based on fetched status
+      const likedPostIds = new Set();
+      transformedPosts.forEach(post => {
+        if (post.isLiked) {
+          likedPostIds.add(post.id);
+        }
       });
+      setLikedPosts(likedPostIds);
 
       setAllFeedPosts(transformedPosts);
     } catch (err) {
@@ -354,16 +375,94 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
     }
   }, [fetchFeedPosts, reset]);
 
-  const handleLike = (postId) => {
+  const handleLike = async (postId) => {
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to like posts.');
+      return;
+    }
+
+    // Optimistic update
+    const wasLiked = likedPosts.has(postId);
     setLikedPosts(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(postId)) {
+      if (wasLiked) {
         newSet.delete(postId);
       } else {
         newSet.add(postId);
       }
       return newSet;
     });
+
+    // Update likes count optimistically
+    setAllFeedPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          likes: wasLiked ? Math.max(0, post.likes - 1) : post.likes + 1,
+          isLiked: !wasLiked,
+        };
+      }
+      return post;
+    }));
+
+    try {
+      // Call API to toggle like
+      await toggleLikePost(token, postId);
+      
+      // Fetch updated likes count
+      const newLikesCount = await getPostLikesCount(token, postId);
+      const newLikeStatus = await getPostLikeStatus(token, postId);
+
+      // Update with actual values from API
+      setAllFeedPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likes: newLikesCount,
+            isLiked: newLikeStatus,
+          };
+        }
+        return post;
+      }));
+
+      // Update liked posts set
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (newLikeStatus) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
+        }
+        return newSet;
+      });
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      
+      // Revert optimistic update on error
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (wasLiked) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
+        }
+        return newSet;
+      });
+
+      setAllFeedPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likes: wasLiked ? post.likes + 1 : Math.max(0, post.likes - 1),
+            isLiked: wasLiked,
+          };
+        }
+        return post;
+      }));
+
+      Alert.alert('Error', 'Failed to update like. Please try again.');
+    }
   };
 
   const handleSave = async (postId) => {
@@ -466,6 +565,11 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
   };
 
   const getCategoryColor = (category) => {
+    // Handle null, undefined, or non-string values
+    if (!category || typeof category !== 'string') {
+      return '#6D6D6D';
+    }
+    
     switch (category.toLowerCase()) {
       case 'landmark':
       case 'landmarks':
@@ -670,7 +774,7 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                     <Text style={styles.placeName}>{post.place.name}</Text>
                     <View style={[styles.categoryTag, { backgroundColor: `${getCategoryColor(post.place.category)}20` }]}>
                       <Text style={[styles.categoryText, { color: getCategoryColor(post.place.category) }]}>
-                        {post.place.category}
+                        {post.place.category || 'General'}
                       </Text>
                     </View>
                   </View>
@@ -762,9 +866,9 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
                   activeOpacity={0.7}
                 >
                   <Ionicons
-                    name={likedPosts.has(post.id) ? 'heart' : 'heart-outline'}
+                    name={(post.isLiked || likedPosts.has(post.id)) ? 'heart' : 'heart-outline'}
                     size={28}
-                    color={likedPosts.has(post.id) ? '#E74C3C' : '#1A1A1A'}
+                    color={(post.isLiked || likedPosts.has(post.id)) ? '#E74C3C' : '#1A1A1A'}
                   />
                 </TouchableOpacity>
                 <TouchableOpacity

@@ -8,7 +8,7 @@ import { TabSelector } from '../components/TabSelector';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
-import { getMyWishlist } from '../services/authService';
+import { getMyWishlist, getMyPastTrips } from '../services/authService';
 import { getToken } from '../utils/storage';
 import { API_BASE_URL } from '../config/api';
 
@@ -18,6 +18,8 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
   const [hasUnreadNotifications] = useState(true); // TODO: Replace with actual notification state
   const [wishlistItems, setWishlistItems] = useState([]);
   const [wishlistError, setWishlistError] = useState(null);
+  const [pastTrips, setPastTrips] = useState([]);
+  const [pastTripsError, setPastTripsError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   
   // Get safe area insets
@@ -109,6 +111,69 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
     }
   };
 
+  // Fetch past trips
+  const fetchPastTrips = async () => {
+    const token = getToken();
+    if (!token) {
+      setPastTripsError('Please log in to view your past trips.');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setPastTripsError(null);
+
+    try {
+      const tripsData = await getMyPastTrips(token);
+      console.log('Past trips data received:', tripsData);
+
+      // Transform trips to display format
+      const transformedTrips = tripsData.map(trip => {
+        // Convert image_path to full URL if present (backend returns image_path, not image)
+        let imageUrl = null;
+        const imagePath = trip.image_path || trip.image;
+        
+        if (imagePath) {
+          if (typeof imagePath === 'string') {
+            if (imagePath.startsWith('http')) {
+              imageUrl = imagePath;
+            } else {
+              // Remove leading slash if present
+              let cleanPath = imagePath.startsWith('/') 
+                ? imagePath.slice(1) 
+                : imagePath;
+              
+              // Path already includes 'uploads/' prefix from backend, so use as-is
+              imageUrl = `${API_BASE_URL}/${cleanPath}`;
+            }
+          } else if (imagePath.uri) {
+            imageUrl = imagePath.uri;
+          }
+        }
+
+        return {
+          id: trip.id,
+          placeName: trip.place_name || 'Unknown Place',
+          location: trip.location || 'Unknown Location',
+          category: trip.category || 'General',
+          date: trip.date || '',
+          description: trip.description || '',
+          image: imageUrl ? { uri: imageUrl } : null,
+          createdAt: trip.created_at || trip.date,
+        };
+      });
+
+      console.log('Transformed past trips:', transformedTrips);
+      setPastTrips(transformedTrips);
+    } catch (err) {
+      console.error('Error fetching past trips:', err);
+      setPastTripsError(err.message || 'Failed to load past trips. Please try again.');
+      setPastTrips([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Load trips data from API
   useEffect(() => {
     const loadTrips = async () => {
@@ -120,20 +185,24 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
     loadTrips();
   }, []);
 
-  // Load wishlist when wishlist tab is selected
+  // Load data when tab is selected
   useEffect(() => {
     if (selectedTab === 'wishlist') {
       fetchWishlist();
+    } else if (selectedTab === 'past') {
+      fetchPastTrips();
     }
   }, [selectedTab]);
 
   // Refresh handler
   const onRefresh = async () => {
+    setRefreshing(true);
     if (selectedTab === 'wishlist') {
-      setRefreshing(true);
       await fetchWishlist();
-      setRefreshing(false);
+    } else if (selectedTab === 'past') {
+      await fetchPastTrips();
     }
+    setRefreshing(false);
   };
 
   // TODO: Replace with API data
@@ -228,7 +297,7 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          selectedTab === 'wishlist' ? (
+          (selectedTab === 'wishlist' || selectedTab === 'past') ? (
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
@@ -343,6 +412,101 @@ export const TripsScreen = ({ activeTab = 'trips', onTabChange, onNotificationsP
               </TouchableOpacity>
             </View>
           </View>
+        ) : selectedTab === 'past' ? (
+          // Past Trips Tab Content
+          isLoading ? (
+            <View style={styles.emptyContainer}>
+              <ActivityIndicator size="large" color="#0A1D37" />
+              <Text style={styles.loadingText}>Loading past trips...</Text>
+            </View>
+          ) : pastTripsError ? (
+            <View style={styles.emptyContainer}>
+              <ErrorCard
+                message={pastTripsError}
+                onRetry={fetchPastTrips}
+              />
+            </View>
+          ) : pastTrips.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="time-outline" size={64} color="#C0C0C0" />
+              <Text style={styles.emptyText}>No past trips yet</Text>
+              <Text style={styles.emptySubtext}>
+                You haven't added any past trips yet. Share your travel memories!
+              </Text>
+              {selectedTab === 'past' && (
+                <TouchableOpacity
+                  style={styles.emptyStateButton}
+                  onPress={() => {
+                    if (onAddTripPress) {
+                      onAddTripPress();
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" style={styles.emptyStateButtonIcon} />
+                  <Text style={styles.emptyStateButtonText}>Add Past Trip</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View style={styles.wishlistContainer}>
+              {pastTrips.map((trip) => (
+                <TouchableOpacity
+                  key={trip.id}
+                  style={styles.wishlistItem}
+                  activeOpacity={0.8}
+                  onPress={() => handleTripPress(trip)}
+                >
+                  {/* Image */}
+                  {trip.image ? (
+                    <Image source={trip.image} style={styles.itemImage} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.itemImagePlaceholder}>
+                      <Ionicons name="image-outline" size={32} color="#C0C0C0" />
+                    </View>
+                  )}
+
+                  {/* Content */}
+                  <View style={styles.itemContent}>
+                    {/* Place Name and Category */}
+                    <View style={styles.itemHeader}>
+                      <Text style={styles.placeNameText} numberOfLines={1}>
+                        {trip.placeName}
+                      </Text>
+                      {trip.category && (
+                        <View style={[styles.categoryTag, { backgroundColor: '#F0F0F0' }]}>
+                          <Text style={styles.categoryText}>{trip.category}</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Location */}
+                    <View style={styles.locationContainer}>
+                      <Ionicons name="location" size={14} color="#6D6D6D" />
+                      <Text style={styles.locationText} numberOfLines={1}>
+                        {trip.location}
+                      </Text>
+                    </View>
+
+                    {/* Date */}
+                    {trip.date && (
+                      <View style={styles.dateContainer}>
+                        <Ionicons name="calendar-outline" size={14} color="#6D6D6D" />
+                        <Text style={styles.dateText}>{trip.date}</Text>
+                      </View>
+                    )}
+
+                    {/* Description */}
+                    {trip.description && (
+                      <Text style={styles.descriptionText} numberOfLines={2}>
+                        {trip.description}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )
         ) : isLoading ? (
           // Show skeleton loaders
           Array.from({ length: 4 }).map((_, index) => (
@@ -710,6 +874,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  placeNameText: {
+    fontSize: 16,
+    fontFamily: FONTS.bold,
+    color: '#0A1D37',
+    flex: 1,
+    marginRight: 8,
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  dateText: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginLeft: 4,
+  },
+  descriptionText: {
+    fontSize: 13,
+    fontFamily: FONTS.regular,
+    color: '#3A3A3A',
+    lineHeight: 18,
+    marginTop: 8,
   },
 });
 

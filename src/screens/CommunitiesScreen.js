@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, Image, Platform, StatusBar as RNStatusBar, TextInput, KeyboardAvoidingView, Animated, Dimensions, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -9,19 +9,26 @@ import { PaginationIndicator } from '../components/PaginationIndicator';
 import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
 import { usePagination } from '../utils/usePagination';
-import { getUser } from '../utils/storage';
+import { getUser, getToken } from '../utils/storage';
+import { getCommunities, toggleJoinCommunity, createCommunityPost, getCommunityPosts as fetchCommunityPosts } from '../services/authService';
+import { API_BASE_URL } from '../config/api';
 
 export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress, onCreateCommunityPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
   
   const [selectedCommunity, setSelectedCommunity] = useState(null);
-  const [joinedCommunities, setJoinedCommunities] = useState(new Set(['hotels', 'museums']));
   const [newPostText, setNewPostText] = useState('');
   const [showSearchBar, setShowSearchBar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [allCommunities, setAllCommunities] = useState([]);
+  const [isLoadingCommunities, setIsLoadingCommunities] = useState(false);
+  const [imageErrors, setImageErrors] = useState(new Set());
+  const [communityPosts, setCommunityPosts] = useState([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
   const searchBarWidth = useRef(new Animated.Value(0)).current;
   const searchBarOpacity = useRef(new Animated.Value(0)).current;
   const [showNewPostInput, setShowNewPostInput] = useState(false);
@@ -74,9 +81,6 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     debouncedSetSearch(searchQuery);
   }, [searchQuery, debouncedSetSearch]);
 
-  // TODO: Replace with API data
-  const allCommunities = useMemo(() => [], []);
-
   // Load user data for profile picture
   useEffect(() => {
     const loadUserData = () => {
@@ -86,13 +90,78 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     loadUserData();
   }, []);
 
-  // TODO: Replace with API data
-  const getCommunityPosts = (communityId) => {
-    // TODO: Fetch posts from API
-    // const token = getToken();
-    // const posts = await fetchCommunityPosts(token, communityId);
-    return [];
-  };
+  // Fetch communities from API
+  const fetchCommunities = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setError('Please log in to view communities');
+      return;
+    }
+
+    setIsLoadingCommunities(true);
+    setError(null);
+    try {
+      const communities = await getCommunities(token, 0, 50);
+      setAllCommunities(communities);
+    } catch (err) {
+      console.error('Error fetching communities:', err);
+      setError(err.message || 'Failed to load communities. Please try again.');
+    } finally {
+      setIsLoadingCommunities(false);
+    }
+  }, []);
+
+  // Fetch communities on mount
+  useEffect(() => {
+    fetchCommunities();
+  }, [fetchCommunities]);
+
+  // Fetch community posts from API
+  const fetchCommunityPostsData = useCallback(async (communityId) => {
+    const token = getToken();
+    if (!token) {
+      return [];
+    }
+
+    setIsLoadingPosts(true);
+    try {
+      const posts = await fetchCommunityPosts(token, communityId, 0, 20);
+      // Transform posts to match UI format
+      const transformedPosts = posts.map(post => {
+        // Build full URL for profile picture
+        let avatarUri = null;
+        if (post.author_profile_picture) {
+          const profilePath = post.author_profile_picture.startsWith('uploads/') 
+            ? post.author_profile_picture 
+            : `uploads/${post.author_profile_picture}`;
+          avatarUri = { uri: `${API_BASE_URL}/${profilePath}` };
+        }
+        
+        return {
+          id: post.id,
+          user: {
+            name: post.author_name || 'Unknown',
+            username: post.author_username || '',
+            avatar: avatarUri,
+          },
+          title: post.title || '',
+          content: post.message || post.content || post.description || '',
+          timestamp: post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Just now',
+          upvotes: post.upvotes || post.likes_count || 0,
+          comments: post.comments_count || 0,
+          isUpvoted: post.is_upvoted || false,
+        };
+      });
+      setCommunityPosts(transformedPosts);
+      return transformedPosts;
+    } catch (err) {
+      console.error('Error fetching community posts:', err);
+      setCommunityPosts([]);
+      return [];
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  }, []);
 
   // TODO: Replace with API data
   const getPostComments = (postId) => {
@@ -102,16 +171,50 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     return [];
   };
 
-  const handleJoinCommunity = (communityId) => {
-    setJoinedCommunities(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(communityId)) {
-        newSet.delete(communityId);
-      } else {
-        newSet.add(communityId);
-      }
-      return newSet;
-    });
+  const handleJoinCommunity = async (communityId) => {
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to join communities.');
+      return;
+    }
+
+    try {
+      // Optimistic update
+      setAllCommunities(prev => prev.map(community => {
+        if (community.id === communityId) {
+          const newIsMember = !community.is_member;
+          return {
+            ...community,
+            is_member: newIsMember,
+            members_count: newIsMember ? community.members_count + 1 : Math.max(0, community.members_count - 1),
+            members: newIsMember ? community.members + 1 : Math.max(0, community.members - 1),
+          };
+        }
+        return community;
+      }));
+
+      // Call API
+      await toggleJoinCommunity(token, communityId);
+      
+      // Refresh communities to get updated data
+      await fetchCommunities();
+    } catch (err) {
+      console.error('Error toggling join community:', err);
+      Alert.alert('Error', err.message || 'Failed to update membership. Please try again.');
+      
+      // Revert optimistic update
+      setAllCommunities(prev => prev.map(community => {
+        if (community.id === communityId) {
+          return {
+            ...community,
+            is_member: !community.is_member,
+            members_count: community.is_member ? community.members_count + 1 : Math.max(0, community.members_count - 1),
+            members: community.is_member ? community.members + 1 : Math.max(0, community.members - 1),
+          };
+        }
+        return community;
+      }));
+    }
   };
 
   const handlePostPress = (post) => {
@@ -142,12 +245,40 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     console.log('Upvote post:', postId);
   };
 
-  const handlePostSubmit = () => {
-    if (newPostText.trim()) {
-      // In a real app, this would submit the post
-      console.log('New post:', newPostText);
+  const handlePostSubmit = async () => {
+    if (!newPostText.trim() || isSubmittingPost) {
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to post in communities.');
+      return;
+    }
+
+    if (!selectedCommunity) {
+      return;
+    }
+
+    setIsSubmittingPost(true);
+    try {
+      await createCommunityPost(token, selectedCommunity, {
+        message: newPostText.trim(),
+      });
+      
+      // Clear input and hide it
       setNewPostText('');
       setShowNewPostInput(false);
+      
+      // Refresh posts
+      await fetchCommunityPostsData(selectedCommunity);
+      
+      Alert.alert('Success', 'Post created successfully!');
+    } catch (err) {
+      console.error('Error creating community post:', err);
+      Alert.alert('Error', err.message || 'Failed to create post. Please try again.');
+    } finally {
+      setIsSubmittingPost(false);
     }
   };
 
@@ -186,11 +317,40 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     reset();
   }, [filteredCommunities.length, reset]);
 
+  // Fetch posts when a community is selected
+  useEffect(() => {
+    if (selectedCommunity) {
+      fetchCommunityPostsData(selectedCommunity);
+    } else {
+      setCommunityPosts([]);
+    }
+  }, [selectedCommunity, fetchCommunityPostsData]);
+
+  // Refresh handler - must be defined before early return
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      if (selectedCommunity) {
+        // Refresh posts if viewing a community
+        await fetchCommunityPostsData(selectedCommunity);
+      } else {
+        // Refresh communities list
+        await fetchCommunities();
+      }
+    } catch (err) {
+      setError('Failed to refresh. Please try again.');
+      console.error('Error refreshing:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // If a community is selected, show its posts
   if (selectedCommunity) {
     const community = allCommunities.find(c => c.id === selectedCommunity);
-    const posts = getCommunityPosts(selectedCommunity);
-    const isJoined = joinedCommunities.has(selectedCommunity);
+    const posts = communityPosts;
+    const isJoined = community?.is_member || false;
 
     return (
       <View style={styles.container}>
@@ -206,8 +366,8 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
             <Ionicons name="arrow-back" size={24} color="#0A1D37" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>{community.name}</Text>
-            <Text style={styles.headerSubtitle}>{formatNumber(community.members)} members</Text>
+            <Text style={styles.headerTitle}>{community?.name || 'Community'}</Text>
+            <Text style={styles.headerSubtitle}>{formatNumber(community?.members_count || community?.members || 0)} members</Text>
           </View>
           <TouchableOpacity
             style={[styles.joinButton, isJoined && styles.joinButtonJoined]}
@@ -268,14 +428,18 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.submitButton, newPostText.trim() === '' && styles.submitButtonDisabled]}
+                    style={[styles.submitButton, (newPostText.trim() === '' || isSubmittingPost) && styles.submitButtonDisabled]}
                     onPress={handlePostSubmit}
                     activeOpacity={0.7}
-                    disabled={newPostText.trim() === ''}
+                    disabled={newPostText.trim() === '' || isSubmittingPost}
                   >
-                    <Text style={[styles.submitButtonText, newPostText.trim() === '' && styles.submitButtonTextDisabled]}>
-                      Post
-                    </Text>
+                    {isSubmittingPost ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={[styles.submitButtonText, (newPostText.trim() === '' || isSubmittingPost) && styles.submitButtonTextDisabled]}>
+                        Post
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -295,27 +459,45 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
 
             {/* Posts List */}
             <View style={styles.postsList}>
-              {posts.map((post) => (
-                <TouchableOpacity
-                  key={post.id}
-                  style={styles.postCard}
-                  onPress={() => handlePostPress(post)}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.postHeader}>
-                    <View style={styles.postUserInfo}>
-                      <View style={styles.postAvatar}>
-                        <Text style={styles.postAvatarText}>{post.user.avatar}</Text>
-                      </View>
-                      <View>
-                        <Text style={styles.postUserName}>{post.user.name}</Text>
-                        <Text style={styles.postTimestamp}>{post.timestamp}</Text>
+              {isLoadingPosts ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#0A1D37" />
+                  <Text style={styles.loadingText}>Loading posts...</Text>
+                </View>
+              ) : posts.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="chatbubble-outline" size={64} color="#C0C0C0" />
+                  <Text style={styles.emptyText}>No posts yet</Text>
+                  <Text style={styles.emptySubtext}>
+                    Be the first to start a discussion in this community!
+                  </Text>
+                </View>
+              ) : (
+                posts.map((post) => (
+                  <TouchableOpacity
+                    key={post.id}
+                    style={styles.postCard}
+                    onPress={() => handlePostPress(post)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.postHeader}>
+                      <View style={styles.postUserInfo}>
+                        {post.user.avatar ? (
+                          <Image source={post.user.avatar} style={styles.postAvatarImage} />
+                        ) : (
+                          <View style={styles.postAvatar}>
+                            <Ionicons name="person" size={16} color="#C0C0C0" />
+                          </View>
+                        )}
+                        <View>
+                          <Text style={styles.postUserName}>{post.user.name}</Text>
+                          <Text style={styles.postTimestamp}>{post.timestamp}</Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
 
-                  <Text style={styles.postTitle}>{post.title}</Text>
-                  <Text style={styles.postContent}>{post.content}</Text>
+                    {post.title ? <Text style={styles.postTitle}>{post.title}</Text> : null}
+                    <Text style={styles.postContent}>{post.content}</Text>
 
                   <View style={styles.postActions}>
                     <TouchableOpacity
@@ -357,7 +539,8 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
                     </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
-              ))}
+                ))
+              )}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -366,25 +549,6 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
       </View>
     );
   }
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    setError(null);
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      // Simulate random error (10% chance for demo)
-      if (Math.random() < 0.1) {
-        throw new Error('Failed to load communities');
-      }
-      // In a real app, you would fetch new communities/posts here
-    } catch (err) {
-      setError('Failed to refresh. Please try again.');
-      console.error('Error refreshing communities:', err);
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   // Show communities list
   return (
@@ -507,6 +671,11 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
             onRetry={onRefresh}
           />
         </View>
+      ) : isLoadingCommunities ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0A1D37" />
+          <Text style={styles.loadingText}>Loading communities...</Text>
+        </View>
       ) : paginatedCommunities.length === 0 ? (
         <View style={styles.emptyContainer}>
           {debouncedSearchQuery.trim() ? (
@@ -530,7 +699,9 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
           data={paginatedCommunities}
           keyExtractor={(item) => item.id}
           renderItem={({ item: community }) => {
-            const isJoined = joinedCommunities.has(community.id);
+            const isJoined = community.is_member || false;
+            const hasImageError = imageErrors.has(community.id);
+            
             return (
               <TouchableOpacity
                 style={styles.communityCard}
@@ -539,19 +710,53 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
               >
                 <View style={styles.communityCardHeader}>
                   <View style={styles.communityIconContainer}>
-                    <Ionicons name={community.icon} size={24} color="#0A1D37" />
+                    {community.profile_picture && !hasImageError ? (
+                      <Image
+                        source={{ uri: community.profile_picture }}
+                        style={styles.communityProfilePicture}
+                        resizeMode="cover"
+                        onError={(error) => {
+                          console.error('Error loading community profile picture:', {
+                            communityId: community.id,
+                            uri: community.profile_picture,
+                            error: error.nativeEvent?.error || error
+                          });
+                          setImageErrors(prev => new Set([...prev, community.id]));
+                        }}
+                        onLoad={() => {
+                          console.log('Community profile picture loaded successfully:', {
+                            communityId: community.id,
+                            uri: community.profile_picture
+                          });
+                        }}
+                      />
+                    ) : (
+                      <Ionicons name={community.icon || 'people'} size={24} color="#0A1D37" />
+                    )}
                   </View>
                   <View style={styles.communityInfo}>
-                    <Text style={styles.communityName}>{community.name}</Text>
+                    <View style={styles.communityNameRow}>
+                      <Text style={styles.communityName}>{community.name}</Text>
+                      {community.is_admin_created && (
+                        <Ionicons name="checkmark-circle" size={18} color="#0A1D37" style={styles.adminCheckmark} />
+                      )}
+                    </View>
                     <Text style={styles.communityStats}>
-                      {formatNumber(community.members)} members • {formatNumber(community.posts)} posts
+                      {formatNumber(community.members_count || community.members || 0)} members • {formatNumber(community.posts_count || community.posts || 0)} posts
                     </Text>
                   </View>
-                  {isJoined && (
-                    <View style={styles.joinedBadge}>
-                      <Text style={styles.joinedBadgeText}>Joined</Text>
-                    </View>
-                  )}
+                  <TouchableOpacity
+                    style={[styles.communityJoinButton, isJoined && styles.communityJoinButtonJoined]}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleJoinCommunity(community.id);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.communityJoinButtonText, isJoined && styles.communityJoinButtonTextJoined]}>
+                      {isJoined ? 'Joined' : 'Join'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.communityDescriptionContainer}>
                   <Text style={styles.communityCardDescription} numberOfLines={2}>
@@ -817,6 +1022,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+    position: 'relative',
   },
   communityIconContainer: {
     width: 40,
@@ -826,15 +1032,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+  },
+  communityProfilePicture: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   communityInfo: {
     flex: 1,
+  },
+  communityNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
   },
   communityName: {
     fontSize: 16,
     fontFamily: FONTS.bold,
     color: '#0A1D37',
-    marginBottom: 2,
+  },
+  adminCheckmark: {
+    marginLeft: 6,
   },
   communityStats: {
     fontSize: 12,
@@ -861,6 +1080,28 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#3A3A3A',
     lineHeight: 18,
+  },
+  communityJoinButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#0A1D37',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  communityJoinButtonJoined: {
+    backgroundColor: '#E8E8E8',
+  },
+  communityJoinButtonText: {
+    fontSize: 13,
+    fontFamily: FONTS.semiBold,
+    color: '#FFFFFF',
+  },
+  communityJoinButtonTextJoined: {
+    color: '#6D6D6D',
   },
   communityDetailInfo: {
     alignItems: 'center',
@@ -968,6 +1209,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
+  postAvatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
   postAvatarText: {
     fontSize: 16,
   },
@@ -1043,6 +1290,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 120,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
   },
   endIndicator: {
     paddingVertical: 20,

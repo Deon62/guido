@@ -1139,3 +1139,781 @@ export const getMyWishlist = async (token) => {
     throw new Error('Network error. Please check your connection and try again.');
   }
 };
+
+/**
+ * Get communities list
+ * @param {string} token - Access token
+ * @param {number} skip - Number of items to skip (default: 0)
+ * @param {number} limit - Number of items to return (default: 50)
+ * @returns {Promise<Array>} Array of communities
+ */
+export const getCommunities = async (token, skip = 0, limit = 50) => {
+  const url = getApiUrl(`communities?skip=${skip}&limit=${limit}`);
+
+  console.log('Get communities request:', { url, skip, limit });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get communities response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get communities response data:', data);
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get communities response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get communities (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Transform API response to match UI format
+    if (Array.isArray(data)) {
+      return data.map(community => {
+        // Convert profile_picture to full URL
+        let profilePictureUrl = null;
+        if (community.profile_picture) {
+          if (community.profile_picture.startsWith('http')) {
+            profilePictureUrl = community.profile_picture;
+          } else {
+            // Remove leading slash if present to avoid double slashes
+            let cleanPath = community.profile_picture.startsWith('/') 
+              ? community.profile_picture.slice(1) 
+              : community.profile_picture;
+            
+            // Add 'uploads/' prefix if not already present (backend serves from uploads directory)
+            if (!cleanPath.startsWith('uploads/')) {
+              cleanPath = `uploads/${cleanPath}`;
+            }
+            
+            profilePictureUrl = `${API_BASE_URL}/${cleanPath}`;
+          }
+          console.log('Community profile picture URL:', {
+            original: community.profile_picture,
+            fullUrl: profilePictureUrl
+          });
+        }
+        
+        return {
+          id: community.id,
+          name: community.name,
+          description: community.description || '',
+          profile_picture: profilePictureUrl,
+          created_by: community.created_by,
+          is_admin_created: community.is_admin_created || false,
+          created_at: community.created_at,
+          updated_at: community.updated_at,
+          creator_name: community.creator_name,
+          creator_username: community.creator_username,
+          members_count: community.members_count || 0,
+          posts_count: community.posts_count || 0,
+          is_member: community.is_member || false,
+          // UI fields
+          icon: 'people',
+          members: community.members_count || 0,
+          posts: community.posts_count || 0,
+        };
+      });
+    }
+    return [];
+  } catch (error) {
+    console.error('Get communities API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Toggle like on a post
+ * @param {string} token - Access token
+ * @param {string|number} postId - Post ID
+ * @returns {Promise<Object>} Response data
+ */
+export const toggleLikePost = async (token, postId) => {
+  const url = getApiUrl(`likes/post/${postId}`);
+
+  console.log('Toggle like post request:', { url, postId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Toggle like post response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Toggle like post response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Toggle like post response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to toggle like (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Toggle like post API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get post likes count
+ * @param {string} token - Access token
+ * @param {string|number} postId - Post ID
+ * @returns {Promise<number>} Likes count
+ */
+export const getPostLikesCount = async (token, postId) => {
+  const url = getApiUrl(`likes/post/${postId}/count`);
+
+  console.log('Get post likes count request:', { url, postId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get post likes count response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get post likes count response data:', data);
+    } else {
+      const text = await response.text();
+      data = { count: 0 };
+      console.log('Get post likes count response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get likes count (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Handle different response formats
+    if (typeof data === 'number') {
+      return data;
+    } else if (data.count !== undefined) {
+      return data.count;
+    } else if (data.likes_count !== undefined) {
+      return data.likes_count;
+    }
+    return 0;
+  } catch (error) {
+    console.error('Get post likes count API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get like status for a post
+ * @param {string} token - Access token
+ * @param {string|number} postId - Post ID
+ * @returns {Promise<boolean>} True if liked, false otherwise
+ */
+export const getPostLikeStatus = async (token, postId) => {
+  const url = getApiUrl(`likes/post/${postId}/status`);
+
+  console.log('Get post like status request:', { url, postId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get post like status response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get post like status response data:', data);
+    } else {
+      const text = await response.text();
+      data = { liked: false };
+      console.log('Get post like status response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get like status (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Handle different response formats
+    if (typeof data === 'boolean') {
+      return data;
+    } else if (data.liked !== undefined) {
+      return data.liked;
+    } else if (data.is_liked !== undefined) {
+      return data.is_liked;
+    }
+    return false;
+  } catch (error) {
+    console.error('Get post like status API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Create a past trip
+ * @param {string} token - Access token
+ * @param {Object} tripData - Trip data
+ * @param {string} tripData.place_name - Place name (required)
+ * @param {string} tripData.location - Location (required)
+ * @param {string} tripData.category - Category (required)
+ * @param {string} tripData.date - Date (required)
+ * @param {string} tripData.description - Optional description
+ * @param {File|Object} tripData.image - Optional image file
+ * @returns {Promise<Object>} Created trip data
+ */
+export const createPastTrip = async (token, tripData) => {
+  const url = getApiUrl('trips/');
+
+  console.log('Create past trip request:', { url, tripData: { ...tripData, image: tripData.image ? 'present' : 'none' } });
+
+  try {
+    // If image is provided, use multipart/form-data, otherwise use JSON
+    if (tripData.image) {
+      const formData = new FormData();
+
+      // Add text fields
+      formData.append('place_name', tripData.place_name);
+      formData.append('location', tripData.location);
+      formData.append('category', tripData.category);
+      formData.append('date', tripData.date);
+      if (tripData.description) {
+        formData.append('description', tripData.description);
+      }
+
+      // Handle image file
+      if (typeof window !== 'undefined' && tripData.image.uri) {
+        // For web, convert URI to Blob/File
+        try {
+          let blob;
+          const imageUri = tripData.image.uri;
+          
+          if (imageUri.startsWith('data:')) {
+            const response = await fetch(imageUri);
+            blob = await response.blob();
+          } else if (imageUri.startsWith('blob:') || imageUri.startsWith('file://') || imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+            const response = await fetch(imageUri);
+            blob = await response.blob();
+          } else {
+            const response = await fetch(imageUri);
+            blob = await response.blob();
+          }
+          
+          const fileName = tripData.image.name || `trip_${Date.now()}.jpg`;
+          const fileType = tripData.image.type || 'image/jpeg';
+          const file = new File([blob], fileName, { type: fileType });
+          formData.append('image', file, fileName);
+        } catch (error) {
+          console.error('Error converting image to blob:', error);
+          throw new Error('Failed to prepare image for upload. Please try again.');
+        }
+      } else {
+        // For React Native
+        formData.append('image', {
+          uri: tripData.image.uri,
+          type: tripData.image.type || 'image/jpeg',
+          name: tripData.image.name || `trip_${Date.now()}.jpg`,
+        });
+      }
+
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            // Don't set Content-Type - browser will set it with boundary
+          },
+          body: formData,
+        },
+        30000 // 30 second timeout for file uploads
+      );
+
+      console.log('Create past trip response status:', response.status);
+
+      const contentType = response.headers.get('content-type');
+      let data;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('Create past trip response data:', data);
+      } else {
+        const text = await response.text();
+        data = {};
+        console.log('Create past trip response text:', text);
+      }
+
+      if (!response.ok) {
+        const errorMessage = data.message || data.error || data.detail || `Failed to create trip (${response.status})`;
+        const apiError = new Error(errorMessage);
+        apiError.status = response.status;
+        throw apiError;
+      }
+
+      return data;
+    } else {
+      // No image, use JSON
+      const requestBody = {
+        place_name: tripData.place_name,
+        location: tripData.location,
+        category: tripData.category,
+        date: tripData.date,
+      };
+
+      if (tripData.description) {
+        requestBody.description = tripData.description;
+      }
+
+      const response = await fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        },
+        15000
+      );
+
+      console.log('Create past trip response status:', response.status);
+
+      const contentType = response.headers.get('content-type');
+      let data;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('Create past trip response data:', data);
+      } else {
+        const text = await response.text();
+        data = {};
+        console.log('Create past trip response text:', text);
+      }
+
+      if (!response.ok) {
+        const errorMessage = data.message || data.error || data.detail || `Failed to create trip (${response.status})`;
+        const apiError = new Error(errorMessage);
+        apiError.status = response.status;
+        throw apiError;
+      }
+
+      return data;
+    }
+  } catch (error) {
+    console.error('Create past trip API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get my past trips
+ * @param {string} token - Access token
+ * @returns {Promise<Array>} Array of past trips
+ */
+export const getMyPastTrips = async (token) => {
+  const url = getApiUrl('trips/my');
+
+  console.log('Get my past trips request:', { url });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get my past trips response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get my past trips response data:', data);
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get my past trips response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get past trips (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of trips (API might return array directly or wrapped in an object)
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.trips && Array.isArray(data.trips)) {
+      return data.trips;
+    } else if (data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+    return [];
+  } catch (error) {
+    console.error('Get my past trips API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Toggle join/leave a community
+ * @param {string} token - Access token
+ * @param {string|number} communityId - Community ID
+ * @returns {Promise<Object>} Response data
+ */
+export const toggleJoinCommunity = async (token, communityId) => {
+  const url = getApiUrl(`communities/${communityId}/join`);
+
+  console.log('Toggle join community request:', { url, communityId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Toggle join community response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Toggle join community response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Toggle join community response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to toggle join (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Toggle join community API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Create a community post
+ * @param {string} token - Access token
+ * @param {string|number} communityId - Community ID
+ * @param {Object} postData - Post data
+ * @param {string} postData.content - Post content (required)
+ * @returns {Promise<Object>} Created post data
+ */
+export const createCommunityPost = async (token, communityId, postData) => {
+  const url = getApiUrl(`communities/${communityId}/posts`);
+
+  const requestBody = {
+    message: postData.message || postData.content,
+  };
+
+  console.log('Create community post request:', { url, communityId, body: requestBody });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+      15000
+    );
+
+    console.log('Create community post response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Create community post response data:', data);
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Create community post response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to create post (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Create community post API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get community posts
+ * @param {string} token - Access token
+ * @param {string|number} communityId - Community ID
+ * @param {number} skip - Number of items to skip (default: 0)
+ * @param {number} limit - Number of items to return (default: 20)
+ * @returns {Promise<Array>} Array of community posts
+ */
+export const getCommunityPosts = async (token, communityId, skip = 0, limit = 20) => {
+  const url = getApiUrl(`communities/${communityId}/posts?skip=${skip}&limit=${limit}`);
+
+  console.log('Get community posts request:', { url, communityId, skip, limit });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get community posts response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get community posts response data:', data);
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get community posts response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get community posts (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of posts (API might return array directly or wrapped in an object)
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.posts && Array.isArray(data.posts)) {
+      return data.posts;
+    } else if (data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+    return [];
+  } catch (error) {
+    console.error('Get community posts API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};

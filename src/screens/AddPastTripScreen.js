@@ -8,6 +8,8 @@ import { Button } from '../components/Button';
 import { FONTS } from '../constants/fonts';
 import { validatePlaceName, validateLocation, validateImageFile, validateMaxLength } from '../utils/formValidation';
 import { triggerHaptic } from '../utils/haptics';
+import { createPastTrip } from '../services/authService';
+import { getToken } from '../utils/storage';
 
 export const AddPastTripScreen = ({ onBack, onSave }) => {
   // Get safe area insets
@@ -58,19 +60,44 @@ export const AddPastTripScreen = ({ onBack, onSave }) => {
     triggerHaptic('medium');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = getToken();
+      if (!token) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      // Prepare trip data for API
+      const tripData = {
+        place_name: formData.placeName.trim(),
+        location: formData.location.trim(),
+        category: formData.category.trim(),
+        date: formData.date.trim(),
+      };
+
+      if (formData.description && formData.description.trim()) {
+        tripData.description = formData.description.trim();
+      }
+
+      // Add image if present
+      if (formData.image) {
+        tripData.image = formData.image;
+      }
+
+      // Call API to create trip
+      const response = await createPastTrip(token, tripData);
+      console.log('Past trip created:', response);
       
       if (onSave) {
-        onSave(formData);
+        onSave({ ...formData, ...response });
       }
       triggerHaptic('success');
+      Alert.alert('Success', 'Trip added successfully!');
       if (onBack) {
         onBack();
       }
     } catch (error) {
+      console.error('Error creating past trip:', error);
       triggerHaptic('error');
-      Alert.alert('Error', 'Failed to save trip. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to save trip. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
