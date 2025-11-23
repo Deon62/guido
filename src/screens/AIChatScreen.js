@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
-import { createConversation, sendMessageStream } from '../services/authService';
+import { createConversation, sendMessageStream, getConversations } from '../services/authService';
 import { getToken } from '../utils/storage';
 
 export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
@@ -25,6 +25,20 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
   const [conversationTitle, setConversationTitle] = useState('');
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState(null);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+
+  // Clean markdown formatting from text
+  const cleanMarkdown = (text) => {
+    if (!text) return '';
+    return text
+      .replace(/\*\*/g, '') // Remove bold **
+      .replace(/\*/g, '') // Remove italic *
+      .replace(/#{1,6}\s/g, '') // Remove headers (#, ##, ###, etc.)
+      .replace(/`/g, '') // Remove code backticks
+      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Convert [text](url) to just text
+      .trim();
+  };
 
   // Typing animation
   const dot1Anim = useRef(new Animated.Value(0.4)).current;
@@ -82,6 +96,8 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
         tension: 65,
         friction: 11,
       }).start();
+      // Fetch conversations when panel opens
+      fetchConversations();
     } else {
       Animated.timing(panelSlideAnim, {
         toValue: 1,
@@ -90,6 +106,56 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
       }).start();
     }
   }, [showConversationsPanel]);
+
+  // Fetch conversations on mount
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  const formatConversationTimestamp = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    
+    // Format as date if older than a week
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+  };
+
+  const fetchConversations = async () => {
+    const token = getToken();
+    if (!token) {
+      return;
+    }
+
+    setIsLoadingConversations(true);
+    try {
+      const data = await getConversations(token);
+      // Transform API response to match UI format
+      const transformedConversations = data.map(conv => ({
+        id: conv.id.toString(),
+        title: conv.title || 'Untitled Conversation',
+        lastMessage: '',
+        timestamp: formatConversationTimestamp(conv.updated_at || conv.created_at),
+        message_count: conv.message_count || 0,
+      }));
+      setConversations(transformedConversations);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      // Don't show error to user, just log it
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  };
 
   const handleSend = async () => {
     if (!inputText.trim() || isTyping || !currentConversationId) return;
@@ -111,6 +177,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
     const messageText = inputText.trim();
     setInputText('');
     setIsTyping(true);
+    setIsWaitingForResponse(true);
     triggerHaptic('light');
     Keyboard.dismiss();
 
@@ -127,10 +194,12 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
 
     try {
       await sendMessageStream(token, currentConversationId, messageText, (accumulatedText, chunk) => {
-        // Update the streaming message in real-time
+        // Clean markdown and update the streaming message in real-time
+        const cleanedText = cleanMarkdown(accumulatedText);
+        setIsWaitingForResponse(false); // Response has started
         setMessages(prev => prev.map(msg => 
           msg.id === aiMessageId 
-            ? { ...msg, text: accumulatedText }
+            ? { ...msg, text: cleanedText }
             : msg
         ));
         
@@ -141,6 +210,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
       });
 
       setIsTyping(false);
+      setIsWaitingForResponse(false);
       setStreamingMessageId(null);
       triggerHaptic('success');
     } catch (error) {
@@ -148,6 +218,7 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
       // Remove the failed AI message
       setMessages(prev => prev.filter(msg => msg.id !== aiMessageId));
       setIsTyping(false);
+      setIsWaitingForResponse(false);
       setStreamingMessageId(null);
       triggerHaptic('error');
       Alert.alert('Error', error.message || 'Failed to send message. Please try again.');
@@ -176,14 +247,8 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
       const response = await createConversation(token, conversationTitle.trim());
       const conversationId = response.id || response.conversation_id;
       
-      // Add to conversations list
-      const newConversation = {
-        id: conversationId.toString(),
-        title: conversationTitle.trim(),
-        lastMessage: '',
-        timestamp: 'Just now',
-      };
-      setConversations(prev => [newConversation, ...prev]);
+      // Refresh conversations list to include the new one
+      await fetchConversations();
       
       // Set as current conversation
       setCurrentConversationId(conversationId);
@@ -330,7 +395,18 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
             </View>
           ))}
           
-          {isTyping && !streamingMessageId && (
+          {isWaitingForResponse && (
+            <View style={[styles.messageWrapper, styles.aiMessageWrapper]}>
+              <View style={styles.aiAvatar}>
+                <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+              </View>
+              <View style={[styles.messageBubble, styles.aiBubble]}>
+                <Text style={styles.thinkingText}>thinking...</Text>
+              </View>
+            </View>
+          )}
+          
+          {isTyping && !streamingMessageId && !isWaitingForResponse && (
             <View style={[styles.messageWrapper, styles.aiMessageWrapper]}>
               <View style={styles.aiAvatar}>
                 <Ionicons name="sparkles" size={20} color="#FFFFFF" />
@@ -453,7 +529,19 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
             </TouchableOpacity>
 
             <ScrollView style={styles.conversationsList}>
-              {conversations.map((conversation) => (
+              {isLoadingConversations ? (
+                <View style={styles.conversationsLoadingContainer}>
+                  <ActivityIndicator size="small" color="#0A1D37" />
+                  <Text style={styles.conversationsLoadingText}>Loading conversations...</Text>
+                </View>
+              ) : conversations.length === 0 ? (
+                <View style={styles.conversationsEmptyContainer}>
+                  <Ionicons name="chatbubbles-outline" size={48} color="#C0C0C0" />
+                  <Text style={styles.conversationsEmptyText}>No conversations yet</Text>
+                  <Text style={styles.conversationsEmptySubtext}>Create a new conversation to get started</Text>
+                </View>
+              ) : (
+                conversations.map((conversation) => (
                 <TouchableOpacity
                   key={conversation.id}
                   style={styles.conversationItem}
@@ -490,7 +578,8 @@ export const AIChatScreen = ({ activeTab = 'ai', onTabChange, onBack }) => {
                     <Ionicons name="ellipsis-vertical" size={20} color="#6D6D6D" />
                   </TouchableOpacity>
                 </TouchableOpacity>
-              ))}
+              ))
+              )}
             </ScrollView>
           </Animated.View>
         </View>
@@ -1034,6 +1123,45 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  thinkingText: {
+    fontSize: 15,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    fontStyle: 'italic',
+    letterSpacing: 0.2,
+  },
+  conversationsLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  conversationsLoadingText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+  },
+  conversationsEmptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  conversationsEmptyText: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: '#0A1D37',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  conversationsEmptySubtext: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    textAlign: 'center',
   },
 });
 

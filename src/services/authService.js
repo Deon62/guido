@@ -2367,3 +2367,62 @@ export const sendMessageStream = async (token, conversationId, content, onChunk)
     throw new Error('Network error. Please check your connection and try again.');
   }
 };
+
+export const getConversations = async (token) => {
+  const url = getApiUrl('chat/conversations');
+
+  console.log('Get conversations request:', { url });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get conversations response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+      console.log('Get conversations response data:', data);
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get conversations response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get conversations (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Get conversations API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
