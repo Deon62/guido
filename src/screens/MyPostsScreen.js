@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
+import { getMyCommunityPosts } from '../services/authService';
+import { getToken } from '../utils/storage';
+import { API_BASE_URL } from '../config/api';
 
 export const MyPostsScreen = ({ onBack, onPostPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // TODO: Replace with API data
-  const [userPosts] = useState([]);
+  const [userPosts, setUserPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const formatNumber = (num) => {
     if (num >= 1000) {
@@ -17,20 +22,107 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
     return num.toString();
   };
 
+  // Format timestamp from API
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Just now';
+    }
+  };
+
+  // Fetch user's community posts from API
+  const fetchMyCommunityPosts = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setError('Please log in to view your posts');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const posts = await getMyCommunityPosts(token, 0, 20);
+      
+      // Transform API posts to match UI format
+      const transformedPosts = posts.map((post) => {
+        // Build full URL for profile picture if available
+        let avatarUri = null;
+        if (post.author_profile_picture) {
+          const profilePath = post.author_profile_picture.startsWith('http') 
+            ? post.author_profile_picture 
+            : post.author_profile_picture.startsWith('uploads/')
+            ? post.author_profile_picture
+            : `uploads/${post.author_profile_picture}`;
+          avatarUri = { uri: `${API_BASE_URL}/${profilePath}` };
+        }
+
+        return {
+          id: post.id?.toString() || Date.now().toString(),
+          community: post.community?.name || 'Unknown Community',
+          communityId: post.community_id || post.community?.id,
+          title: post.title || '',
+          content: post.message || post.content || '',
+          upvotes: post.upvotes || post.likes_count || 0,
+          comments: post.comments_count || 0,
+          isUpvoted: post.is_upvoted || false,
+          timestamp: post.created_at ? formatTimestamp(post.created_at) : 'Just now',
+          user: {
+            name: post.author_name || 'You',
+            username: post.author_username || '',
+            avatar: avatarUri || '👤',
+          },
+        };
+      });
+
+      setUserPosts(transformedPosts);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching my community posts:', err);
+      setError(err.message || 'Failed to load your posts. Please try again.');
+      setUserPosts([]);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Fetch posts on mount
+  useEffect(() => {
+    fetchMyCommunityPosts();
+  }, [fetchMyCommunityPosts]);
+
+  // Handle refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMyCommunityPosts();
+  }, [fetchMyCommunityPosts]);
+
   const handlePostPress = (post) => {
     if (onPostPress) {
-      // Create a mock community object for the post
+      // Create community object from post data
       const community = {
-        id: post.community.replace('q/', ''),
-        name: post.community,
-        description: '',
+        id: post.communityId || post.community?.id || 'unknown',
+        name: post.community || post.community?.name || 'Unknown Community',
+        description: post.community?.description || '',
       };
       // Ensure post has user information for PostDetailScreen
       const postWithUser = {
         ...post,
         user: {
-          name: 'You', // Since these are the user's own posts
-          avatar: '👤',
+          name: post.user?.name || 'You', // Since these are the user's own posts
+          avatar: post.user?.avatar || '👤',
         },
       };
       onPostPress(postWithUser, community, []);
@@ -58,8 +150,33 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0A1D37"
+          />
+        }
       >
-        {userPosts.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0A1D37" />
+            <Text style={styles.loadingText}>Loading your posts...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="alert-circle-outline" size={64} color="#E74C3C" />
+            <Text style={styles.emptyStateText}>Error loading posts</Text>
+            <Text style={styles.emptyStateSubtext}>{error}</Text>
+            <TouchableOpacity
+              style={styles.emptyStateButton}
+              onPress={fetchMyCommunityPosts}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.emptyStateButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : userPosts.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="document-text-outline" size={64} color="#C0C0C0" />
             <Text style={styles.emptyStateText}>No posts yet</Text>
@@ -158,6 +275,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 120,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginTop: 16,
   },
   emptyState: {
     alignItems: 'center',

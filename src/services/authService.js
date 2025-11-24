@@ -2741,6 +2741,150 @@ export const getMyFeedPosts = async (token, skip = 0, limit = 20) => {
   }
 };
 
+/**
+ * Delete a feed post
+ * @param {string} token - Access token
+ * @param {number|string} postId - Post ID to delete
+ * @returns {Promise<Object>} Response data
+ */
+export const deleteFeedPost = async (token, postId) => {
+  const url = getApiUrl(`feed/posts/${postId}`);
+
+  console.log('Delete feed post request:', { url, postId });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Delete feed post response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+        console.log('Delete feed post response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        data = {};
+      }
+    } else {
+      const text = await response.text();
+      data = {};
+      console.log('Delete feed post response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to delete feed post (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Delete feed post API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
+/**
+ * Get user's own community posts
+ * @param {string} token - Access token
+ * @param {number} skip - Number of posts to skip (for pagination)
+ * @param {number} limit - Maximum number of posts to return
+ * @returns {Promise<Array>} Array of user's community posts
+ */
+export const getMyCommunityPosts = async (token, skip = 0, limit = 20) => {
+  const url = `${getApiUrl('communities/posts/my')}?skip=${skip}&limit=${limit}`;
+
+  console.log('Get my community posts request:', { url, skip, limit });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get my community posts response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : [];
+        console.log('Get my community posts response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get my community posts response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get my community posts (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of posts (API returns array directly)
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Get my community posts API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
 // Feed Post Comment APIs
 export const createFeedPostComment = async (token, postId, content) => {
   const url = getApiUrl(`feed/posts/${postId}/comments`);

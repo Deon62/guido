@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, 
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
-import { getMyFeedPosts } from '../services/authService';
+import { getMyFeedPosts, deleteFeedPost } from '../services/authService';
 import { getToken } from '../utils/storage';
 import { API_BASE_URL } from '../config/api';
 
@@ -17,7 +17,7 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress, onAddPostPress }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleDeletePost = (postId) => {
+  const handleDeletePost = async (postId) => {
     Alert.alert(
       'Delete Post',
       'Are you sure you want to delete this post? This action cannot be undone.',
@@ -29,8 +29,27 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress, onAddPostPress }) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setUserFeedPosts(prev => prev.filter(post => post.id !== postId));
+          onPress: async () => {
+            const token = getToken();
+            if (!token) {
+              Alert.alert('Authentication Required', 'Please log in to delete posts.');
+              return;
+            }
+
+            try {
+              // Optimistic update - remove from UI immediately
+              setUserFeedPosts(prev => prev.filter(post => post.id !== postId));
+              
+              // Call API to delete
+              await deleteFeedPost(token, postId);
+              
+              Alert.alert('Success', 'Post deleted successfully.');
+            } catch (err) {
+              console.error('Error deleting post:', err);
+              // Revert optimistic update on error
+              fetchMyFeedPosts();
+              Alert.alert('Error', err.message || 'Failed to delete post. Please try again.');
+            }
           },
         },
       ]
