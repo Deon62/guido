@@ -10,7 +10,7 @@ import { FONTS } from '../constants/fonts';
 import { debounce } from '../utils/debounce';
 import { usePagination } from '../utils/usePagination';
 import { getUser, getToken } from '../utils/storage';
-import { getCommunities, toggleJoinCommunity, createCommunityPost, getCommunityPosts as fetchCommunityPosts } from '../services/authService';
+import { getCommunities, toggleJoinCommunity, createCommunityPost, getCommunityPosts as fetchCommunityPosts, getCommunityPostComments } from '../services/authService';
 import { API_BASE_URL } from '../config/api';
 
 export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCommunitiesPress, onCreateCommunityPress }) => {
@@ -163,12 +163,55 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     }
   }, []);
 
-  // TODO: Replace with API data
-  const getPostComments = (postId) => {
-    // TODO: Fetch comments from API
-    // const token = getToken();
-    // const comments = await fetchPostComments(token, postId);
-    return [];
+  // Fetch comments for a post
+  const getPostComments = async (communityId, postId) => {
+    const token = getToken();
+    if (!token || !communityId || !postId) {
+      return [];
+    }
+
+    try {
+      const commentsData = await getCommunityPostComments(token, communityId, postId);
+      
+      // Transform API response to UI format
+      return commentsData.map(comment => ({
+        id: comment.id?.toString() || Date.now().toString(),
+        user: {
+          name: comment.author_name || 'Unknown User',
+          avatar: comment.author_profile_picture 
+            ? { uri: comment.author_profile_picture.startsWith('http') 
+                ? comment.author_profile_picture 
+                : `${API_BASE_URL}/${comment.author_profile_picture}` }
+            : '👤',
+        },
+        text: comment.content || '',
+        timestamp: comment.created_at ? formatCommentTimestamp(comment.created_at) : 'Just now',
+      }));
+    } catch (err) {
+      console.error('Error fetching post comments:', err);
+      return [];
+    }
+  };
+
+  // Format timestamp helper for comments
+  const formatCommentTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Just now';
+    }
   };
 
   const handleJoinCommunity = async (communityId) => {
@@ -217,13 +260,13 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
     }
   };
 
-  const handlePostPress = (post) => {
+  const handlePostPress = async (post) => {
     if (onPostPress && selectedCommunity) {
       // Use allCommunities instead of communities to ensure we find it
       const community = allCommunities.find(c => c.id === selectedCommunity);
       if (community) {
-        const postKey = `${selectedCommunity}-${post.id}`;
-        const comments = getPostComments(postKey);
+        // Fetch comments asynchronously
+        const comments = await getPostComments(selectedCommunity, post.id);
         onPostPress(post, community, comments);
       } else {
         // If community not found, create a fallback community object
@@ -233,8 +276,8 @@ export const CommunitiesScreen = ({ activeTab, onTabChange, onPostPress, onMyCom
           description: '',
           members: 0,
         };
-        const postKey = `${selectedCommunity}-${post.id}`;
-        const comments = getPostComments(postKey);
+        // Fetch comments asynchronously
+        const comments = await getPostComments(selectedCommunity, post.id);
         onPostPress(post, fallbackCommunity, comments);
       }
     }

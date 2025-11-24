@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, StatusBar as RNStatusBar, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback, Alert, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ErrorCard } from '../components/ErrorCard';
 import { FONTS } from '../constants/fonts';
 import { triggerHaptic } from '../utils/haptics';
+import { createCommunityPostComment, getCommunityPostComments } from '../services/authService';
+import { getToken } from '../utils/storage';
+import { API_BASE_URL } from '../config/api';
 
 export const PostDetailScreen = ({ post, community, comments: initialComments, onBack, onAddComment }) => {
   const [comments, setComments] = useState(initialComments || []);
@@ -12,6 +15,7 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const scrollViewRef = useRef(null);
 
   // Ensure post has required structure with defaults
@@ -50,27 +54,118 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
     };
   }, []);
 
+  // Fetch comments when component mounts or when post/community changes
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!post?.id || !community?.id) {
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        return;
+      }
+
+      setIsLoadingComments(true);
+      setError(null);
+
+      try {
+        const commentsData = await getCommunityPostComments(token, community.id, post.id);
+        
+        // Transform API response to UI format
+        const transformedComments = commentsData.map(comment => ({
+          id: comment.id?.toString() || Date.now().toString(),
+          user: {
+            name: comment.author_name || 'Unknown User',
+            avatar: comment.author_profile_picture 
+              ? { uri: comment.author_profile_picture.startsWith('http') 
+                  ? comment.author_profile_picture 
+                  : `${API_BASE_URL}/${comment.author_profile_picture}` }
+              : '👤',
+          },
+          text: comment.content || '',
+          timestamp: comment.created_at ? formatTimestamp(comment.created_at) : 'Just now',
+        }));
+
+        setComments(transformedComments);
+      } catch (err) {
+        console.error('Error fetching comments:', err);
+        setError('Failed to load comments. Please try again.');
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
+    fetchComments();
+  }, [post?.id, community?.id]);
+
+  // Format timestamp helper
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Just now';
+    }
+  };
+
   const handleSendComment = async () => {
     if (commentText.trim() === '' || isSubmitting) return;
+
+    if (!post?.id || !community?.id) {
+      Alert.alert('Error', 'Post or community information is missing.');
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to comment.');
+      return;
+    }
+
+    // Validate content length
+    if (commentText.trim().length > 2000) {
+      Alert.alert('Error', 'Comment must be 2000 characters or less.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Simulate random error (5% chance for demo)
-      if (Math.random() < 0.05) {
-        throw new Error('Failed to post comment');
-      }
+      const commentData = await createCommunityPostComment(
+        token,
+        community.id,
+        post.id,
+        commentText.trim()
+      );
 
+      // Transform API response to UI format
       const newComment = {
-        id: Date.now().toString(),
-        user: { name: 'You', avatar: '👤' },
-        text: commentText.trim(),
-        timestamp: 'Just now',
+        id: commentData.id?.toString() || Date.now().toString(),
+        user: {
+          name: commentData.author_name || 'You',
+          avatar: commentData.author_profile_picture 
+            ? { uri: commentData.author_profile_picture.startsWith('http') 
+                ? commentData.author_profile_picture 
+                : `${API_BASE_URL}/${commentData.author_profile_picture}` }
+            : '👤',
+        },
+        text: commentData.content || commentText.trim(),
+        timestamp: commentData.created_at ? formatTimestamp(commentData.created_at) : 'Just now',
       };
+
       setComments(prev => [...prev, newComment]);
       setCommentText('');
       triggerHaptic('success');
@@ -85,9 +180,10 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (err) {
-      setError('Failed to post comment. Please try again.');
+      setError(err.message || 'Failed to post comment. Please try again.');
       triggerHaptic('error');
       console.error('Error posting comment:', err);
+      Alert.alert('Error', err.message || 'Failed to post comment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -186,7 +282,13 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
           <View style={styles.postHeader}>
             <View style={styles.postUserInfo}>
               <View style={styles.postAvatar}>
-                <Text style={styles.postAvatarText}>{safePostData.user.avatar}</Text>
+                {safePostData.user.avatar && typeof safePostData.user.avatar === 'object' && safePostData.user.avatar.uri ? (
+                  <Image source={safePostData.user.avatar} style={styles.postAvatarImage} />
+                ) : (
+                  <Text style={styles.postAvatarText}>
+                    {typeof safePostData.user.avatar === 'string' ? safePostData.user.avatar : '👤'}
+                  </Text>
+                )}
               </View>
               <View>
                 <Text style={styles.postUserName}>{safePostData.user.name}</Text>
@@ -222,11 +324,39 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
             <View style={styles.errorContainer}>
               <ErrorCard
                 message={error}
-                onRetry={() => setError(null)}
+                onRetry={() => {
+                  setError(null);
+                  // Refetch comments
+                  const token = getToken();
+                  if (token && post?.id && community?.id) {
+                    getCommunityPostComments(token, community.id, post.id)
+                      .then(commentsData => {
+                        const transformedComments = commentsData.map(comment => ({
+                          id: comment.id?.toString() || Date.now().toString(),
+                          user: {
+                            name: comment.author_name || 'Unknown User',
+                            avatar: comment.author_profile_picture 
+                              ? { uri: comment.author_profile_picture.startsWith('http') 
+                                  ? comment.author_profile_picture 
+                                  : `${API_BASE_URL}/${comment.author_profile_picture}` }
+                              : '👤',
+                          },
+                          text: comment.content || '',
+                          timestamp: comment.created_at ? formatTimestamp(comment.created_at) : 'Just now',
+                        }));
+                        setComments(transformedComments);
+                      })
+                      .catch(err => console.error('Error refetching comments:', err));
+                  }
+                }}
               />
             </View>
           )}
-          {comments.length === 0 ? (
+          {isLoadingComments ? (
+            <View style={styles.emptyComments}>
+              <Text style={styles.emptyCommentsText}>Loading comments...</Text>
+            </View>
+          ) : comments.length === 0 ? (
             <View style={styles.emptyComments}>
               <Ionicons name="chatbubble-outline" size={48} color="#C0C0C0" />
               <Text style={styles.emptyCommentsText}>No comments yet</Text>
@@ -235,10 +365,20 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
           ) : (
             comments.map((comment) => {
               const safeCommentUser = comment.user || { name: 'Unknown User', avatar: '👤' };
+              const avatarSource = typeof safeCommentUser.avatar === 'object' && safeCommentUser.avatar.uri
+                ? safeCommentUser.avatar
+                : null;
+              
               return (
                 <View key={comment.id} style={styles.commentItem}>
                   <View style={styles.commentAvatar}>
-                    <Text style={styles.commentAvatarText}>{safeCommentUser.avatar}</Text>
+                    {avatarSource ? (
+                      <Image source={avatarSource} style={styles.commentAvatarImage} />
+                    ) : (
+                      <Text style={styles.commentAvatarText}>
+                        {typeof safeCommentUser.avatar === 'string' ? safeCommentUser.avatar : '👤'}
+                      </Text>
+                    )}
                   </View>
                   <View style={styles.commentContent}>
                     <View style={styles.commentBubble}>
@@ -263,13 +403,13 @@ export const PostDetailScreen = ({ post, community, comments: initialComments, o
               value={commentText}
               onChangeText={setCommentText}
               multiline
-              maxLength={500}
+              maxLength={2000}
               returnKeyType="done"
               blurOnSubmit={true}
               onSubmitEditing={Keyboard.dismiss}
             />
             <Text style={styles.commentCharacterCount}>
-              {commentText.length} / 500
+              {commentText.length} / 2000
             </Text>
           </View>
           <TouchableOpacity
@@ -342,6 +482,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+  },
+  postAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   postAvatarText: {
     fontSize: 18,
@@ -433,6 +579,11 @@ const styles = StyleSheet.create({
   },
   commentAvatarText: {
     fontSize: 18,
+  },
+  commentAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   commentContent: {
     flex: 1,

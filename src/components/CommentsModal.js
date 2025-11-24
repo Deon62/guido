@@ -1,95 +1,85 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, FlatList, TextInput, TouchableOpacity, Image, Platform, KeyboardAvoidingView, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Modal, FlatList, TextInput, TouchableOpacity, Image, Platform, KeyboardAvoidingView, Keyboard, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
 import { usePagination } from '../utils/usePagination';
 import { LoadMoreButton } from './LoadMoreButton';
+import { createFeedPostComment, getFeedPostComments } from '../services/authService';
+import { getToken } from '../utils/storage';
+import { API_BASE_URL } from '../config/api';
 
 export const CommentsModal = ({ visible, post, onClose }) => {
   const [userComments, setUserComments] = useState([]); // User's own comments
   const [commentText, setCommentText] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allComments, setAllComments] = useState([]);
   const scrollViewRef = useRef(null);
 
-  // Generate mock comments data for the post
-  const generateMockComments = useMemo(() => {
-    if (!visible || !post) return [];
-    
-    const baseComments = [
-      {
-        id: '1',
-        user: {
-          name: 'Sarah Johnson',
-          avatar: { uri: 'https://i.pravatar.cc/150?img=5' },
-        },
-        text: 'This looks amazing! I need to visit this place soon. 📸',
-        timestamp: '2 hours ago',
-      },
-      {
-        id: '2',
-        user: {
-          name: 'Mike Chen',
-          avatar: { uri: 'https://i.pravatar.cc/150?img=12' },
-        },
-        text: 'Been there last month! The views are incredible.',
-        timestamp: '5 hours ago',
-      },
-      {
-        id: '3',
-        user: {
-          name: 'Emma Wilson',
-          avatar: { uri: 'https://i.pravatar.cc/150?img=9' },
-        },
-        text: 'Great recommendation! Adding this to my travel list ✨',
-        timestamp: '1 day ago',
-      },
-    ];
+  // Format timestamp helper
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
 
-    // Generate additional comments for pagination testing
-    const users = [
-      { name: 'Alex Brown', img: 13 },
-      { name: 'Lisa Park', img: 14 },
-      { name: 'David Lee', img: 15 },
-      { name: 'Maria Garcia', img: 16 },
-      { name: 'Tom Anderson', img: 17 },
-      { name: 'Sophie Martin', img: 18 },
-      { name: 'James Wilson', img: 19 },
-      { name: 'Anna Taylor', img: 20 },
-    ];
-
-    const comments = [
-      'Amazing photos! 📷',
-      'I was there last summer, it\'s beautiful!',
-      'Adding to my bucket list! ✨',
-      'The best place I\'ve ever visited!',
-      'Great recommendation, thanks!',
-      'I need to go there ASAP!',
-      'Looks incredible! 😍',
-      'Been there, done that, loved it!',
-    ];
-
-    const additionalComments = [];
-    for (let i = 4; i <= 20; i++) {
-      const user = users[i % users.length];
-      const comment = comments[i % comments.length];
-      const hoursAgo = i * 2;
-      const timestamp = hoursAgo < 24 
-        ? `${hoursAgo} hours ago` 
-        : `${Math.floor(hoursAgo / 24)} days ago`;
-
-      additionalComments.push({
-        id: String(i),
-        user: {
-          name: user.name,
-          avatar: { uri: `https://i.pravatar.cc/150?img=${user.img}` },
-        },
-        text: comment,
-        timestamp,
-      });
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Just now';
     }
+  };
 
-    return [...baseComments, ...additionalComments];
-  }, [visible, post]);
+  // Fetch comments from API
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!visible || !post?.id) {
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        return;
+      }
+
+      setIsLoadingComments(true);
+      try {
+        const commentsData = await getFeedPostComments(token, post.id);
+        
+        // Transform API response to UI format
+        const transformedComments = commentsData.map(comment => ({
+          id: comment.id?.toString() || Date.now().toString(),
+          user: {
+            name: comment.author_name || 'Unknown User',
+            avatar: comment.author_profile_picture 
+              ? { uri: comment.author_profile_picture.startsWith('http') 
+                  ? comment.author_profile_picture 
+                  : `${API_BASE_URL}/${comment.author_profile_picture}` }
+              : '👤',
+          },
+          text: comment.content || '',
+          timestamp: comment.created_at ? formatTimestamp(comment.created_at) : 'Just now',
+        }));
+
+        setAllComments(transformedComments);
+      } catch (err) {
+        console.error('Error fetching feed post comments:', err);
+        Alert.alert('Error', 'Failed to load comments. Please try again.');
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+
+    fetchComments();
+  }, [visible, post?.id]);
 
   // Use pagination hook for comments
   const {
@@ -102,13 +92,14 @@ export const CommentsModal = ({ visible, post, onClose }) => {
     reset,
     totalItems,
     displayedCount,
-  } = usePagination(generateMockComments, 10, 10); // 10 comments per page, initially show 10
+  } = usePagination(allComments, 10, 10); // 10 comments per page, initially show 10
 
   // Reset pagination when modal opens/closes or post changes
   useEffect(() => {
     if (visible && post) {
       reset();
       setUserComments([]);
+      setCommentText('');
     }
   }, [visible, post, reset]);
 
@@ -136,26 +127,81 @@ export const CommentsModal = ({ visible, post, onClose }) => {
     };
   }, []);
 
-  const handleSendComment = () => {
-    if (commentText.trim() === '') return;
+  const handleSendComment = async () => {
+    if (commentText.trim() === '' || isSubmitting) return;
 
-    const newComment = {
-      id: Date.now().toString(),
-      user: {
-        name: 'You',
-        avatar: require('../../assets/profiles/ic.png'), // Current user avatar
-      },
-      text: commentText.trim(),
-      timestamp: 'Just now',
-    };
+    if (!post?.id) {
+      Alert.alert('Error', 'Post information is missing.');
+      return;
+    }
 
-    setUserComments(prev => [newComment, ...prev]);
-    setCommentText('');
-    
-    // Scroll to top to show new comment
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
-    }, 100);
+    const token = getToken();
+    if (!token) {
+      Alert.alert('Authentication Required', 'Please log in to comment.');
+      return;
+    }
+
+    // Validate content length
+    if (commentText.trim().length > 2000) {
+      Alert.alert('Error', 'Comment must be 2000 characters or less.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const commentData = await createFeedPostComment(
+        token,
+        post.id,
+        commentText.trim()
+      );
+
+      // Transform API response to UI format
+      const newComment = {
+        id: commentData.id?.toString() || Date.now().toString(),
+        user: {
+          name: commentData.author_name || 'You',
+          avatar: commentData.author_profile_picture 
+            ? { uri: commentData.author_profile_picture.startsWith('http') 
+                ? commentData.author_profile_picture 
+                : `${API_BASE_URL}/${commentData.author_profile_picture}` }
+            : '👤',
+        },
+        text: commentData.content || commentText.trim(),
+        timestamp: commentData.created_at ? formatTimestamp(commentData.created_at) : 'Just now',
+      };
+
+      // Add to user comments (shown at top) and refresh all comments
+      setUserComments(prev => [newComment, ...prev]);
+      setCommentText('');
+      
+      // Refresh comments from API to get updated list
+      const commentsData = await getFeedPostComments(token, post.id);
+      const transformedComments = commentsData.map(comment => ({
+        id: comment.id?.toString() || Date.now().toString(),
+        user: {
+          name: comment.author_name || 'Unknown User',
+          avatar: comment.author_profile_picture 
+            ? { uri: comment.author_profile_picture.startsWith('http') 
+                ? comment.author_profile_picture 
+                : `${API_BASE_URL}/${comment.author_profile_picture}` }
+            : '👤',
+        },
+        text: comment.content || '',
+        timestamp: comment.created_at ? formatTimestamp(comment.created_at) : 'Just now',
+      }));
+      setAllComments(transformedComments);
+      
+      // Scroll to top to show new comment
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }, 100);
+    } catch (err) {
+      console.error('Error posting comment:', err);
+      Alert.alert('Error', err.message || 'Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -201,7 +247,12 @@ export const CommentsModal = ({ visible, post, onClose }) => {
             </TouchableOpacity>
           </View>
 
-          {allDisplayedComments.length === 0 && !hasMore ? (
+          {isLoadingComments ? (
+            <View style={styles.emptyComments}>
+              <ActivityIndicator size="large" color="#0A1D37" />
+              <Text style={styles.emptyCommentsText}>Loading comments...</Text>
+            </View>
+          ) : allDisplayedComments.length === 0 && !hasMore ? (
             <View style={styles.emptyComments}>
               <Ionicons name="chatbubble-outline" size={48} color="#C0C0C0" />
               <Text style={styles.emptyCommentsText}>No comments yet</Text>
@@ -212,18 +263,33 @@ export const CommentsModal = ({ visible, post, onClose }) => {
               ref={scrollViewRef}
               data={allDisplayedComments}
               keyExtractor={(item) => item.id}
-              renderItem={({ item: comment }) => (
-                <View style={styles.commentItem}>
-                  <Image source={comment.user.avatar} style={styles.commentAvatar} />
-                  <View style={styles.commentContent}>
-                    <View style={styles.commentBubble}>
-                      <Text style={styles.commentUserName}>{comment.user.name}</Text>
-                      <Text style={styles.commentText}>{comment.text}</Text>
+              renderItem={({ item: comment }) => {
+                const safeCommentUser = comment.user || { name: 'Unknown User', avatar: '👤' };
+                const avatarSource = typeof safeCommentUser.avatar === 'object' && safeCommentUser.avatar.uri
+                  ? safeCommentUser.avatar
+                  : null;
+                
+                return (
+                  <View style={styles.commentItem}>
+                    {avatarSource ? (
+                      <Image source={avatarSource} style={styles.commentAvatar} />
+                    ) : (
+                      <View style={styles.commentAvatarPlaceholder}>
+                        <Text style={styles.commentAvatarText}>
+                          {typeof safeCommentUser.avatar === 'string' ? safeCommentUser.avatar : '👤'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.commentContent}>
+                      <View style={styles.commentBubble}>
+                        <Text style={styles.commentUserName}>{safeCommentUser.name}</Text>
+                        <Text style={styles.commentText}>{comment.text || ''}</Text>
+                      </View>
+                      <Text style={styles.commentTimestamp}>{comment.timestamp || ''}</Text>
                     </View>
-                    <Text style={styles.commentTimestamp}>{comment.timestamp}</Text>
                   </View>
-                </View>
-              )}
+                );
+              }}
               style={styles.commentsList}
               contentContainerStyle={styles.commentsListContent}
               showsVerticalScrollIndicator={false}
@@ -264,15 +330,19 @@ export const CommentsModal = ({ visible, post, onClose }) => {
               value={commentText}
               onChangeText={setCommentText}
               multiline
-              maxLength={500}
+              maxLength={2000}
             />
             <TouchableOpacity
-              style={[styles.sendButton, commentText.trim() === '' && styles.sendButtonDisabled]}
+              style={[styles.sendButton, (commentText.trim() === '' || isSubmitting) && styles.sendButtonDisabled]}
               onPress={handleSendComment}
               activeOpacity={0.7}
-              disabled={commentText.trim() === ''}
+              disabled={commentText.trim() === '' || isSubmitting}
             >
-              <Ionicons name="send" size={20} color={commentText.trim() === '' ? '#C0C0C0' : '#FFFFFF'} />
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="send" size={20} color={(commentText.trim() === '' || isSubmitting) ? '#C0C0C0' : '#FFFFFF'} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -365,6 +435,18 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     marginRight: 12,
+  },
+  commentAvatarPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F7F7F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  commentAvatarText: {
+    fontSize: 18,
   },
   commentContent: {
     flex: 1,
