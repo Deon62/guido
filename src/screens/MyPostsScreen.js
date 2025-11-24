@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusB
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
-import { getMyCommunityPosts } from '../services/authService';
+import { getMyCommunityPosts, getCommunities } from '../services/authService';
 import { getToken } from '../utils/storage';
 import { API_BASE_URL } from '../config/api';
 
@@ -53,10 +53,26 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
     }
 
     try {
-      const posts = await getMyCommunityPosts(token, 0, 20);
+      // Fetch both posts and communities in parallel
+      const [posts, communities] = await Promise.all([
+        getMyCommunityPosts(token, 0, 20),
+        getCommunities(token, 0, 100) // Fetch enough communities to cover all posts
+      ]);
+
+      // Create a map of community_id -> community name
+      const communityMap = new Map();
+      communities.forEach(community => {
+        communityMap.set(community.id, community.name);
+      });
       
       // Transform API posts to match UI format
       const transformedPosts = posts.map((post) => {
+        // Get community name from map using community_id
+        const communityId = post.community_id || post.community?.id;
+        const communityName = communityId 
+          ? (communityMap.get(communityId) || 'Unknown Community')
+          : (post.community?.name || 'Unknown Community');
+
         // Build full URL for profile picture if available
         let avatarUri = null;
         if (post.author_profile_picture) {
@@ -70,8 +86,8 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
 
         return {
           id: post.id?.toString() || Date.now().toString(),
-          community: post.community?.name || 'Unknown Community',
-          communityId: post.community_id || post.community?.id,
+          community: communityName,
+          communityId: communityId,
           title: post.title || '',
           content: post.message || post.content || '',
           upvotes: post.upvotes || post.likes_count || 0,
