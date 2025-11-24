@@ -2668,6 +2668,79 @@ export const getCommunityPostComments = async (token, communityId, postId, skip 
   }
 };
 
+/**
+ * Get user's own feed posts
+ * @param {string} token - Access token
+ * @param {number} skip - Number of posts to skip (for pagination)
+ * @param {number} limit - Maximum number of posts to return
+ * @returns {Promise<Array>} Array of user's feed posts
+ */
+export const getMyFeedPosts = async (token, skip = 0, limit = 20) => {
+  const url = `${getApiUrl('feed/posts/my')}?skip=${skip}&limit=${limit}`;
+
+  console.log('Get my feed posts request:', { url, skip, limit });
+
+  try {
+    const response = await fetchWithTimeout(
+      url,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      },
+      15000
+    );
+
+    console.log('Get my feed posts response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    let data;
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : [];
+        console.log('Get my feed posts response data:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
+    } else {
+      const text = await response.text();
+      data = [];
+      console.log('Get my feed posts response text:', text);
+    }
+
+    if (!response.ok) {
+      const errorMessage = data.message || data.error || data.detail || `Failed to get my feed posts (${response.status})`;
+      const apiError = new Error(errorMessage);
+      apiError.status = response.status;
+      throw apiError;
+    }
+
+    // Return array of posts (API returns array directly)
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Get my feed posts API error:', error);
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        throw new Error(
+          `Cannot reach backend at ${API_BASE_URL}. Please verify the backend server is running.`
+        );
+      }
+      if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
+        throw new Error(
+          `Network error. Cannot connect to ${API_BASE_URL}. Please check your connection and ensure the backend is running.`
+        );
+      }
+      throw error;
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  }
+};
+
 // Feed Post Comment APIs
 export const createFeedPostComment = async (token, postId, content) => {
   const url = getApiUrl(`feed/posts/${postId}/comments`);

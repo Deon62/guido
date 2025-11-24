@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, StatusBar as RNStatusBar, Alert, Dimensions, RefreshControl, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
+import { getMyFeedPosts } from '../services/authService';
+import { getToken } from '../utils/storage';
+import { API_BASE_URL } from '../config/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
+export const MyFeedPostsScreen = ({ onBack, onPostPress, onAddPostPress }) => {
   const statusBarHeight = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
 
-  // TODO: Replace with API data
   const [userFeedPosts, setUserFeedPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleDeletePost = (postId) => {
     Alert.alert(
@@ -40,6 +45,8 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
   };
 
   const getCategoryColor = (category) => {
+    if (!category || typeof category !== 'string') return '#6D6D6D';
+    
     switch (category.toLowerCase()) {
       case 'landmark':
       case 'landmarks':
@@ -52,10 +59,94 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
         return '#FFE66D';
       case 'nature':
         return '#95E1D3';
+      case 'skyscraper':
+      case 'skycrapers':
+        return '#9B59B6';
       default:
         return '#6D6D6D';
     }
   };
+
+  // Format timestamp from API
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      
+      return date.toLocaleDateString();
+    } catch (e) {
+      return 'Just now';
+    }
+  };
+
+  // Fetch user's feed posts from API
+  const fetchMyFeedPosts = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setError('Please log in to view your feed posts');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const posts = await getMyFeedPosts(token, 0, 20);
+      
+      // Transform API posts to match UI format
+      const transformedPosts = posts.map((post) => {
+        // Convert media_paths to images array with full URLs
+        const images = (post.media_paths || []).map(mediaPath => {
+          const fullUrl = mediaPath.startsWith('http') 
+            ? mediaPath 
+            : `${API_BASE_URL}/${mediaPath}`;
+          return { uri: fullUrl };
+        });
+
+        return {
+          id: post.id?.toString() || Date.now().toString(),
+          place: {
+            name: post.location || 'Unknown Location',
+            location: post.location || '',
+            category: post.category?.name || 'Unknown',
+          },
+          images: images,
+          caption: post.description || '',
+          likes: post.likes_count || 0,
+          comments: post.comments_count || 0,
+          timestamp: post.created_at ? formatTimestamp(post.created_at) : 'Just now',
+        };
+      });
+
+      setUserFeedPosts(transformedPosts);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching my feed posts:', err);
+      setError(err.message || 'Failed to load your feed posts. Please try again.');
+      setUserFeedPosts([]);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Fetch posts on mount
+  useEffect(() => {
+    fetchMyFeedPosts();
+  }, [fetchMyFeedPosts]);
+
+  // Handle refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMyFeedPosts();
+  }, [fetchMyFeedPosts]);
 
   return (
     <View style={styles.container}>
@@ -78,8 +169,33 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0A1D37"
+          />
+        }
       >
-        {userFeedPosts.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0A1D37" />
+            <Text style={styles.loadingText}>Loading your posts...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="alert-circle-outline" size={64} color="#E74C3C" />
+            <Text style={styles.emptyStateText}>Error loading posts</Text>
+            <Text style={styles.emptyStateSubtext}>{error}</Text>
+            <TouchableOpacity
+              style={styles.emptyStateButton}
+              onPress={fetchMyFeedPosts}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.emptyStateButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : userFeedPosts.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="images-outline" size={64} color="#C0C0C0" />
             <Text style={styles.emptyStateText}>No feed posts yet</Text>
@@ -89,8 +205,11 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
             <TouchableOpacity
               style={styles.emptyStateButton}
               onPress={() => {
-                // Navigate to create feed post - this would be handled by parent
-                console.log('Create feed post from empty state');
+                if (onAddPostPress) {
+                  onAddPostPress();
+                } else {
+                  console.log('Create feed post from empty state');
+                }
               }}
               activeOpacity={0.7}
             >
@@ -174,6 +293,21 @@ export const MyFeedPostsScreen = ({ onBack, onPostPress }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Floating Action Button for Adding Post */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          if (onAddPostPress) {
+            onAddPostPress();
+          } else {
+            console.log('Add post pressed');
+          }
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -211,6 +345,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 120,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: '#6D6D6D',
+    marginTop: 16,
   },
   emptyState: {
     alignItems: 'center',
@@ -355,6 +501,26 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     color: '#9B9B9B',
     marginLeft: 'auto',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0A1D37',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A1D37',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 20,
   },
 });
 

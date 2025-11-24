@@ -1000,21 +1000,6 @@ export const FeedScreen = ({ activeTab = 'feed', onTabChange, onAddPostPress, on
         </>
       )}
 
-      {/* Floating Action Button for Adding Post */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {
-          if (onAddPostPress) {
-            onAddPostPress();
-          } else {
-            console.log('Add post pressed');
-          }
-        }}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-
       {/* Comments Modal */}
       <CommentsModal
         visible={selectedPostForComments !== null}
@@ -1406,26 +1391,6 @@ const styles = StyleSheet.create({
     color: '#6D6D6D',
     paddingHorizontal: 16,
     marginBottom: 16,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 80,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0A1D37',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#0A1D37',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 20,
   },
   errorContainer: {
     flex: 1,

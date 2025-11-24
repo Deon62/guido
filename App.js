@@ -853,6 +853,7 @@ function AppContent() {
         <MyFeedPostsScreen
           onBack={handleBack}
           onPostPress={handlePostDetailPress}
+          onAddPostPress={handleAddFeedPostPress}
         />
       </PageTransition>
     );
