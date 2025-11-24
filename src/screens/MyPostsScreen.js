@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, StatusBar as RNStatusBar, RefreshControl, ActivityIndicator, Alert, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS } from '../constants/fonts';
@@ -59,19 +59,24 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
         getCommunities(token, 0, 100) // Fetch enough communities to cover all posts
       ]);
 
-      // Create a map of community_id -> community name
+      // Create a map of community_id -> community data (name and profile_picture)
       const communityMap = new Map();
       communities.forEach(community => {
-        communityMap.set(community.id, community.name);
+        communityMap.set(community.id, {
+          name: community.name,
+          profile_picture: community.profile_picture,
+        });
       });
       
       // Transform API posts to match UI format
       const transformedPosts = posts.map((post) => {
-        // Get community name from map using community_id
+        // Get community data from map using community_id
         const communityId = post.community_id || post.community?.id;
-        const communityName = communityId 
-          ? (communityMap.get(communityId) || 'Unknown Community')
-          : (post.community?.name || 'Unknown Community');
+        const communityData = communityId 
+          ? (communityMap.get(communityId) || { name: 'Unknown Community', profile_picture: null })
+          : (post.community?.name ? { name: post.community.name, profile_picture: post.community.profile_picture } : { name: 'Unknown Community', profile_picture: null });
+        const communityName = communityData.name;
+        const communityProfilePicture = communityData.profile_picture;
 
         // Build full URL for profile picture if available
         let avatarUri = null;
@@ -88,6 +93,7 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
           id: post.id?.toString() || Date.now().toString(),
           community: communityName,
           communityId: communityId,
+          communityProfilePicture: communityProfilePicture,
           title: post.title || '',
           content: post.message || post.content || '',
           upvotes: post.upvotes || post.likes_count || 0,
@@ -132,6 +138,7 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
         id: post.communityId || post.community?.id || 'unknown',
         name: post.community || post.community?.name || 'Unknown Community',
         description: post.community?.description || '',
+        profile_picture: post.communityProfilePicture || post.community?.profile_picture || null,
       };
       // Ensure post has user information for PostDetailScreen
       const postWithUser = {
@@ -222,6 +229,13 @@ export const MyPostsScreen = ({ onBack, onPostPress }) => {
               >
                 <View style={styles.postHeader}>
                   <View style={styles.communityBadge}>
+                    {post.communityProfilePicture ? (
+                      <Image 
+                        source={{ uri: post.communityProfilePicture }} 
+                        style={styles.communityProfilePicture}
+                        resizeMode="cover"
+                      />
+                    ) : null}
                     <Text style={styles.communityText}>{post.community}</Text>
                   </View>
                   <Text style={styles.postTimestamp}>{post.timestamp}</Text>
@@ -361,10 +375,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   communityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F7F7F7',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
+    gap: 6,
+  },
+  communityProfilePicture: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   communityText: {
     fontSize: 12,
